@@ -1,0 +1,1106 @@
+<p>NumPy（Numerical Python的简称）是Python数值计算最重要的基础包。大多数提供科学计算的包都是用NumPy的数组作为构建基础。</p>
+<p>NumPy的部分功能如下：</p>
+<ul>
+<li>ndarray，一个具有矢量算术运算和复杂广播能力的快速且节省空间的多维数组。</li>
+<li>用于对整组数据进行快速运算的标准数学函数（无需编写循环）。</li>
+<li>用于读写磁盘数据的工具以及用于操作内存映射文件的工具。</li>
+<li>线性代数、随机数生成以及傅里叶变换功能。</li>
+<li>用于集成由C、C++、Fortran等语言编写的代码的A C API。</li>
+</ul>
+<p>由于NumPy提供了一个简单易用的C API，因此很容易将数据传递给由低级语言编写的外部库，外部库也能以NumPy数组的形式将数据返回给Python。这个功能使Python成为一种包装C/C++/Fortran历史代码库的选择，并使被包装库拥有一个动态的、易用的接口。</p>
+<p>NumPy本身并没有提供多么高级的数据分析功能，理解NumPy数组以及面向数组的计算将有助于你更加高效地使用诸如pandas之类的工具。因为NumPy是一个很大的题目，我会在附录A中介绍更多NumPy高级功能，比如广播。</p>
+<p>对于大部分数据分析应用而言，我最关注的功能主要集中在：</p>
+<ul>
+<li>用于数据整理和清理、子集构造和过滤、转换等快速的矢量化数组运算。</li>
+<li>常用的数组算法，如排序、唯一化、集合运算等。</li>
+<li>高效的描述统计和数据聚合/摘要运算。</li>
+<li>用于异构数据集的合并/连接运算的数据对齐和关系型数据运算。</li>
+<li>将条件逻辑表述为数组表达式（而不是带有if-elif-else分支的循环）。</li>
+<li>数据的分组运算（聚合、转换、函数应用等）。。</li>
+</ul>
+<p>虽然NumPy提供了通用的数值数据处理的计算基础，但大多数读者可能还是想将pandas作为统计和分析工作的基础，尤其是处理表格数据时。pandas还提供了一些NumPy所没有的领域特定的功能，如时间序列处理等。</p>
+<blockquote>
+<p>笔记：Python的面向数组计算可以追溯到1995年，Jim Hugunin创建了Numeric库。接下来的10年，许多科学编程社区纷纷开始使用Python的数组编程，但是进入21世纪，库的生态系统变得碎片化了。2005年，Travis Oliphant从Numeric和Numarray项目整合出了NumPy项目，进而所有社区都集合到了这个框架下。</p>
+</blockquote>
+<p>NumPy之于数值计算特别重要的原因之一，是因为它可以高效处理大数组的数据。这是因为：</p>
+<ul>
+<li>NumPy是在一个连续的内存块中存储数据，独立于其他Python内置对象。NumPy的C语言编写的算法库可以操作内存，而不必进行类型检查或其它前期工作。比起Python的内置序列，NumPy数组使用的内存更少。</li>
+<li>NumPy可以在整个数组上执行复杂的计算，而不需要Python的for循环。</li>
+</ul>
+<p>要搞明白具体的性能差距，考察一个包含一百万整数的数组，和一个等价的Python列表：</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1"></a>In [<span class="dv">7</span>]: <span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb1-2"><a href="#cb1-2"></a></span>
+<span id="cb1-3"><a href="#cb1-3"></a>In [<span class="dv">8</span>]: my_arr <span class="op">=</span> np.arange(<span class="dv">1000000</span>)</span>
+<span id="cb1-4"><a href="#cb1-4"></a></span>
+<span id="cb1-5"><a href="#cb1-5"></a>In [<span class="dv">9</span>]: my_list <span class="op">=</span> <span class="bu">list</span>(<span class="bu">range</span>(<span class="dv">1000000</span>))</span></code></pre></div>
+<p>各个序列分别乘以2：</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1"></a>In [<span class="dv">10</span>]: <span class="op">%</span>time <span class="cf">for</span> _ <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">10</span>): my_arr2 <span class="op">=</span> my_arr <span class="op">*</span> <span class="dv">2</span></span>
+<span id="cb2-2"><a href="#cb2-2"></a>CPU times: user <span class="dv">20</span> ms, sys: <span class="dv">50</span> ms, total: <span class="dv">70</span> ms</span>
+<span id="cb2-3"><a href="#cb2-3"></a>Wall time: <span class="fl">72.4</span> ms</span>
+<span id="cb2-4"><a href="#cb2-4"></a></span>
+<span id="cb2-5"><a href="#cb2-5"></a>In [<span class="dv">11</span>]: <span class="op">%</span>time <span class="cf">for</span> _ <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">10</span>): my_list2 <span class="op">=</span> [x <span class="op">*</span> <span class="dv">2</span> <span class="cf">for</span> x <span class="kw">in</span> my_list]</span>
+<span id="cb2-6"><a href="#cb2-6"></a>CPU times: user <span class="dv">760</span> ms, sys: <span class="dv">290</span> ms, total: <span class="fl">1.05</span> s</span>
+<span id="cb2-7"><a href="#cb2-7"></a>Wall time: <span class="fl">1.05</span> s</span></code></pre></div>
+<p>基于NumPy的算法要比纯Python快10到100倍（甚至更快），并且使用的内存更少。</p>
+<h1 id="numpy的ndarray一种多维数组对象">4.1 NumPy的ndarray：一种多维数组对象</h1>
+<p>NumPy最重要的一个特点就是其N维数组对象（即ndarray），该对象是一个快速而灵活的大数据集容器。你可以利用这种数组对整块数据执行一些数学运算，其语法跟标量元素之间的运算一样。</p>
+<p>要明白Python是如何利用与标量值类似的语法进行批次计算，我先引入NumPy，然后生成一个包含随机数据的小数组：</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1"></a>In [<span class="dv">12</span>]: <span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb3-2"><a href="#cb3-2"></a></span>
+<span id="cb3-3"><a href="#cb3-3"></a><span class="co"># Generate some random data</span></span>
+<span id="cb3-4"><a href="#cb3-4"></a>In [<span class="dv">13</span>]: data <span class="op">=</span> np.random.randn(<span class="dv">2</span>, <span class="dv">3</span>)</span>
+<span id="cb3-5"><a href="#cb3-5"></a></span>
+<span id="cb3-6"><a href="#cb3-6"></a>In [<span class="dv">14</span>]: data</span>
+<span id="cb3-7"><a href="#cb3-7"></a>Out[<span class="dv">14</span>]: </span>
+<span id="cb3-8"><a href="#cb3-8"></a>array([[<span class="op">-</span><span class="fl">0.2047</span>,  <span class="fl">0.4789</span>, <span class="op">-</span><span class="fl">0.5194</span>],</span>
+<span id="cb3-9"><a href="#cb3-9"></a>       [<span class="op">-</span><span class="fl">0.5557</span>,  <span class="fl">1.9658</span>,  <span class="fl">1.3934</span>]])</span></code></pre></div>
+<p>然后进行数学运算：</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1"></a>In [<span class="dv">15</span>]: data <span class="op">*</span> <span class="dv">10</span></span>
+<span id="cb4-2"><a href="#cb4-2"></a>Out[<span class="dv">15</span>]: </span>
+<span id="cb4-3"><a href="#cb4-3"></a>array([[ <span class="op">-</span><span class="fl">2.0471</span>,   <span class="fl">4.7894</span>,  <span class="op">-</span><span class="fl">5.1944</span>],</span>
+<span id="cb4-4"><a href="#cb4-4"></a>       [ <span class="op">-</span><span class="fl">5.5573</span>,  <span class="fl">19.6578</span>,  <span class="fl">13.9341</span>]])</span>
+<span id="cb4-5"><a href="#cb4-5"></a></span>
+<span id="cb4-6"><a href="#cb4-6"></a>In [<span class="dv">16</span>]: data <span class="op">+</span> data</span>
+<span id="cb4-7"><a href="#cb4-7"></a>Out[<span class="dv">16</span>]: </span>
+<span id="cb4-8"><a href="#cb4-8"></a>array([[<span class="op">-</span><span class="fl">0.4094</span>,  <span class="fl">0.9579</span>, <span class="op">-</span><span class="fl">1.0389</span>],</span>
+<span id="cb4-9"><a href="#cb4-9"></a>       [<span class="op">-</span><span class="fl">1.1115</span>,  <span class="fl">3.9316</span>,  <span class="fl">2.7868</span>]])</span></code></pre></div>
+<p>第一个例子中，所有的元素都乘以10。第二个例子中，每个元素都与自身相加。</p>
+<blockquote>
+<p>笔记：在本章及全书中，我会使用标准的NumPy惯用法<code>import numpy as np</code>。你当然也可以在代码中使用<code>from numpy import *</code>，但不建议这么做。<code>numpy</code>的命名空间很大，包含许多函数，其中一些的名字与Python的内置函数重名（比如min和max）。</p>
+</blockquote>
+<p>ndarray是一个通用的同构数据多维容器，也就是说，其中的所有元素必须是相同类型的。每个数组都有一个shape（一个表示各维度大小的元组）和一个dtype（一个用于说明数组数据类型的对象）：</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1"></a>In [<span class="dv">17</span>]: data.shape</span>
+<span id="cb5-2"><a href="#cb5-2"></a>Out[<span class="dv">17</span>]: (<span class="dv">2</span>, <span class="dv">3</span>)</span>
+<span id="cb5-3"><a href="#cb5-3"></a></span>
+<span id="cb5-4"><a href="#cb5-4"></a>In [<span class="dv">18</span>]: data.dtype</span>
+<span id="cb5-5"><a href="#cb5-5"></a>Out[<span class="dv">18</span>]: dtype(<span class="st">&#39;float64&#39;</span>)</span></code></pre></div>
+<p>本章将会介绍NumPy数组的基本用法，这对于本书后面各章的理解基本够用。虽然大多数数据分析工作不需要深入理解NumPy，但是精通面向数组的编程和思维方式是成为Python科学计算牛人的一大关键步骤。</p>
+<blockquote>
+<p>笔记：当你在本书中看到“数组”、“NumPy数组”、“ndarray”时，基本上都指的是同一样东西，即ndarray对象。</p>
+</blockquote>
+<h2 id="创建ndarray">创建ndarray</h2>
+<p>创建数组最简单的办法就是使用array函数。它接受一切序列型的对象（包括其他数组），然后产生一个新的含有传入数据的NumPy数组。以一个列表的转换为例：</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1"></a>In [<span class="dv">19</span>]: data1 <span class="op">=</span> [<span class="dv">6</span>, <span class="fl">7.5</span>, <span class="dv">8</span>, <span class="dv">0</span>, <span class="dv">1</span>]</span>
+<span id="cb6-2"><a href="#cb6-2"></a></span>
+<span id="cb6-3"><a href="#cb6-3"></a>In [<span class="dv">20</span>]: arr1 <span class="op">=</span> np.array(data1)</span>
+<span id="cb6-4"><a href="#cb6-4"></a></span>
+<span id="cb6-5"><a href="#cb6-5"></a>In [<span class="dv">21</span>]: arr1</span>
+<span id="cb6-6"><a href="#cb6-6"></a>Out[<span class="dv">21</span>]: array([ <span class="fl">6.</span> ,  <span class="fl">7.5</span>,  <span class="fl">8.</span> ,  <span class="fl">0.</span> ,  <span class="fl">1.</span> ])</span></code></pre></div>
+<p>嵌套序列（比如由一组等长列表组成的列表）将会被转换为一个多维数组：</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1"></a>In [<span class="dv">22</span>]: data2 <span class="op">=</span> [[<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>], [<span class="dv">5</span>, <span class="dv">6</span>, <span class="dv">7</span>, <span class="dv">8</span>]]</span>
+<span id="cb7-2"><a href="#cb7-2"></a></span>
+<span id="cb7-3"><a href="#cb7-3"></a>In [<span class="dv">23</span>]: arr2 <span class="op">=</span> np.array(data2)</span>
+<span id="cb7-4"><a href="#cb7-4"></a></span>
+<span id="cb7-5"><a href="#cb7-5"></a>In [<span class="dv">24</span>]: arr2</span>
+<span id="cb7-6"><a href="#cb7-6"></a>Out[<span class="dv">24</span>]: </span>
+<span id="cb7-7"><a href="#cb7-7"></a>array([[<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>],</span>
+<span id="cb7-8"><a href="#cb7-8"></a>       [<span class="dv">5</span>, <span class="dv">6</span>, <span class="dv">7</span>, <span class="dv">8</span>]])</span></code></pre></div>
+<p>因为data2是列表的列表，NumPy数组arr2的两个维度的shape是从data2引入的。可以用属性ndim和shape验证：</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1"></a>In [<span class="dv">25</span>]: arr2.ndim</span>
+<span id="cb8-2"><a href="#cb8-2"></a>Out[<span class="dv">25</span>]: <span class="dv">2</span></span>
+<span id="cb8-3"><a href="#cb8-3"></a></span>
+<span id="cb8-4"><a href="#cb8-4"></a>In [<span class="dv">26</span>]: arr2.shape</span>
+<span id="cb8-5"><a href="#cb8-5"></a>Out[<span class="dv">26</span>]: (<span class="dv">2</span>, <span class="dv">4</span>)</span></code></pre></div>
+<p>除非特别说明（稍后将会详细介绍），np.array会尝试为新建的这个数组推断出一个较为合适的数据类型。数据类型保存在一个特殊的dtype对象中。比如说，在上面的两个例子中，我们有：</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1"></a>In [<span class="dv">27</span>]: arr1.dtype</span>
+<span id="cb9-2"><a href="#cb9-2"></a>Out[<span class="dv">27</span>]: dtype(<span class="st">&#39;float64&#39;</span>)</span>
+<span id="cb9-3"><a href="#cb9-3"></a></span>
+<span id="cb9-4"><a href="#cb9-4"></a>In [<span class="dv">28</span>]: arr2.dtype</span>
+<span id="cb9-5"><a href="#cb9-5"></a>Out[<span class="dv">28</span>]: dtype(<span class="st">&#39;int64&#39;</span>)</span></code></pre></div>
+<p>除np.array之外，还有一些函数也可以新建数组。比如，zeros和ones分别可以创建指定长度或形状的全0或全1数组。empty可以创建一个没有任何具体值的数组。要用这些方法创建多维数组，只需传入一个表示形状的元组即可：</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1"></a>In [<span class="dv">29</span>]: np.zeros(<span class="dv">10</span>)</span>
+<span id="cb10-2"><a href="#cb10-2"></a>Out[<span class="dv">29</span>]: array([ <span class="fl">0.</span>,  <span class="fl">0.</span>,  <span class="fl">0.</span>,  <span class="fl">0.</span>,  <span class="fl">0.</span>,  <span class="fl">0.</span>,  <span class="fl">0.</span>,  <span class="fl">0.</span>,  <span class="fl">0.</span>,  <span class="fl">0.</span>])</span>
+<span id="cb10-3"><a href="#cb10-3"></a></span>
+<span id="cb10-4"><a href="#cb10-4"></a>In [<span class="dv">30</span>]: np.zeros((<span class="dv">3</span>, <span class="dv">6</span>))</span>
+<span id="cb10-5"><a href="#cb10-5"></a>Out[<span class="dv">30</span>]: </span>
+<span id="cb10-6"><a href="#cb10-6"></a>array([[ <span class="fl">0.</span>,  <span class="fl">0.</span>,  <span class="fl">0.</span>,  <span class="fl">0.</span>,  <span class="fl">0.</span>,  <span class="fl">0.</span>],</span>
+<span id="cb10-7"><a href="#cb10-7"></a>       [ <span class="fl">0.</span>,  <span class="fl">0.</span>,  <span class="fl">0.</span>,  <span class="fl">0.</span>,  <span class="fl">0.</span>,  <span class="fl">0.</span>],</span>
+<span id="cb10-8"><a href="#cb10-8"></a>       [ <span class="fl">0.</span>,  <span class="fl">0.</span>,  <span class="fl">0.</span>,  <span class="fl">0.</span>,  <span class="fl">0.</span>,  <span class="fl">0.</span>]])</span>
+<span id="cb10-9"><a href="#cb10-9"></a></span>
+<span id="cb10-10"><a href="#cb10-10"></a>In [<span class="dv">31</span>]: np.empty((<span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">2</span>))</span>
+<span id="cb10-11"><a href="#cb10-11"></a>Out[<span class="dv">31</span>]: </span>
+<span id="cb10-12"><a href="#cb10-12"></a>array([[[ <span class="fl">0.</span>,  <span class="fl">0.</span>],</span>
+<span id="cb10-13"><a href="#cb10-13"></a>        [ <span class="fl">0.</span>,  <span class="fl">0.</span>],</span>
+<span id="cb10-14"><a href="#cb10-14"></a>        [ <span class="fl">0.</span>,  <span class="fl">0.</span>]],</span>
+<span id="cb10-15"><a href="#cb10-15"></a>       [[ <span class="fl">0.</span>,  <span class="fl">0.</span>],</span>
+<span id="cb10-16"><a href="#cb10-16"></a>        [ <span class="fl">0.</span>,  <span class="fl">0.</span>],</span>
+<span id="cb10-17"><a href="#cb10-17"></a>        [ <span class="fl">0.</span>,  <span class="fl">0.</span>]]])</span></code></pre></div>
+<blockquote>
+<p>注意：认为np.empty会返回全0数组的想法是不安全的。很多情况下（如前所示），它返回的都是一些未初始化的垃圾值。</p>
+</blockquote>
+<p>arange是Python内置函数range的数组版：</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1"></a>In [<span class="dv">32</span>]: np.arange(<span class="dv">15</span>)</span>
+<span id="cb11-2"><a href="#cb11-2"></a>Out[<span class="dv">32</span>]: array([ <span class="dv">0</span>,  <span class="dv">1</span>,  <span class="dv">2</span>,  <span class="dv">3</span>,  <span class="dv">4</span>,  <span class="dv">5</span>,  <span class="dv">6</span>,  <span class="dv">7</span>,  <span class="dv">8</span>,  <span class="dv">9</span>, <span class="dv">10</span>, <span class="dv">11</span>, <span class="dv">12</span>, <span class="dv">13</span>, <span class="dv">14</span>])</span></code></pre></div>
+<p>表4-1列出了一些数组创建函数。由于NumPy关注的是数值计算，因此，如果没有特别指定，数据类型基本都是float64（浮点数）。</p>
+<figure>
+<img src="http://upload-images.jianshu.io/upload_images/7178691-78ab11f67e7077a6.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="" /><figcaption>表4-1 数组创建函数</figcaption>
+</figure>
+<h2 id="ndarray的数据类型">ndarray的数据类型</h2>
+<p>dtype（数据类型）是一个特殊的对象，它含有ndarray将一块内存解释为特定数据类型所需的信息：</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1"></a>In [<span class="dv">33</span>]: arr1 <span class="op">=</span> np.array([<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>], dtype<span class="op">=</span>np.float64)</span>
+<span id="cb12-2"><a href="#cb12-2"></a></span>
+<span id="cb12-3"><a href="#cb12-3"></a>In [<span class="dv">34</span>]: arr2 <span class="op">=</span> np.array([<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>], dtype<span class="op">=</span>np.int32)</span>
+<span id="cb12-4"><a href="#cb12-4"></a></span>
+<span id="cb12-5"><a href="#cb12-5"></a>In [<span class="dv">35</span>]: arr1.dtype</span>
+<span id="cb12-6"><a href="#cb12-6"></a>Out[<span class="dv">35</span>]: dtype(<span class="st">&#39;float64&#39;</span>)</span>
+<span id="cb12-7"><a href="#cb12-7"></a></span>
+<span id="cb12-8"><a href="#cb12-8"></a>In [<span class="dv">36</span>]: arr2.dtype</span>
+<span id="cb12-9"><a href="#cb12-9"></a>Out[<span class="dv">36</span>]: dtype(<span class="st">&#39;int32&#39;</span>)</span></code></pre></div>
+<p>dtype是NumPy灵活交互其它系统的源泉之一。多数情况下，它们直接映射到相应的机器表示，这使得“读写磁盘上的二进制数据流”以及“集成低级语言代码（如C、Fortran）”等工作变得更加简单。数值型dtype的命名方式相同：一个类型名（如float或int），后面跟一个用于表示各元素位长的数字。标准的双精度浮点值（即Python中的float对象）需要占用8字节（即64位）。因此，该类型在NumPy中就记作float64。表4-2列出了NumPy所支持的全部数据类型。</p>
+<blockquote>
+<p>笔记：记不住这些NumPy的dtype也没关系，新手更是如此。通常只需要知道你所处理的数据的大致类型是浮点数、复数、整数、布尔值、字符串，还是普通的Python对象即可。当你需要控制数据在内存和磁盘中的存储方式时（尤其是对大数据集），那就得了解如何控制存储类型。</p>
+</blockquote>
+<p><img src="http://upload-images.jianshu.io/upload_images/7178691-2f2d7406a8bc076c.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" /></p>
+<p><img src="http://upload-images.jianshu.io/upload_images/7178691-5cc31115615737b7.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" /></p>
+<p>你可以通过ndarray的astype方法明确地将一个数组从一个dtype转换成另一个dtype：</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1"></a>In [<span class="dv">37</span>]: arr <span class="op">=</span> np.array([<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">5</span>])</span>
+<span id="cb13-2"><a href="#cb13-2"></a></span>
+<span id="cb13-3"><a href="#cb13-3"></a>In [<span class="dv">38</span>]: arr.dtype</span>
+<span id="cb13-4"><a href="#cb13-4"></a>Out[<span class="dv">38</span>]: dtype(<span class="st">&#39;int64&#39;</span>)</span>
+<span id="cb13-5"><a href="#cb13-5"></a></span>
+<span id="cb13-6"><a href="#cb13-6"></a>In [<span class="dv">39</span>]: float_arr <span class="op">=</span> arr.astype(np.float64)</span>
+<span id="cb13-7"><a href="#cb13-7"></a></span>
+<span id="cb13-8"><a href="#cb13-8"></a>In [<span class="dv">40</span>]: float_arr.dtype</span>
+<span id="cb13-9"><a href="#cb13-9"></a>Out[<span class="dv">40</span>]: dtype(<span class="st">&#39;float64&#39;</span>)</span></code></pre></div>
+<p>在本例中，整数被转换成了浮点数。如果将浮点数转换成整数，则小数部分将会被截取删除：</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1"></a>In [<span class="dv">41</span>]: arr <span class="op">=</span> np.array([<span class="fl">3.7</span>, <span class="op">-</span><span class="fl">1.2</span>, <span class="op">-</span><span class="fl">2.6</span>, <span class="fl">0.5</span>, <span class="fl">12.9</span>, <span class="fl">10.1</span>])</span>
+<span id="cb14-2"><a href="#cb14-2"></a></span>
+<span id="cb14-3"><a href="#cb14-3"></a>In [<span class="dv">42</span>]: arr</span>
+<span id="cb14-4"><a href="#cb14-4"></a>Out[<span class="dv">42</span>]: array([  <span class="fl">3.7</span>,  <span class="op">-</span><span class="fl">1.2</span>,  <span class="op">-</span><span class="fl">2.6</span>,   <span class="fl">0.5</span>,  <span class="fl">12.9</span>,  <span class="fl">10.1</span>])</span>
+<span id="cb14-5"><a href="#cb14-5"></a></span>
+<span id="cb14-6"><a href="#cb14-6"></a>In [<span class="dv">43</span>]: arr.astype(np.int32)</span>
+<span id="cb14-7"><a href="#cb14-7"></a>Out[<span class="dv">43</span>]: array([ <span class="dv">3</span>, <span class="op">-</span><span class="dv">1</span>, <span class="op">-</span><span class="dv">2</span>,  <span class="dv">0</span>, <span class="dv">12</span>, <span class="dv">10</span>], dtype<span class="op">=</span>int32)</span></code></pre></div>
+<p>如果某字符串数组表示的全是数字，也可以用astype将其转换为数值形式：</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1"></a>In [<span class="dv">44</span>]: numeric_strings <span class="op">=</span> np.array([<span class="st">&#39;1.25&#39;</span>, <span class="st">&#39;-9.6&#39;</span>, <span class="st">&#39;42&#39;</span>], dtype<span class="op">=</span>np.string_)</span>
+<span id="cb15-2"><a href="#cb15-2"></a></span>
+<span id="cb15-3"><a href="#cb15-3"></a>In [<span class="dv">45</span>]: numeric_strings.astype(<span class="bu">float</span>)</span>
+<span id="cb15-4"><a href="#cb15-4"></a>Out[<span class="dv">45</span>]: array([  <span class="fl">1.25</span>,  <span class="op">-</span><span class="fl">9.6</span> ,  <span class="fl">42.</span>  ])</span></code></pre></div>
+<blockquote>
+<p>注意：使用numpy.string_类型时，一定要小心，因为NumPy的字符串数据是大小固定的，发生截取时，不会发出警告。pandas提供了更多非数值数据的便利的处理方法。</p>
+</blockquote>
+<p>如果转换过程因为某种原因而失败了（比如某个不能被转换为float64的字符串），就会引发一个ValueError。这里，我比较懒，写的是float而不是np.float64；NumPy很聪明，它会将Python类型映射到等价的dtype上。</p>
+<p>数组的dtype还有另一个属性：</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1"></a>In [<span class="dv">46</span>]: int_array <span class="op">=</span> np.arange(<span class="dv">10</span>)</span>
+<span id="cb16-2"><a href="#cb16-2"></a></span>
+<span id="cb16-3"><a href="#cb16-3"></a>In [<span class="dv">47</span>]: calibers <span class="op">=</span> np.array([<span class="fl">.22</span>, <span class="fl">.270</span>, <span class="fl">.357</span>, <span class="fl">.380</span>, <span class="fl">.44</span>, <span class="fl">.50</span>], dtype<span class="op">=</span>np.float64)</span>
+<span id="cb16-4"><a href="#cb16-4"></a></span>
+<span id="cb16-5"><a href="#cb16-5"></a>In [<span class="dv">48</span>]: int_array.astype(calibers.dtype)</span>
+<span id="cb16-6"><a href="#cb16-6"></a>Out[<span class="dv">48</span>]: array([ <span class="fl">0.</span>,  <span class="fl">1.</span>,  <span class="fl">2.</span>,  <span class="fl">3.</span>,  <span class="fl">4.</span>,  <span class="fl">5.</span>,  <span class="fl">6.</span>,  <span class="fl">7.</span>,  <span class="fl">8.</span>,  <span class="fl">9.</span>])</span></code></pre></div>
+<p>你还可以用简洁的类型代码来表示dtype：</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1"></a>In [<span class="dv">49</span>]: empty_uint32 <span class="op">=</span> np.empty(<span class="dv">8</span>, dtype<span class="op">=</span><span class="st">&#39;u4&#39;</span>)</span>
+<span id="cb17-2"><a href="#cb17-2"></a></span>
+<span id="cb17-3"><a href="#cb17-3"></a>In [<span class="dv">50</span>]: empty_uint32</span>
+<span id="cb17-4"><a href="#cb17-4"></a>Out[<span class="dv">50</span>]: </span>
+<span id="cb17-5"><a href="#cb17-5"></a>array([         <span class="dv">0</span>, <span class="dv">1075314688</span>,          <span class="dv">0</span>, <span class="dv">1075707904</span>,          <span class="dv">0</span>,</span>
+<span id="cb17-6"><a href="#cb17-6"></a>       <span class="dv">1075838976</span>,          <span class="dv">0</span>, <span class="dv">1072693248</span>], dtype<span class="op">=</span>uint32)</span></code></pre></div>
+<blockquote>
+<p>笔记：调用astype总会创建一个新的数组（一个数据的备份），即使新的dtype与旧的dtype相同。</p>
+</blockquote>
+<h2 id="numpy数组的运算">NumPy数组的运算</h2>
+<p>数组很重要，因为它使你不用编写循环即可对数据执行批量运算。NumPy用户称其为矢量化（vectorization）。大小相等的数组之间的任何算术运算都会将运算应用到元素级：</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1"></a>In [<span class="dv">51</span>]: arr <span class="op">=</span> np.array([[<span class="fl">1.</span>, <span class="fl">2.</span>, <span class="fl">3.</span>], [<span class="fl">4.</span>, <span class="fl">5.</span>, <span class="fl">6.</span>]])</span>
+<span id="cb18-2"><a href="#cb18-2"></a></span>
+<span id="cb18-3"><a href="#cb18-3"></a>In [<span class="dv">52</span>]: arr</span>
+<span id="cb18-4"><a href="#cb18-4"></a>Out[<span class="dv">52</span>]: </span>
+<span id="cb18-5"><a href="#cb18-5"></a>array([[ <span class="fl">1.</span>,  <span class="fl">2.</span>,  <span class="fl">3.</span>],</span>
+<span id="cb18-6"><a href="#cb18-6"></a>       [ <span class="fl">4.</span>,  <span class="fl">5.</span>,  <span class="fl">6.</span>]])</span>
+<span id="cb18-7"><a href="#cb18-7"></a></span>
+<span id="cb18-8"><a href="#cb18-8"></a>In [<span class="dv">53</span>]: arr <span class="op">*</span> arr</span>
+<span id="cb18-9"><a href="#cb18-9"></a>Out[<span class="dv">53</span>]: </span>
+<span id="cb18-10"><a href="#cb18-10"></a>array([[  <span class="fl">1.</span>,   <span class="fl">4.</span>,   <span class="fl">9.</span>],</span>
+<span id="cb18-11"><a href="#cb18-11"></a>       [ <span class="fl">16.</span>,  <span class="fl">25.</span>,  <span class="fl">36.</span>]])</span>
+<span id="cb18-12"><a href="#cb18-12"></a></span>
+<span id="cb18-13"><a href="#cb18-13"></a>In [<span class="dv">54</span>]: arr <span class="op">-</span> arr</span>
+<span id="cb18-14"><a href="#cb18-14"></a>Out[<span class="dv">54</span>]: </span>
+<span id="cb18-15"><a href="#cb18-15"></a>array([[ <span class="fl">0.</span>,  <span class="fl">0.</span>,  <span class="fl">0.</span>],</span>
+<span id="cb18-16"><a href="#cb18-16"></a>       [ <span class="fl">0.</span>,  <span class="fl">0.</span>,  <span class="fl">0.</span>]])</span></code></pre></div>
+<p>数组与标量的算术运算会将标量值传播到各个元素：</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1"></a>In [<span class="dv">55</span>]: <span class="dv">1</span> <span class="op">/</span> arr</span>
+<span id="cb19-2"><a href="#cb19-2"></a>Out[<span class="dv">55</span>]: </span>
+<span id="cb19-3"><a href="#cb19-3"></a>array([[ <span class="fl">1.</span>    ,  <span class="fl">0.5</span>   ,  <span class="fl">0.3333</span>],</span>
+<span id="cb19-4"><a href="#cb19-4"></a>       [ <span class="fl">0.25</span>  ,  <span class="fl">0.2</span>   ,  <span class="fl">0.1667</span>]])</span>
+<span id="cb19-5"><a href="#cb19-5"></a></span>
+<span id="cb19-6"><a href="#cb19-6"></a>In [<span class="dv">56</span>]: arr <span class="op">**</span> <span class="fl">0.5</span></span>
+<span id="cb19-7"><a href="#cb19-7"></a>Out[<span class="dv">56</span>]: </span>
+<span id="cb19-8"><a href="#cb19-8"></a>array([[ <span class="fl">1.</span>    ,  <span class="fl">1.4142</span>,  <span class="fl">1.7321</span>],</span>
+<span id="cb19-9"><a href="#cb19-9"></a>       [ <span class="fl">2.</span>    ,  <span class="fl">2.2361</span>,  <span class="fl">2.4495</span>]])</span></code></pre></div>
+<p>大小相同的数组之间的比较会生成布尔值数组：</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1"></a>In [<span class="dv">57</span>]: arr2 <span class="op">=</span> np.array([[<span class="fl">0.</span>, <span class="fl">4.</span>, <span class="fl">1.</span>], [<span class="fl">7.</span>, <span class="fl">2.</span>, <span class="fl">12.</span>]])</span>
+<span id="cb20-2"><a href="#cb20-2"></a></span>
+<span id="cb20-3"><a href="#cb20-3"></a>In [<span class="dv">58</span>]: arr2</span>
+<span id="cb20-4"><a href="#cb20-4"></a>Out[<span class="dv">58</span>]: </span>
+<span id="cb20-5"><a href="#cb20-5"></a>array([[  <span class="fl">0.</span>,   <span class="fl">4.</span>,   <span class="fl">1.</span>],</span>
+<span id="cb20-6"><a href="#cb20-6"></a>       [  <span class="fl">7.</span>,   <span class="fl">2.</span>,  <span class="fl">12.</span>]])</span>
+<span id="cb20-7"><a href="#cb20-7"></a></span>
+<span id="cb20-8"><a href="#cb20-8"></a>In [<span class="dv">59</span>]: arr2 <span class="op">&gt;</span> arr</span>
+<span id="cb20-9"><a href="#cb20-9"></a>Out[<span class="dv">59</span>]:</span>
+<span id="cb20-10"><a href="#cb20-10"></a>array([[<span class="va">False</span>,  <span class="va">True</span>, <span class="va">False</span>],</span>
+<span id="cb20-11"><a href="#cb20-11"></a>       [ <span class="va">True</span>, <span class="va">False</span>,  <span class="va">True</span>]], dtype<span class="op">=</span><span class="bu">bool</span>)</span></code></pre></div>
+<p>不同大小的数组之间的运算叫做广播（broadcasting），将在附录A中对其进行详细讨论。本书的内容不需要对广播机制有多深的理解。</p>
+<h2 id="基本的索引和切片">基本的索引和切片</h2>
+<p>NumPy数组的索引是一个内容丰富的主题，因为选取数据子集或单个元素的方式有很多。一维数组很简单。从表面上看，它们跟Python列表的功能差不多：</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1"></a>In [<span class="dv">60</span>]: arr <span class="op">=</span> np.arange(<span class="dv">10</span>)</span>
+<span id="cb21-2"><a href="#cb21-2"></a></span>
+<span id="cb21-3"><a href="#cb21-3"></a>In [<span class="dv">61</span>]: arr</span>
+<span id="cb21-4"><a href="#cb21-4"></a>Out[<span class="dv">61</span>]: array([<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">5</span>, <span class="dv">6</span>, <span class="dv">7</span>, <span class="dv">8</span>, <span class="dv">9</span>])</span>
+<span id="cb21-5"><a href="#cb21-5"></a></span>
+<span id="cb21-6"><a href="#cb21-6"></a>In [<span class="dv">62</span>]: arr[<span class="dv">5</span>]</span>
+<span id="cb21-7"><a href="#cb21-7"></a>Out[<span class="dv">62</span>]: <span class="dv">5</span></span>
+<span id="cb21-8"><a href="#cb21-8"></a></span>
+<span id="cb21-9"><a href="#cb21-9"></a>In [<span class="dv">63</span>]: arr[<span class="dv">5</span>:<span class="dv">8</span>]</span>
+<span id="cb21-10"><a href="#cb21-10"></a>Out[<span class="dv">63</span>]: array([<span class="dv">5</span>, <span class="dv">6</span>, <span class="dv">7</span>])</span>
+<span id="cb21-11"><a href="#cb21-11"></a></span>
+<span id="cb21-12"><a href="#cb21-12"></a>In [<span class="dv">64</span>]: arr[<span class="dv">5</span>:<span class="dv">8</span>] <span class="op">=</span> <span class="dv">12</span></span>
+<span id="cb21-13"><a href="#cb21-13"></a></span>
+<span id="cb21-14"><a href="#cb21-14"></a>In [<span class="dv">65</span>]: arr</span>
+<span id="cb21-15"><a href="#cb21-15"></a>Out[<span class="dv">65</span>]: array([ <span class="dv">0</span>,  <span class="dv">1</span>,  <span class="dv">2</span>,  <span class="dv">3</span>,  <span class="dv">4</span>, <span class="dv">12</span>, <span class="dv">12</span>, <span class="dv">12</span>,  <span class="dv">8</span>,  <span class="dv">9</span>])</span></code></pre></div>
+<p>如上所示，当你将一个标量值赋值给一个切片时（如arr[5:8]=12），该值会自动传播（也就说后面将会讲到的“广播”）到整个选区。跟列表最重要的区别在于，数组切片是原始数组的视图。这意味着数据不会被复制，视图上的任何修改都会直接反映到源数组上。</p>
+<p>作为例子，先创建一个arr的切片：</p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1"></a>In [<span class="dv">66</span>]: arr_slice <span class="op">=</span> arr[<span class="dv">5</span>:<span class="dv">8</span>]</span>
+<span id="cb22-2"><a href="#cb22-2"></a></span>
+<span id="cb22-3"><a href="#cb22-3"></a>In [<span class="dv">67</span>]: arr_slice</span>
+<span id="cb22-4"><a href="#cb22-4"></a>Out[<span class="dv">67</span>]: array([<span class="dv">12</span>, <span class="dv">12</span>, <span class="dv">12</span>])</span></code></pre></div>
+<p>现在，当我修稿arr_slice中的值，变动也会体现在原始数组arr中：</p>
+<div class="sourceCode" id="cb23"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1"></a>In [<span class="dv">68</span>]: arr_slice[<span class="dv">1</span>] <span class="op">=</span> <span class="dv">12345</span></span>
+<span id="cb23-2"><a href="#cb23-2"></a></span>
+<span id="cb23-3"><a href="#cb23-3"></a>In [<span class="dv">69</span>]: arr</span>
+<span id="cb23-4"><a href="#cb23-4"></a>Out[<span class="dv">69</span>]: array([    <span class="dv">0</span>,     <span class="dv">1</span>,     <span class="dv">2</span>,     <span class="dv">3</span>,     <span class="dv">4</span>,    <span class="dv">12</span>, <span class="dv">12345</span>,    <span class="dv">12</span>,     <span class="dv">8</span>,   </span>
+<span id="cb23-5"><a href="#cb23-5"></a>  <span class="dv">9</span>])</span></code></pre></div>
+<p>切片[ : ]会给数组中的所有值赋值：</p>
+<div class="sourceCode" id="cb24"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1"></a>In [<span class="dv">70</span>]: arr_slice[:] <span class="op">=</span> <span class="dv">64</span></span>
+<span id="cb24-2"><a href="#cb24-2"></a></span>
+<span id="cb24-3"><a href="#cb24-3"></a>In [<span class="dv">71</span>]: arr</span>
+<span id="cb24-4"><a href="#cb24-4"></a>Out[<span class="dv">71</span>]: array([ <span class="dv">0</span>,  <span class="dv">1</span>,  <span class="dv">2</span>,  <span class="dv">3</span>,  <span class="dv">4</span>, <span class="dv">64</span>, <span class="dv">64</span>, <span class="dv">64</span>,  <span class="dv">8</span>,  <span class="dv">9</span>])</span></code></pre></div>
+<p>如果你刚开始接触NumPy，可能会对此感到惊讶（尤其是当你曾经用过其他热衷于复制数组数据的编程语言）。由于NumPy的设计目的是处理大数据，所以你可以想象一下，假如NumPy坚持要将数据复制来复制去的话会产生何等的性能和内存问题。</p>
+<blockquote>
+<p>注意：如果你想要得到的是ndarray切片的一份副本而非视图，就需要明确地进行复制操作，例如<code>arr[5:8].copy()</code>。</p>
+</blockquote>
+<p>对于高维度数组，能做的事情更多。在一个二维数组中，各索引位置上的元素不再是标量而是一维数组：</p>
+<div class="sourceCode" id="cb25"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1"></a>In [<span class="dv">72</span>]: arr2d <span class="op">=</span> np.array([[<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>], [<span class="dv">4</span>, <span class="dv">5</span>, <span class="dv">6</span>], [<span class="dv">7</span>, <span class="dv">8</span>, <span class="dv">9</span>]])</span>
+<span id="cb25-2"><a href="#cb25-2"></a></span>
+<span id="cb25-3"><a href="#cb25-3"></a>In [<span class="dv">73</span>]: arr2d[<span class="dv">2</span>]</span>
+<span id="cb25-4"><a href="#cb25-4"></a>Out[<span class="dv">73</span>]: array([<span class="dv">7</span>, <span class="dv">8</span>, <span class="dv">9</span>])</span></code></pre></div>
+<p>因此，可以对各个元素进行递归访问，但这样需要做的事情有点多。你可以传入一个以逗号隔开的索引列表来选取单个元素。也就是说，下面两种方式是等价的：</p>
+<div class="sourceCode" id="cb26"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1"></a>In [<span class="dv">74</span>]: arr2d[<span class="dv">0</span>][<span class="dv">2</span>]</span>
+<span id="cb26-2"><a href="#cb26-2"></a>Out[<span class="dv">74</span>]: <span class="dv">3</span></span>
+<span id="cb26-3"><a href="#cb26-3"></a></span>
+<span id="cb26-4"><a href="#cb26-4"></a>In [<span class="dv">75</span>]: arr2d[<span class="dv">0</span>, <span class="dv">2</span>]</span>
+<span id="cb26-5"><a href="#cb26-5"></a>Out[<span class="dv">75</span>]: <span class="dv">3</span></span></code></pre></div>
+<p>图4-1说明了二维数组的索引方式。轴0作为行，轴1作为列。</p>
+<figure>
+<img src="http://upload-images.jianshu.io/upload_images/7178691-0a641536f73f560e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="" /><figcaption>图4-1 NumPy数组中的元素索引</figcaption>
+</figure>
+<p>在多维数组中，如果省略了后面的索引，则返回对象会是一个维度低一点的ndarray（它含有高一级维度上的所有数据）。因此，在2×2×3数组arr3d中：</p>
+<div class="sourceCode" id="cb27"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1"></a>In [<span class="dv">76</span>]: arr3d <span class="op">=</span> np.array([[[<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>], [<span class="dv">4</span>, <span class="dv">5</span>, <span class="dv">6</span>]], [[<span class="dv">7</span>, <span class="dv">8</span>, <span class="dv">9</span>], [<span class="dv">10</span>, <span class="dv">11</span>, <span class="dv">12</span>]]])</span>
+<span id="cb27-2"><a href="#cb27-2"></a></span>
+<span id="cb27-3"><a href="#cb27-3"></a>In [<span class="dv">77</span>]: arr3d</span>
+<span id="cb27-4"><a href="#cb27-4"></a>Out[<span class="dv">77</span>]: </span>
+<span id="cb27-5"><a href="#cb27-5"></a>array([[[ <span class="dv">1</span>,  <span class="dv">2</span>,  <span class="dv">3</span>],</span>
+<span id="cb27-6"><a href="#cb27-6"></a>        [ <span class="dv">4</span>,  <span class="dv">5</span>,  <span class="dv">6</span>]],</span>
+<span id="cb27-7"><a href="#cb27-7"></a>       [[ <span class="dv">7</span>,  <span class="dv">8</span>,  <span class="dv">9</span>],</span>
+<span id="cb27-8"><a href="#cb27-8"></a>        [<span class="dv">10</span>, <span class="dv">11</span>, <span class="dv">12</span>]]])</span></code></pre></div>
+<p>arr3d[0]是一个2×3数组：</p>
+<div class="sourceCode" id="cb28"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1"></a>In [<span class="dv">78</span>]: arr3d[<span class="dv">0</span>]</span>
+<span id="cb28-2"><a href="#cb28-2"></a>Out[<span class="dv">78</span>]: </span>
+<span id="cb28-3"><a href="#cb28-3"></a>array([[<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>],</span>
+<span id="cb28-4"><a href="#cb28-4"></a>       [<span class="dv">4</span>, <span class="dv">5</span>, <span class="dv">6</span>]])</span></code></pre></div>
+<p>标量值和数组都可以被赋值给arr3d[0]：</p>
+<div class="sourceCode" id="cb29"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1"></a>In [<span class="dv">79</span>]: old_values <span class="op">=</span> arr3d[<span class="dv">0</span>].copy()</span>
+<span id="cb29-2"><a href="#cb29-2"></a></span>
+<span id="cb29-3"><a href="#cb29-3"></a>In [<span class="dv">80</span>]: arr3d[<span class="dv">0</span>] <span class="op">=</span> <span class="dv">42</span></span>
+<span id="cb29-4"><a href="#cb29-4"></a></span>
+<span id="cb29-5"><a href="#cb29-5"></a>In [<span class="dv">81</span>]: arr3d</span>
+<span id="cb29-6"><a href="#cb29-6"></a>Out[<span class="dv">81</span>]: </span>
+<span id="cb29-7"><a href="#cb29-7"></a>array([[[<span class="dv">42</span>, <span class="dv">42</span>, <span class="dv">42</span>],</span>
+<span id="cb29-8"><a href="#cb29-8"></a>        [<span class="dv">42</span>, <span class="dv">42</span>, <span class="dv">42</span>]],</span>
+<span id="cb29-9"><a href="#cb29-9"></a>       [[ <span class="dv">7</span>,  <span class="dv">8</span>,  <span class="dv">9</span>],</span>
+<span id="cb29-10"><a href="#cb29-10"></a>        [<span class="dv">10</span>, <span class="dv">11</span>, <span class="dv">12</span>]]])</span>
+<span id="cb29-11"><a href="#cb29-11"></a></span>
+<span id="cb29-12"><a href="#cb29-12"></a>In [<span class="dv">82</span>]: arr3d[<span class="dv">0</span>] <span class="op">=</span> old_values</span>
+<span id="cb29-13"><a href="#cb29-13"></a></span>
+<span id="cb29-14"><a href="#cb29-14"></a>In [<span class="dv">83</span>]: arr3d</span>
+<span id="cb29-15"><a href="#cb29-15"></a>Out[<span class="dv">83</span>]: </span>
+<span id="cb29-16"><a href="#cb29-16"></a>array([[[ <span class="dv">1</span>,  <span class="dv">2</span>,  <span class="dv">3</span>],</span>
+<span id="cb29-17"><a href="#cb29-17"></a>        [ <span class="dv">4</span>,  <span class="dv">5</span>,  <span class="dv">6</span>]],</span>
+<span id="cb29-18"><a href="#cb29-18"></a>       [[ <span class="dv">7</span>,  <span class="dv">8</span>,  <span class="dv">9</span>],</span>
+<span id="cb29-19"><a href="#cb29-19"></a>        [<span class="dv">10</span>, <span class="dv">11</span>, <span class="dv">12</span>]]])</span></code></pre></div>
+<p>相似的，arr3d[1,0]可以访问索引以(1,0)开头的那些值（以一维数组的形式返回）：</p>
+<div class="sourceCode" id="cb30"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1"></a>In [<span class="dv">84</span>]: arr3d[<span class="dv">1</span>, <span class="dv">0</span>]</span>
+<span id="cb30-2"><a href="#cb30-2"></a>Out[<span class="dv">84</span>]: array([<span class="dv">7</span>, <span class="dv">8</span>, <span class="dv">9</span>])</span></code></pre></div>
+<p>虽然是用两步进行索引的，表达式是相同的：</p>
+<div class="sourceCode" id="cb31"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb31-1"><a href="#cb31-1"></a>In [<span class="dv">85</span>]: x <span class="op">=</span> arr3d[<span class="dv">1</span>]</span>
+<span id="cb31-2"><a href="#cb31-2"></a></span>
+<span id="cb31-3"><a href="#cb31-3"></a>In [<span class="dv">86</span>]: x</span>
+<span id="cb31-4"><a href="#cb31-4"></a>Out[<span class="dv">86</span>]: </span>
+<span id="cb31-5"><a href="#cb31-5"></a>array([[ <span class="dv">7</span>,  <span class="dv">8</span>,  <span class="dv">9</span>],</span>
+<span id="cb31-6"><a href="#cb31-6"></a>       [<span class="dv">10</span>, <span class="dv">11</span>, <span class="dv">12</span>]])</span>
+<span id="cb31-7"><a href="#cb31-7"></a></span>
+<span id="cb31-8"><a href="#cb31-8"></a>In [<span class="dv">87</span>]: x[<span class="dv">0</span>]</span>
+<span id="cb31-9"><a href="#cb31-9"></a>Out[<span class="dv">87</span>]: array([<span class="dv">7</span>, <span class="dv">8</span>, <span class="dv">9</span>])</span></code></pre></div>
+<p>注意，在上面所有这些选取数组子集的例子中，返回的数组都是视图。</p>
+<h2 id="切片索引">切片索引</h2>
+<p>ndarray的切片语法跟Python列表这样的一维对象差不多：</p>
+<div class="sourceCode" id="cb32"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb32-1"><a href="#cb32-1"></a>In [<span class="dv">88</span>]: arr</span>
+<span id="cb32-2"><a href="#cb32-2"></a>Out[<span class="dv">88</span>]: array([ <span class="dv">0</span>,  <span class="dv">1</span>,  <span class="dv">2</span>,  <span class="dv">3</span>,  <span class="dv">4</span>, <span class="dv">64</span>, <span class="dv">64</span>, <span class="dv">64</span>,  <span class="dv">8</span>,  <span class="dv">9</span>])</span>
+<span id="cb32-3"><a href="#cb32-3"></a></span>
+<span id="cb32-4"><a href="#cb32-4"></a>In [<span class="dv">89</span>]: arr[<span class="dv">1</span>:<span class="dv">6</span>]</span>
+<span id="cb32-5"><a href="#cb32-5"></a>Out[<span class="dv">89</span>]: array([ <span class="dv">1</span>,  <span class="dv">2</span>,  <span class="dv">3</span>,  <span class="dv">4</span>, <span class="dv">64</span>])</span></code></pre></div>
+<p>对于之前的二维数组arr2d，其切片方式稍显不同：</p>
+<div class="sourceCode" id="cb33"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb33-1"><a href="#cb33-1"></a>In [<span class="dv">90</span>]: arr2d</span>
+<span id="cb33-2"><a href="#cb33-2"></a>Out[<span class="dv">90</span>]: </span>
+<span id="cb33-3"><a href="#cb33-3"></a>array([[<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>],</span>
+<span id="cb33-4"><a href="#cb33-4"></a>       [<span class="dv">4</span>, <span class="dv">5</span>, <span class="dv">6</span>],</span>
+<span id="cb33-5"><a href="#cb33-5"></a>       [<span class="dv">7</span>, <span class="dv">8</span>, <span class="dv">9</span>]])</span>
+<span id="cb33-6"><a href="#cb33-6"></a></span>
+<span id="cb33-7"><a href="#cb33-7"></a>In [<span class="dv">91</span>]: arr2d[:<span class="dv">2</span>]</span>
+<span id="cb33-8"><a href="#cb33-8"></a>Out[<span class="dv">91</span>]: </span>
+<span id="cb33-9"><a href="#cb33-9"></a>array([[<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>],</span>
+<span id="cb33-10"><a href="#cb33-10"></a>       [<span class="dv">4</span>, <span class="dv">5</span>, <span class="dv">6</span>]])</span></code></pre></div>
+<p>可以看出，它是沿着第0轴（即第一个轴）切片的。也就是说，切片是沿着一个轴向选取元素的。表达式arr2d[:2]可以被认为是“选取arr2d的前两行”。</p>
+<p>你可以一次传入多个切片，就像传入多个索引那样：</p>
+<div class="sourceCode" id="cb34"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb34-1"><a href="#cb34-1"></a>In [<span class="dv">92</span>]: arr2d[:<span class="dv">2</span>, <span class="dv">1</span>:]</span>
+<span id="cb34-2"><a href="#cb34-2"></a>Out[<span class="dv">92</span>]: </span>
+<span id="cb34-3"><a href="#cb34-3"></a>array([[<span class="dv">2</span>, <span class="dv">3</span>],</span>
+<span id="cb34-4"><a href="#cb34-4"></a>       [<span class="dv">5</span>, <span class="dv">6</span>]])</span></code></pre></div>
+<p>像这样进行切片时，只能得到相同维数的数组视图。通过将整数索引和切片混合，可以得到低维度的切片。</p>
+<p>例如，我可以选取第二行的前两列：</p>
+<div class="sourceCode" id="cb35"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb35-1"><a href="#cb35-1"></a>In [<span class="dv">93</span>]: arr2d[<span class="dv">1</span>, :<span class="dv">2</span>]</span>
+<span id="cb35-2"><a href="#cb35-2"></a>Out[<span class="dv">93</span>]: array([<span class="dv">4</span>, <span class="dv">5</span>])</span></code></pre></div>
+<p>相似的，还可以选择第三列的前两行：</p>
+<div class="sourceCode" id="cb36"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb36-1"><a href="#cb36-1"></a>In [<span class="dv">94</span>]: arr2d[:<span class="dv">2</span>, <span class="dv">2</span>]</span>
+<span id="cb36-2"><a href="#cb36-2"></a>Out[<span class="dv">94</span>]: array([<span class="dv">3</span>, <span class="dv">6</span>])</span></code></pre></div>
+<p>图4-2对此进行了说明。注意，“只有冒号”表示选取整个轴，因此你可以像下面这样只对高维轴进行切片：</p>
+<div class="sourceCode" id="cb37"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb37-1"><a href="#cb37-1"></a>In [<span class="dv">95</span>]: arr2d[:, :<span class="dv">1</span>]</span>
+<span id="cb37-2"><a href="#cb37-2"></a>Out[<span class="dv">95</span>]: </span>
+<span id="cb37-3"><a href="#cb37-3"></a>array([[<span class="dv">1</span>],</span>
+<span id="cb37-4"><a href="#cb37-4"></a>       [<span class="dv">4</span>],</span>
+<span id="cb37-5"><a href="#cb37-5"></a>       [<span class="dv">7</span>]])</span></code></pre></div>
+<figure>
+<img src="http://upload-images.jianshu.io/upload_images/7178691-9da32d2f4629c304.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="" /><figcaption>图4-2 二维数组切片</figcaption>
+</figure>
+<p>自然，对切片表达式的赋值操作也会被扩散到整个选区：</p>
+<div class="sourceCode" id="cb38"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb38-1"><a href="#cb38-1"></a>In [<span class="dv">96</span>]: arr2d[:<span class="dv">2</span>, <span class="dv">1</span>:] <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb38-2"><a href="#cb38-2"></a></span>
+<span id="cb38-3"><a href="#cb38-3"></a>In [<span class="dv">97</span>]: arr2d</span>
+<span id="cb38-4"><a href="#cb38-4"></a>Out[<span class="dv">97</span>]: </span>
+<span id="cb38-5"><a href="#cb38-5"></a>array([[<span class="dv">1</span>, <span class="dv">0</span>, <span class="dv">0</span>],</span>
+<span id="cb38-6"><a href="#cb38-6"></a>       [<span class="dv">4</span>, <span class="dv">0</span>, <span class="dv">0</span>],</span>
+<span id="cb38-7"><a href="#cb38-7"></a>       [<span class="dv">7</span>, <span class="dv">8</span>, <span class="dv">9</span>]])</span></code></pre></div>
+<h2 id="布尔型索引">布尔型索引</h2>
+<p>来看这样一个例子，假设我们有一个用于存储数据的数组以及一个存储姓名的数组（含有重复项）。在这里，我将使用numpy.random中的randn函数生成一些正态分布的随机数据：</p>
+<div class="sourceCode" id="cb39"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb39-1"><a href="#cb39-1"></a>In [<span class="dv">98</span>]: names <span class="op">=</span> np.array([<span class="st">&#39;Bob&#39;</span>, <span class="st">&#39;Joe&#39;</span>, <span class="st">&#39;Will&#39;</span>, <span class="st">&#39;Bob&#39;</span>, <span class="st">&#39;Will&#39;</span>, <span class="st">&#39;Joe&#39;</span>, <span class="st">&#39;Joe&#39;</span>])</span>
+<span id="cb39-2"><a href="#cb39-2"></a></span>
+<span id="cb39-3"><a href="#cb39-3"></a>In [<span class="dv">99</span>]: data <span class="op">=</span> np.random.randn(<span class="dv">7</span>, <span class="dv">4</span>)</span>
+<span id="cb39-4"><a href="#cb39-4"></a></span>
+<span id="cb39-5"><a href="#cb39-5"></a>In [<span class="dv">100</span>]: names</span>
+<span id="cb39-6"><a href="#cb39-6"></a>Out[<span class="dv">100</span>]: </span>
+<span id="cb39-7"><a href="#cb39-7"></a>array([<span class="st">&#39;Bob&#39;</span>, <span class="st">&#39;Joe&#39;</span>, <span class="st">&#39;Will&#39;</span>, <span class="st">&#39;Bob&#39;</span>, <span class="st">&#39;Will&#39;</span>, <span class="st">&#39;Joe&#39;</span>, <span class="st">&#39;Joe&#39;</span>],</span>
+<span id="cb39-8"><a href="#cb39-8"></a>      dtype<span class="op">=</span><span class="st">&#39;&lt;U4&#39;</span>)</span>
+<span id="cb39-9"><a href="#cb39-9"></a></span>
+<span id="cb39-10"><a href="#cb39-10"></a>In [<span class="dv">101</span>]: data</span>
+<span id="cb39-11"><a href="#cb39-11"></a>Out[<span class="dv">101</span>]: </span>
+<span id="cb39-12"><a href="#cb39-12"></a>array([[ <span class="fl">0.0929</span>,  <span class="fl">0.2817</span>,  <span class="fl">0.769</span> ,  <span class="fl">1.2464</span>],</span>
+<span id="cb39-13"><a href="#cb39-13"></a>       [ <span class="fl">1.0072</span>, <span class="op">-</span><span class="fl">1.2962</span>,  <span class="fl">0.275</span> ,  <span class="fl">0.2289</span>],</span>
+<span id="cb39-14"><a href="#cb39-14"></a>       [ <span class="fl">1.3529</span>,  <span class="fl">0.8864</span>, <span class="op">-</span><span class="fl">2.0016</span>, <span class="op">-</span><span class="fl">0.3718</span>],</span>
+<span id="cb39-15"><a href="#cb39-15"></a>       [ <span class="fl">1.669</span> , <span class="op">-</span><span class="fl">0.4386</span>, <span class="op">-</span><span class="fl">0.5397</span>,  <span class="fl">0.477</span> ],</span>
+<span id="cb39-16"><a href="#cb39-16"></a>       [ <span class="fl">3.2489</span>, <span class="op">-</span><span class="fl">1.0212</span>, <span class="op">-</span><span class="fl">0.5771</span>,  <span class="fl">0.1241</span>],</span>
+<span id="cb39-17"><a href="#cb39-17"></a>       [ <span class="fl">0.3026</span>,  <span class="fl">0.5238</span>,  <span class="fl">0.0009</span>,  <span class="fl">1.3438</span>],</span>
+<span id="cb39-18"><a href="#cb39-18"></a>       [<span class="op">-</span><span class="fl">0.7135</span>, <span class="op">-</span><span class="fl">0.8312</span>, <span class="op">-</span><span class="fl">2.3702</span>, <span class="op">-</span><span class="fl">1.8608</span>]])</span></code></pre></div>
+<p>假设每个名字都对应data数组中的一行，而我们想要选出对应于名字“Bob”的所有行。跟算术运算一样，数组的比较运算（如==）也是矢量化的。因此，对names和字符串“Bob”的比较运算将会产生一个布尔型数组：</p>
+<div class="sourceCode" id="cb40"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb40-1"><a href="#cb40-1"></a>In [<span class="dv">102</span>]: names <span class="op">==</span> <span class="st">&#39;Bob&#39;</span></span>
+<span id="cb40-2"><a href="#cb40-2"></a>Out[<span class="dv">102</span>]: array([ <span class="va">True</span>, <span class="va">False</span>, <span class="va">False</span>,  <span class="va">True</span>, <span class="va">False</span>, <span class="va">False</span>, <span class="va">False</span>], dtype<span class="op">=</span><span class="bu">bool</span>)</span></code></pre></div>
+<p>这个布尔型数组可用于数组索引：</p>
+<div class="sourceCode" id="cb41"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb41-1"><a href="#cb41-1"></a>In [<span class="dv">103</span>]: data[names <span class="op">==</span> <span class="st">&#39;Bob&#39;</span>]</span>
+<span id="cb41-2"><a href="#cb41-2"></a>Out[<span class="dv">103</span>]: </span>
+<span id="cb41-3"><a href="#cb41-3"></a>array([[ <span class="fl">0.0929</span>,  <span class="fl">0.2817</span>,  <span class="fl">0.769</span> ,  <span class="fl">1.2464</span>],</span>
+<span id="cb41-4"><a href="#cb41-4"></a>       [ <span class="fl">1.669</span> , <span class="op">-</span><span class="fl">0.4386</span>, <span class="op">-</span><span class="fl">0.5397</span>,  <span class="fl">0.477</span> ]])</span></code></pre></div>
+<p>布尔型数组的长度必须跟被索引的轴长度一致。此外，还可以将布尔型数组跟切片、整数（或整数序列，稍后将对此进行详细讲解）混合使用：</p>
+<div class="sourceCode" id="cb42"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb42-1"><a href="#cb42-1"></a>In [<span class="dv">103</span>]: data[names <span class="op">==</span> <span class="st">&#39;Bob&#39;</span>]</span>
+<span id="cb42-2"><a href="#cb42-2"></a>Out[<span class="dv">103</span>]: </span>
+<span id="cb42-3"><a href="#cb42-3"></a>array([[ <span class="fl">0.0929</span>,  <span class="fl">0.2817</span>,  <span class="fl">0.769</span> ,  <span class="fl">1.2464</span>],</span>
+<span id="cb42-4"><a href="#cb42-4"></a>       [ <span class="fl">1.669</span> , <span class="op">-</span><span class="fl">0.4386</span>, <span class="op">-</span><span class="fl">0.5397</span>,  <span class="fl">0.477</span> ]])</span></code></pre></div>
+<blockquote>
+<p>注意：如果布尔型数组的长度不对，布尔型选择就会出错，因此一定要小心。</p>
+</blockquote>
+<p>下面的例子，我选取了<code>names == 'Bob'</code>的行，并索引了列：</p>
+<div class="sourceCode" id="cb43"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb43-1"><a href="#cb43-1"></a>In [<span class="dv">104</span>]: data[names <span class="op">==</span> <span class="st">&#39;Bob&#39;</span>, <span class="dv">2</span>:]</span>
+<span id="cb43-2"><a href="#cb43-2"></a>Out[<span class="dv">104</span>]: </span>
+<span id="cb43-3"><a href="#cb43-3"></a>array([[ <span class="fl">0.769</span> ,  <span class="fl">1.2464</span>],</span>
+<span id="cb43-4"><a href="#cb43-4"></a>       [<span class="op">-</span><span class="fl">0.5397</span>,  <span class="fl">0.477</span> ]])</span>
+<span id="cb43-5"><a href="#cb43-5"></a></span>
+<span id="cb43-6"><a href="#cb43-6"></a>In [<span class="dv">105</span>]: data[names <span class="op">==</span> <span class="st">&#39;Bob&#39;</span>, <span class="dv">3</span>]</span>
+<span id="cb43-7"><a href="#cb43-7"></a>Out[<span class="dv">105</span>]: array([ <span class="fl">1.2464</span>,  <span class="fl">0.477</span> ])</span></code></pre></div>
+<p>要选择除“Bob”以外的其他值，既可以使用不等于符号（!=），也可以通过~对条件进行否定：</p>
+<div class="sourceCode" id="cb44"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb44-1"><a href="#cb44-1"></a>In [<span class="dv">106</span>]: names <span class="op">!=</span> <span class="st">&#39;Bob&#39;</span></span>
+<span id="cb44-2"><a href="#cb44-2"></a>Out[<span class="dv">106</span>]: array([<span class="va">False</span>,  <span class="va">True</span>,  <span class="va">True</span>, <span class="va">False</span>,  <span class="va">True</span>,  <span class="va">True</span>,  <span class="va">True</span>], dtype<span class="op">=</span><span class="bu">bool</span>)</span>
+<span id="cb44-3"><a href="#cb44-3"></a></span>
+<span id="cb44-4"><a href="#cb44-4"></a>In [<span class="dv">107</span>]: data[<span class="op">~</span>(names <span class="op">==</span> <span class="st">&#39;Bob&#39;</span>)]</span>
+<span id="cb44-5"><a href="#cb44-5"></a>Out[<span class="dv">107</span>]:</span>
+<span id="cb44-6"><a href="#cb44-6"></a>array([[ <span class="fl">1.0072</span>, <span class="op">-</span><span class="fl">1.2962</span>,  <span class="fl">0.275</span> ,  <span class="fl">0.2289</span>],</span>
+<span id="cb44-7"><a href="#cb44-7"></a>       [ <span class="fl">1.3529</span>,  <span class="fl">0.8864</span>, <span class="op">-</span><span class="fl">2.0016</span>, <span class="op">-</span><span class="fl">0.3718</span>],</span>
+<span id="cb44-8"><a href="#cb44-8"></a>       [ <span class="fl">3.2489</span>, <span class="op">-</span><span class="fl">1.0212</span>, <span class="op">-</span><span class="fl">0.5771</span>,  <span class="fl">0.1241</span>],</span>
+<span id="cb44-9"><a href="#cb44-9"></a>       [ <span class="fl">0.3026</span>,  <span class="fl">0.5238</span>,  <span class="fl">0.0009</span>,  <span class="fl">1.3438</span>],</span>
+<span id="cb44-10"><a href="#cb44-10"></a>       [<span class="op">-</span><span class="fl">0.7135</span>, <span class="op">-</span><span class="fl">0.8312</span>, <span class="op">-</span><span class="fl">2.3702</span>, <span class="op">-</span><span class="fl">1.8608</span>]])</span></code></pre></div>
+<p>~操作符用来反转条件很好用：</p>
+<div class="sourceCode" id="cb45"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb45-1"><a href="#cb45-1"></a>In [<span class="dv">108</span>]: cond <span class="op">=</span> names <span class="op">==</span> <span class="st">&#39;Bob&#39;</span></span>
+<span id="cb45-2"><a href="#cb45-2"></a></span>
+<span id="cb45-3"><a href="#cb45-3"></a>In [<span class="dv">109</span>]: data[<span class="op">~</span>cond]</span>
+<span id="cb45-4"><a href="#cb45-4"></a>Out[<span class="dv">109</span>]: </span>
+<span id="cb45-5"><a href="#cb45-5"></a>array([[ <span class="fl">1.0072</span>, <span class="op">-</span><span class="fl">1.2962</span>,  <span class="fl">0.275</span> ,  <span class="fl">0.2289</span>],</span>
+<span id="cb45-6"><a href="#cb45-6"></a>       [ <span class="fl">1.3529</span>,  <span class="fl">0.8864</span>, <span class="op">-</span><span class="fl">2.0016</span>, <span class="op">-</span><span class="fl">0.3718</span>],</span>
+<span id="cb45-7"><a href="#cb45-7"></a>       [ <span class="fl">3.2489</span>, <span class="op">-</span><span class="fl">1.0212</span>, <span class="op">-</span><span class="fl">0.5771</span>,  <span class="fl">0.1241</span>],</span>
+<span id="cb45-8"><a href="#cb45-8"></a>       [ <span class="fl">0.3026</span>,  <span class="fl">0.5238</span>,  <span class="fl">0.0009</span>,  <span class="fl">1.3438</span>],</span>
+<span id="cb45-9"><a href="#cb45-9"></a>       [<span class="op">-</span><span class="fl">0.7135</span>, <span class="op">-</span><span class="fl">0.8312</span>, <span class="op">-</span><span class="fl">2.3702</span>, <span class="op">-</span><span class="fl">1.8608</span>]])</span></code></pre></div>
+<p>选取这三个名字中的两个需要组合应用多个布尔条件，使用&amp;（和）、|（或）之类的布尔算术运算符即可：</p>
+<div class="sourceCode" id="cb46"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb46-1"><a href="#cb46-1"></a>In [<span class="dv">110</span>]: mask <span class="op">=</span> (names <span class="op">==</span> <span class="st">&#39;Bob&#39;</span>) <span class="op">|</span> (names <span class="op">==</span> <span class="st">&#39;Will&#39;</span>)</span>
+<span id="cb46-2"><a href="#cb46-2"></a></span>
+<span id="cb46-3"><a href="#cb46-3"></a>In [<span class="dv">111</span>]: mask</span>
+<span id="cb46-4"><a href="#cb46-4"></a>Out[<span class="dv">111</span>]: array([ <span class="va">True</span>, <span class="va">False</span>,  <span class="va">True</span>,  <span class="va">True</span>,  <span class="va">True</span>, <span class="va">False</span>, <span class="va">False</span>], dtype<span class="op">=</span><span class="bu">bool</span>)</span>
+<span id="cb46-5"><a href="#cb46-5"></a></span>
+<span id="cb46-6"><a href="#cb46-6"></a>In [<span class="dv">112</span>]: data[mask]</span>
+<span id="cb46-7"><a href="#cb46-7"></a>Out[<span class="dv">112</span>]: </span>
+<span id="cb46-8"><a href="#cb46-8"></a>array([[ <span class="fl">0.0929</span>,  <span class="fl">0.2817</span>,  <span class="fl">0.769</span> ,  <span class="fl">1.2464</span>],</span>
+<span id="cb46-9"><a href="#cb46-9"></a>       [ <span class="fl">1.3529</span>,  <span class="fl">0.8864</span>, <span class="op">-</span><span class="fl">2.0016</span>, <span class="op">-</span><span class="fl">0.3718</span>],</span>
+<span id="cb46-10"><a href="#cb46-10"></a>       [ <span class="fl">1.669</span> , <span class="op">-</span><span class="fl">0.4386</span>, <span class="op">-</span><span class="fl">0.5397</span>,  <span class="fl">0.477</span> ],</span>
+<span id="cb46-11"><a href="#cb46-11"></a>       [ <span class="fl">3.2489</span>, <span class="op">-</span><span class="fl">1.0212</span>, <span class="op">-</span><span class="fl">0.5771</span>,  <span class="fl">0.1241</span>]])</span></code></pre></div>
+<p>通过布尔型索引选取数组中的数据，将总是创建数据的副本，即使返回一模一样的数组也是如此。</p>
+<blockquote>
+<p>注意：Python关键字and和or在布尔型数组中无效。要使用&amp;与|。</p>
+</blockquote>
+<p>通过布尔型数组设置值是一种经常用到的手段。为了将data中的所有负值都设置为0，我们只需：</p>
+<div class="sourceCode" id="cb47"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb47-1"><a href="#cb47-1"></a>In [<span class="dv">113</span>]: data[data <span class="op">&lt;</span> <span class="dv">0</span>] <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb47-2"><a href="#cb47-2"></a></span>
+<span id="cb47-3"><a href="#cb47-3"></a>In [<span class="dv">114</span>]: data</span>
+<span id="cb47-4"><a href="#cb47-4"></a>Out[<span class="dv">114</span>]: </span>
+<span id="cb47-5"><a href="#cb47-5"></a>array([[ <span class="fl">0.0929</span>,  <span class="fl">0.2817</span>,  <span class="fl">0.769</span> ,  <span class="fl">1.2464</span>],</span>
+<span id="cb47-6"><a href="#cb47-6"></a>       [ <span class="fl">1.0072</span>,  <span class="fl">0.</span>    ,  <span class="fl">0.275</span> ,  <span class="fl">0.2289</span>],</span>
+<span id="cb47-7"><a href="#cb47-7"></a>       [ <span class="fl">1.3529</span>,  <span class="fl">0.8864</span>,  <span class="fl">0.</span>    ,  <span class="fl">0.</span>    ],</span>
+<span id="cb47-8"><a href="#cb47-8"></a>       [ <span class="fl">1.669</span> ,  <span class="fl">0.</span>    ,  <span class="fl">0.</span>    ,  <span class="fl">0.477</span> ],</span>
+<span id="cb47-9"><a href="#cb47-9"></a>       [ <span class="fl">3.2489</span>,  <span class="fl">0.</span>    ,  <span class="fl">0.</span>    ,  <span class="fl">0.1241</span>],</span>
+<span id="cb47-10"><a href="#cb47-10"></a>       [ <span class="fl">0.3026</span>,  <span class="fl">0.5238</span>,  <span class="fl">0.0009</span>,  <span class="fl">1.3438</span>],</span>
+<span id="cb47-11"><a href="#cb47-11"></a>       [ <span class="fl">0.</span>    ,  <span class="fl">0.</span>    ,  <span class="fl">0.</span>    ,  <span class="fl">0.</span>    ]])</span></code></pre></div>
+<p>通过一维布尔数组设置整行或列的值也很简单：</p>
+<div class="sourceCode" id="cb48"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb48-1"><a href="#cb48-1"></a>In [<span class="dv">115</span>]: data[names <span class="op">!=</span> <span class="st">&#39;Joe&#39;</span>] <span class="op">=</span> <span class="dv">7</span></span>
+<span id="cb48-2"><a href="#cb48-2"></a></span>
+<span id="cb48-3"><a href="#cb48-3"></a>In [<span class="dv">116</span>]: data</span>
+<span id="cb48-4"><a href="#cb48-4"></a>Out[<span class="dv">116</span>]: </span>
+<span id="cb48-5"><a href="#cb48-5"></a>array([[ <span class="fl">7.</span>    ,  <span class="fl">7.</span>    ,  <span class="fl">7.</span>    ,  <span class="fl">7.</span>    ],</span>
+<span id="cb48-6"><a href="#cb48-6"></a>       [ <span class="fl">1.0072</span>,  <span class="fl">0.</span>    ,  <span class="fl">0.275</span> ,  <span class="fl">0.2289</span>],</span>
+<span id="cb48-7"><a href="#cb48-7"></a>       [ <span class="fl">7.</span>    ,  <span class="fl">7.</span>    ,  <span class="fl">7.</span>    ,  <span class="fl">7.</span>    ],</span>
+<span id="cb48-8"><a href="#cb48-8"></a>       [ <span class="fl">7.</span>    ,  <span class="fl">7.</span>    ,  <span class="fl">7.</span>    ,  <span class="fl">7.</span>    ],</span>
+<span id="cb48-9"><a href="#cb48-9"></a>       [ <span class="fl">7.</span>    ,  <span class="fl">7.</span>    ,  <span class="fl">7.</span>    ,  <span class="fl">7.</span>    ],</span>
+<span id="cb48-10"><a href="#cb48-10"></a>       [ <span class="fl">0.3026</span>,  <span class="fl">0.5238</span>,  <span class="fl">0.0009</span>,  <span class="fl">1.3438</span>],</span>
+<span id="cb48-11"><a href="#cb48-11"></a>       [ <span class="fl">0.</span>    ,  <span class="fl">0.</span>    ,  <span class="fl">0.</span>    ,  <span class="fl">0.</span>    ]])</span></code></pre></div>
+<p>后面会看到，这类二维数据的操作也可以用pandas方便的来做。</p>
+<h2 id="花式索引">花式索引</h2>
+<p>花式索引（Fancy indexing）是一个NumPy术语，它指的是利用整数数组进行索引。假设我们有一个8×4数组：</p>
+<div class="sourceCode" id="cb49"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb49-1"><a href="#cb49-1"></a>In [<span class="dv">117</span>]: arr <span class="op">=</span> np.empty((<span class="dv">8</span>, <span class="dv">4</span>))</span>
+<span id="cb49-2"><a href="#cb49-2"></a></span>
+<span id="cb49-3"><a href="#cb49-3"></a>In [<span class="dv">118</span>]: <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">8</span>):</span>
+<span id="cb49-4"><a href="#cb49-4"></a>   .....:     arr[i] <span class="op">=</span> i</span>
+<span id="cb49-5"><a href="#cb49-5"></a></span>
+<span id="cb49-6"><a href="#cb49-6"></a>In [<span class="dv">119</span>]: arr</span>
+<span id="cb49-7"><a href="#cb49-7"></a>Out[<span class="dv">119</span>]: </span>
+<span id="cb49-8"><a href="#cb49-8"></a>array([[ <span class="fl">0.</span>,  <span class="fl">0.</span>,  <span class="fl">0.</span>,  <span class="fl">0.</span>],</span>
+<span id="cb49-9"><a href="#cb49-9"></a>       [ <span class="fl">1.</span>,  <span class="fl">1.</span>,  <span class="fl">1.</span>,  <span class="fl">1.</span>],</span>
+<span id="cb49-10"><a href="#cb49-10"></a>       [ <span class="fl">2.</span>,  <span class="fl">2.</span>,  <span class="fl">2.</span>,  <span class="fl">2.</span>],</span>
+<span id="cb49-11"><a href="#cb49-11"></a>       [ <span class="fl">3.</span>,  <span class="fl">3.</span>,  <span class="fl">3.</span>,  <span class="fl">3.</span>],</span>
+<span id="cb49-12"><a href="#cb49-12"></a>       [ <span class="fl">4.</span>,  <span class="fl">4.</span>,  <span class="fl">4.</span>,  <span class="fl">4.</span>],</span>
+<span id="cb49-13"><a href="#cb49-13"></a>       [ <span class="fl">5.</span>,  <span class="fl">5.</span>,  <span class="fl">5.</span>,  <span class="fl">5.</span>],</span>
+<span id="cb49-14"><a href="#cb49-14"></a>       [ <span class="fl">6.</span>,  <span class="fl">6.</span>,  <span class="fl">6.</span>,  <span class="fl">6.</span>],</span>
+<span id="cb49-15"><a href="#cb49-15"></a>       [ <span class="fl">7.</span>,  <span class="fl">7.</span>,  <span class="fl">7.</span>,  <span class="fl">7.</span>]])</span></code></pre></div>
+<p>为了以特定顺序选取行子集，只需传入一个用于指定顺序的整数列表或ndarray即可：</p>
+<div class="sourceCode" id="cb50"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb50-1"><a href="#cb50-1"></a>In [<span class="dv">120</span>]: arr[[<span class="dv">4</span>, <span class="dv">3</span>, <span class="dv">0</span>, <span class="dv">6</span>]]</span>
+<span id="cb50-2"><a href="#cb50-2"></a>Out[<span class="dv">120</span>]: </span>
+<span id="cb50-3"><a href="#cb50-3"></a>array([[ <span class="fl">4.</span>,  <span class="fl">4.</span>,  <span class="fl">4.</span>,  <span class="fl">4.</span>],</span>
+<span id="cb50-4"><a href="#cb50-4"></a>       [ <span class="fl">3.</span>,  <span class="fl">3.</span>,  <span class="fl">3.</span>,  <span class="fl">3.</span>],</span>
+<span id="cb50-5"><a href="#cb50-5"></a>       [ <span class="fl">0.</span>,  <span class="fl">0.</span>,  <span class="fl">0.</span>,  <span class="fl">0.</span>],</span>
+<span id="cb50-6"><a href="#cb50-6"></a>       [ <span class="fl">6.</span>,  <span class="fl">6.</span>,  <span class="fl">6.</span>,  <span class="fl">6.</span>]])</span></code></pre></div>
+<p>这段代码确实达到我们的要求了！使用负数索引将会从末尾开始选取行：</p>
+<div class="sourceCode" id="cb51"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb51-1"><a href="#cb51-1"></a>In [<span class="dv">121</span>]: arr[[<span class="op">-</span><span class="dv">3</span>, <span class="op">-</span><span class="dv">5</span>, <span class="op">-</span><span class="dv">7</span>]]</span>
+<span id="cb51-2"><a href="#cb51-2"></a>Out[<span class="dv">121</span>]: </span>
+<span id="cb51-3"><a href="#cb51-3"></a>array([[ <span class="fl">5.</span>,  <span class="fl">5.</span>,  <span class="fl">5.</span>,  <span class="fl">5.</span>],</span>
+<span id="cb51-4"><a href="#cb51-4"></a>       [ <span class="fl">3.</span>,  <span class="fl">3.</span>,  <span class="fl">3.</span>,  <span class="fl">3.</span>],</span>
+<span id="cb51-5"><a href="#cb51-5"></a>       [ <span class="fl">1.</span>,  <span class="fl">1.</span>,  <span class="fl">1.</span>,  <span class="fl">1.</span>]])</span></code></pre></div>
+<p>一次传入多个索引数组会有一点特别。它返回的是一个一维数组，其中的元素对应各个索引元组：</p>
+<div class="sourceCode" id="cb52"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb52-1"><a href="#cb52-1"></a>In [<span class="dv">122</span>]: arr <span class="op">=</span> np.arange(<span class="dv">32</span>).reshape((<span class="dv">8</span>, <span class="dv">4</span>))</span>
+<span id="cb52-2"><a href="#cb52-2"></a></span>
+<span id="cb52-3"><a href="#cb52-3"></a>In [<span class="dv">123</span>]: arr</span>
+<span id="cb52-4"><a href="#cb52-4"></a>Out[<span class="dv">123</span>]: </span>
+<span id="cb52-5"><a href="#cb52-5"></a>array([[ <span class="dv">0</span>,  <span class="dv">1</span>,  <span class="dv">2</span>,  <span class="dv">3</span>],</span>
+<span id="cb52-6"><a href="#cb52-6"></a>       [ <span class="dv">4</span>,  <span class="dv">5</span>,  <span class="dv">6</span>,  <span class="dv">7</span>],</span>
+<span id="cb52-7"><a href="#cb52-7"></a>       [ <span class="dv">8</span>,  <span class="dv">9</span>, <span class="dv">10</span>, <span class="dv">11</span>],</span>
+<span id="cb52-8"><a href="#cb52-8"></a>       [<span class="dv">12</span>, <span class="dv">13</span>, <span class="dv">14</span>, <span class="dv">15</span>],</span>
+<span id="cb52-9"><a href="#cb52-9"></a>       [<span class="dv">16</span>, <span class="dv">17</span>, <span class="dv">18</span>, <span class="dv">19</span>],</span>
+<span id="cb52-10"><a href="#cb52-10"></a>       [<span class="dv">20</span>, <span class="dv">21</span>, <span class="dv">22</span>, <span class="dv">23</span>],</span>
+<span id="cb52-11"><a href="#cb52-11"></a>       [<span class="dv">24</span>, <span class="dv">25</span>, <span class="dv">26</span>, <span class="dv">27</span>],</span>
+<span id="cb52-12"><a href="#cb52-12"></a>       [<span class="dv">28</span>, <span class="dv">29</span>, <span class="dv">30</span>, <span class="dv">31</span>]])</span>
+<span id="cb52-13"><a href="#cb52-13"></a></span>
+<span id="cb52-14"><a href="#cb52-14"></a>In [<span class="dv">124</span>]: arr[[<span class="dv">1</span>, <span class="dv">5</span>, <span class="dv">7</span>, <span class="dv">2</span>], [<span class="dv">0</span>, <span class="dv">3</span>, <span class="dv">1</span>, <span class="dv">2</span>]]</span>
+<span id="cb52-15"><a href="#cb52-15"></a>Out[<span class="dv">124</span>]: array([ <span class="dv">4</span>, <span class="dv">23</span>, <span class="dv">29</span>, <span class="dv">10</span>])</span></code></pre></div>
+<p>附录A中会详细介绍reshape方法。</p>
+<p>最终选出的是元素(1,0)、(5,3)、(7,1)和(2,2)。无论数组是多少维的，花式索引总是一维的。</p>
+<p>这个花式索引的行为可能会跟某些用户的预期不一样（包括我在内），选取矩阵的行列子集应该是矩形区域的形式才对。下面是得到该结果的一个办法：</p>
+<div class="sourceCode" id="cb53"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb53-1"><a href="#cb53-1"></a>In [<span class="dv">125</span>]: arr[[<span class="dv">1</span>, <span class="dv">5</span>, <span class="dv">7</span>, <span class="dv">2</span>]][:, [<span class="dv">0</span>, <span class="dv">3</span>, <span class="dv">1</span>, <span class="dv">2</span>]]</span>
+<span id="cb53-2"><a href="#cb53-2"></a>Out[<span class="dv">125</span>]: </span>
+<span id="cb53-3"><a href="#cb53-3"></a>array([[ <span class="dv">4</span>,  <span class="dv">7</span>,  <span class="dv">5</span>,  <span class="dv">6</span>],</span>
+<span id="cb53-4"><a href="#cb53-4"></a>       [<span class="dv">20</span>, <span class="dv">23</span>, <span class="dv">21</span>, <span class="dv">22</span>],</span>
+<span id="cb53-5"><a href="#cb53-5"></a>       [<span class="dv">28</span>, <span class="dv">31</span>, <span class="dv">29</span>, <span class="dv">30</span>],</span>
+<span id="cb53-6"><a href="#cb53-6"></a>       [ <span class="dv">8</span>, <span class="dv">11</span>,  <span class="dv">9</span>, <span class="dv">10</span>]])</span></code></pre></div>
+<p>记住，花式索引跟切片不一样，它总是将数据复制到新数组中。</p>
+<h2 id="数组转置和轴对换">数组转置和轴对换</h2>
+<p>转置是重塑的一种特殊形式，它返回的是源数据的视图（不会进行任何复制操作）。数组不仅有transpose方法，还有一个特殊的T属性：</p>
+<div class="sourceCode" id="cb54"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb54-1"><a href="#cb54-1"></a>In [<span class="dv">126</span>]: arr <span class="op">=</span> np.arange(<span class="dv">15</span>).reshape((<span class="dv">3</span>, <span class="dv">5</span>))</span>
+<span id="cb54-2"><a href="#cb54-2"></a></span>
+<span id="cb54-3"><a href="#cb54-3"></a>In [<span class="dv">127</span>]: arr</span>
+<span id="cb54-4"><a href="#cb54-4"></a>Out[<span class="dv">127</span>]: </span>
+<span id="cb54-5"><a href="#cb54-5"></a>array([[ <span class="dv">0</span>,  <span class="dv">1</span>,  <span class="dv">2</span>,  <span class="dv">3</span>,  <span class="dv">4</span>],</span>
+<span id="cb54-6"><a href="#cb54-6"></a>       [ <span class="dv">5</span>,  <span class="dv">6</span>,  <span class="dv">7</span>,  <span class="dv">8</span>,  <span class="dv">9</span>],</span>
+<span id="cb54-7"><a href="#cb54-7"></a>       [<span class="dv">10</span>, <span class="dv">11</span>, <span class="dv">12</span>, <span class="dv">13</span>, <span class="dv">14</span>]])</span>
+<span id="cb54-8"><a href="#cb54-8"></a></span>
+<span id="cb54-9"><a href="#cb54-9"></a>In [<span class="dv">128</span>]: arr.T</span>
+<span id="cb54-10"><a href="#cb54-10"></a>Out[<span class="dv">128</span>]: </span>
+<span id="cb54-11"><a href="#cb54-11"></a>array([[ <span class="dv">0</span>,  <span class="dv">5</span>, <span class="dv">10</span>],</span>
+<span id="cb54-12"><a href="#cb54-12"></a>       [ <span class="dv">1</span>,  <span class="dv">6</span>, <span class="dv">11</span>],</span>
+<span id="cb54-13"><a href="#cb54-13"></a>       [ <span class="dv">2</span>,  <span class="dv">7</span>, <span class="dv">12</span>],</span>
+<span id="cb54-14"><a href="#cb54-14"></a>       [ <span class="dv">3</span>,  <span class="dv">8</span>, <span class="dv">13</span>],</span>
+<span id="cb54-15"><a href="#cb54-15"></a>       [ <span class="dv">4</span>,  <span class="dv">9</span>, <span class="dv">14</span>]])</span></code></pre></div>
+<p>在进行矩阵计算时，经常需要用到该操作，比如利用np.dot计算矩阵内积：</p>
+<div class="sourceCode" id="cb55"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb55-1"><a href="#cb55-1"></a>In [<span class="dv">129</span>]: arr <span class="op">=</span> np.random.randn(<span class="dv">6</span>, <span class="dv">3</span>)</span>
+<span id="cb55-2"><a href="#cb55-2"></a></span>
+<span id="cb55-3"><a href="#cb55-3"></a>In [<span class="dv">130</span>]: arr</span>
+<span id="cb55-4"><a href="#cb55-4"></a>Out[<span class="dv">130</span>]: </span>
+<span id="cb55-5"><a href="#cb55-5"></a>array([[<span class="op">-</span><span class="fl">0.8608</span>,  <span class="fl">0.5601</span>, <span class="op">-</span><span class="fl">1.2659</span>],</span>
+<span id="cb55-6"><a href="#cb55-6"></a>       [ <span class="fl">0.1198</span>, <span class="op">-</span><span class="fl">1.0635</span>,  <span class="fl">0.3329</span>],</span>
+<span id="cb55-7"><a href="#cb55-7"></a>       [<span class="op">-</span><span class="fl">2.3594</span>, <span class="op">-</span><span class="fl">0.1995</span>, <span class="op">-</span><span class="fl">1.542</span> ],</span>
+<span id="cb55-8"><a href="#cb55-8"></a>       [<span class="op">-</span><span class="fl">0.9707</span>, <span class="op">-</span><span class="fl">1.307</span> ,  <span class="fl">0.2863</span>],</span>
+<span id="cb55-9"><a href="#cb55-9"></a>       [ <span class="fl">0.378</span> , <span class="op">-</span><span class="fl">0.7539</span>,  <span class="fl">0.3313</span>],</span>
+<span id="cb55-10"><a href="#cb55-10"></a>       [ <span class="fl">1.3497</span>,  <span class="fl">0.0699</span>,  <span class="fl">0.2467</span>]])</span>
+<span id="cb55-11"><a href="#cb55-11"></a></span>
+<span id="cb55-12"><a href="#cb55-12"></a>In [<span class="dv">131</span>]: np.dot(arr.T, arr)</span>
+<span id="cb55-13"><a href="#cb55-13"></a>Out[<span class="dv">131</span>]:</span>
+<span id="cb55-14"><a href="#cb55-14"></a>array([[ <span class="fl">9.2291</span>,  <span class="fl">0.9394</span>,  <span class="fl">4.948</span> ],</span>
+<span id="cb55-15"><a href="#cb55-15"></a>       [ <span class="fl">0.9394</span>,  <span class="fl">3.7662</span>, <span class="op">-</span><span class="fl">1.3622</span>],</span>
+<span id="cb55-16"><a href="#cb55-16"></a>       [ <span class="fl">4.948</span> , <span class="op">-</span><span class="fl">1.3622</span>,  <span class="fl">4.3437</span>]])</span></code></pre></div>
+<p>对于高维数组，transpose需要得到一个由轴编号组成的元组才能对这些轴进行转置（比较费脑子）：</p>
+<div class="sourceCode" id="cb56"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb56-1"><a href="#cb56-1"></a>In [<span class="dv">132</span>]: arr <span class="op">=</span> np.arange(<span class="dv">16</span>).reshape((<span class="dv">2</span>, <span class="dv">2</span>, <span class="dv">4</span>))</span>
+<span id="cb56-2"><a href="#cb56-2"></a></span>
+<span id="cb56-3"><a href="#cb56-3"></a>In [<span class="dv">133</span>]: arr</span>
+<span id="cb56-4"><a href="#cb56-4"></a>Out[<span class="dv">133</span>]: </span>
+<span id="cb56-5"><a href="#cb56-5"></a>array([[[ <span class="dv">0</span>,  <span class="dv">1</span>,  <span class="dv">2</span>,  <span class="dv">3</span>],</span>
+<span id="cb56-6"><a href="#cb56-6"></a>        [ <span class="dv">4</span>,  <span class="dv">5</span>,  <span class="dv">6</span>,  <span class="dv">7</span>]],</span>
+<span id="cb56-7"><a href="#cb56-7"></a>       [[ <span class="dv">8</span>,  <span class="dv">9</span>, <span class="dv">10</span>, <span class="dv">11</span>],</span>
+<span id="cb56-8"><a href="#cb56-8"></a>        [<span class="dv">12</span>, <span class="dv">13</span>, <span class="dv">14</span>, <span class="dv">15</span>]]])</span>
+<span id="cb56-9"><a href="#cb56-9"></a></span>
+<span id="cb56-10"><a href="#cb56-10"></a>In [<span class="dv">134</span>]: arr.transpose((<span class="dv">1</span>, <span class="dv">0</span>, <span class="dv">2</span>))</span>
+<span id="cb56-11"><a href="#cb56-11"></a>Out[<span class="dv">134</span>]: </span>
+<span id="cb56-12"><a href="#cb56-12"></a>array([[[ <span class="dv">0</span>,  <span class="dv">1</span>,  <span class="dv">2</span>,  <span class="dv">3</span>],</span>
+<span id="cb56-13"><a href="#cb56-13"></a>        [ <span class="dv">8</span>,  <span class="dv">9</span>, <span class="dv">10</span>, <span class="dv">11</span>]],</span>
+<span id="cb56-14"><a href="#cb56-14"></a>       [[ <span class="dv">4</span>,  <span class="dv">5</span>,  <span class="dv">6</span>,  <span class="dv">7</span>],</span>
+<span id="cb56-15"><a href="#cb56-15"></a>        [<span class="dv">12</span>, <span class="dv">13</span>, <span class="dv">14</span>, <span class="dv">15</span>]]])</span></code></pre></div>
+<p>这里，第一个轴被换成了第二个，第二个轴被换成了第一个，最后一个轴不变。</p>
+<p>简单的转置可以使用.T，它其实就是进行轴对换而已。ndarray还有一个swapaxes方法，它需要接受一对轴编号：</p>
+<div class="sourceCode" id="cb57"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb57-1"><a href="#cb57-1"></a>In [<span class="dv">135</span>]: arr</span>
+<span id="cb57-2"><a href="#cb57-2"></a>Out[<span class="dv">135</span>]: </span>
+<span id="cb57-3"><a href="#cb57-3"></a>array([[[ <span class="dv">0</span>,  <span class="dv">1</span>,  <span class="dv">2</span>,  <span class="dv">3</span>],</span>
+<span id="cb57-4"><a href="#cb57-4"></a>        [ <span class="dv">4</span>,  <span class="dv">5</span>,  <span class="dv">6</span>,  <span class="dv">7</span>]],</span>
+<span id="cb57-5"><a href="#cb57-5"></a>       [[ <span class="dv">8</span>,  <span class="dv">9</span>, <span class="dv">10</span>, <span class="dv">11</span>],</span>
+<span id="cb57-6"><a href="#cb57-6"></a>        [<span class="dv">12</span>, <span class="dv">13</span>, <span class="dv">14</span>, <span class="dv">15</span>]]])</span>
+<span id="cb57-7"><a href="#cb57-7"></a></span>
+<span id="cb57-8"><a href="#cb57-8"></a>In [<span class="dv">136</span>]: arr.swapaxes(<span class="dv">1</span>, <span class="dv">2</span>)</span>
+<span id="cb57-9"><a href="#cb57-9"></a>Out[<span class="dv">136</span>]: </span>
+<span id="cb57-10"><a href="#cb57-10"></a>array([[[ <span class="dv">0</span>,  <span class="dv">4</span>],</span>
+<span id="cb57-11"><a href="#cb57-11"></a>        [ <span class="dv">1</span>,  <span class="dv">5</span>],</span>
+<span id="cb57-12"><a href="#cb57-12"></a>        [ <span class="dv">2</span>,  <span class="dv">6</span>],</span>
+<span id="cb57-13"><a href="#cb57-13"></a>        [ <span class="dv">3</span>,  <span class="dv">7</span>]],</span>
+<span id="cb57-14"><a href="#cb57-14"></a>       [[ <span class="dv">8</span>, <span class="dv">12</span>],</span>
+<span id="cb57-15"><a href="#cb57-15"></a>        [ <span class="dv">9</span>, <span class="dv">13</span>],</span>
+<span id="cb57-16"><a href="#cb57-16"></a>        [<span class="dv">10</span>, <span class="dv">14</span>],</span>
+<span id="cb57-17"><a href="#cb57-17"></a>        [<span class="dv">11</span>, <span class="dv">15</span>]]])</span></code></pre></div>
+<p>swapaxes也是返回源数据的视图（不会进行任何复制操作）。</p>
+<h1 id="通用函数快速的元素级数组函数">4.2 通用函数：快速的元素级数组函数</h1>
+<p>通用函数（即ufunc）是一种对ndarray中的数据执行元素级运算的函数。你可以将其看做简单函数（接受一个或多个标量值，并产生一个或多个标量值）的矢量化包装器。</p>
+<p>许多ufunc都是简单的元素级变体，如sqrt和exp：</p>
+<div class="sourceCode" id="cb58"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb58-1"><a href="#cb58-1"></a>In [<span class="dv">137</span>]: arr <span class="op">=</span> np.arange(<span class="dv">10</span>)</span>
+<span id="cb58-2"><a href="#cb58-2"></a></span>
+<span id="cb58-3"><a href="#cb58-3"></a>In [<span class="dv">138</span>]: arr</span>
+<span id="cb58-4"><a href="#cb58-4"></a>Out[<span class="dv">138</span>]: array([<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">5</span>, <span class="dv">6</span>, <span class="dv">7</span>, <span class="dv">8</span>, <span class="dv">9</span>])</span>
+<span id="cb58-5"><a href="#cb58-5"></a></span>
+<span id="cb58-6"><a href="#cb58-6"></a>In [<span class="dv">139</span>]: np.sqrt(arr)</span>
+<span id="cb58-7"><a href="#cb58-7"></a>Out[<span class="dv">139</span>]: </span>
+<span id="cb58-8"><a href="#cb58-8"></a>array([ <span class="fl">0.</span>    ,  <span class="fl">1.</span>    ,  <span class="fl">1.4142</span>,  <span class="fl">1.7321</span>,  <span class="fl">2.</span>    ,  <span class="fl">2.2361</span>,  <span class="fl">2.4495</span>,</span>
+<span id="cb58-9"><a href="#cb58-9"></a>        <span class="fl">2.6458</span>,  <span class="fl">2.8284</span>,  <span class="fl">3.</span>    ])</span>
+<span id="cb58-10"><a href="#cb58-10"></a></span>
+<span id="cb58-11"><a href="#cb58-11"></a>In [<span class="dv">140</span>]: np.exp(arr)</span>
+<span id="cb58-12"><a href="#cb58-12"></a>Out[<span class="dv">140</span>]: </span>
+<span id="cb58-13"><a href="#cb58-13"></a>array([    <span class="fl">1.</span>    ,     <span class="fl">2.7183</span>,     <span class="fl">7.3891</span>,    <span class="fl">20.0855</span>,    <span class="fl">54.5982</span>,</span>
+<span id="cb58-14"><a href="#cb58-14"></a>         <span class="fl">148.4132</span>,   <span class="fl">403.4288</span>,  <span class="fl">1096.6332</span>,  <span class="fl">2980.958</span> ,  <span class="fl">8103.0839</span>])</span></code></pre></div>
+<p>这些都是一元（unary）ufunc。另外一些（如add或maximum）接受2个数组（因此也叫二元（binary）ufunc），并返回一个结果数组：</p>
+<div class="sourceCode" id="cb59"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb59-1"><a href="#cb59-1"></a>In [<span class="dv">141</span>]: x <span class="op">=</span> np.random.randn(<span class="dv">8</span>)</span>
+<span id="cb59-2"><a href="#cb59-2"></a></span>
+<span id="cb59-3"><a href="#cb59-3"></a>In [<span class="dv">142</span>]: y <span class="op">=</span> np.random.randn(<span class="dv">8</span>)</span>
+<span id="cb59-4"><a href="#cb59-4"></a></span>
+<span id="cb59-5"><a href="#cb59-5"></a>In [<span class="dv">143</span>]: x</span>
+<span id="cb59-6"><a href="#cb59-6"></a>Out[<span class="dv">143</span>]: </span>
+<span id="cb59-7"><a href="#cb59-7"></a>array([<span class="op">-</span><span class="fl">0.0119</span>,  <span class="fl">1.0048</span>,  <span class="fl">1.3272</span>, <span class="op">-</span><span class="fl">0.9193</span>, <span class="op">-</span><span class="fl">1.5491</span>,  <span class="fl">0.0222</span>,  <span class="fl">0.7584</span>,</span>
+<span id="cb59-8"><a href="#cb59-8"></a>       <span class="op">-</span><span class="fl">0.6605</span>])</span>
+<span id="cb59-9"><a href="#cb59-9"></a></span>
+<span id="cb59-10"><a href="#cb59-10"></a>In [<span class="dv">144</span>]: y</span>
+<span id="cb59-11"><a href="#cb59-11"></a>Out[<span class="dv">144</span>]: </span>
+<span id="cb59-12"><a href="#cb59-12"></a>array([ <span class="fl">0.8626</span>, <span class="op">-</span><span class="fl">0.01</span>  ,  <span class="fl">0.05</span>  ,  <span class="fl">0.6702</span>,  <span class="fl">0.853</span> , <span class="op">-</span><span class="fl">0.9559</span>, <span class="op">-</span><span class="fl">0.0235</span>,</span>
+<span id="cb59-13"><a href="#cb59-13"></a>       <span class="op">-</span><span class="fl">2.3042</span>])</span>
+<span id="cb59-14"><a href="#cb59-14"></a></span>
+<span id="cb59-15"><a href="#cb59-15"></a>In [<span class="dv">145</span>]: np.maximum(x, y)</span>
+<span id="cb59-16"><a href="#cb59-16"></a>Out[<span class="dv">145</span>]: </span>
+<span id="cb59-17"><a href="#cb59-17"></a>array([ <span class="fl">0.8626</span>,  <span class="fl">1.0048</span>,  <span class="fl">1.3272</span>,  <span class="fl">0.6702</span>,  <span class="fl">0.853</span> ,  <span class="fl">0.0222</span>,  <span class="fl">0.7584</span>,   </span>
+<span id="cb59-18"><a href="#cb59-18"></a>       <span class="op">-</span><span class="fl">0.6605</span>])</span></code></pre></div>
+<p>这里，numpy.maximum计算了x和y中元素级别最大的元素。</p>
+<p>虽然并不常见，但有些ufunc的确可以返回多个数组。modf就是一个例子，它是Python内置函数divmod的矢量化版本，它会返回浮点数数组的小数和整数部分：</p>
+<div class="sourceCode" id="cb60"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb60-1"><a href="#cb60-1"></a>In [<span class="dv">146</span>]: arr <span class="op">=</span> np.random.randn(<span class="dv">7</span>) <span class="op">*</span> <span class="dv">5</span></span>
+<span id="cb60-2"><a href="#cb60-2"></a></span>
+<span id="cb60-3"><a href="#cb60-3"></a>In [<span class="dv">147</span>]: arr</span>
+<span id="cb60-4"><a href="#cb60-4"></a>Out[<span class="dv">147</span>]: array([<span class="op">-</span><span class="fl">3.2623</span>, <span class="op">-</span><span class="fl">6.0915</span>, <span class="op">-</span><span class="fl">6.663</span> ,  <span class="fl">5.3731</span>,  <span class="fl">3.6182</span>,  <span class="fl">3.45</span>  ,  <span class="fl">5.0077</span>])</span>
+<span id="cb60-5"><a href="#cb60-5"></a></span>
+<span id="cb60-6"><a href="#cb60-6"></a>In [<span class="dv">148</span>]: remainder, whole_part <span class="op">=</span> np.modf(arr)</span>
+<span id="cb60-7"><a href="#cb60-7"></a></span>
+<span id="cb60-8"><a href="#cb60-8"></a>In [<span class="dv">149</span>]: remainder</span>
+<span id="cb60-9"><a href="#cb60-9"></a>Out[<span class="dv">149</span>]: array([<span class="op">-</span><span class="fl">0.2623</span>, <span class="op">-</span><span class="fl">0.0915</span>, <span class="op">-</span><span class="fl">0.663</span> ,  <span class="fl">0.3731</span>,</span>
+<span id="cb60-10"><a href="#cb60-10"></a><span class="fl">0.6182</span>,  <span class="fl">0.45</span>  ,  <span class="fl">0.0077</span>])</span>
+<span id="cb60-11"><a href="#cb60-11"></a></span>
+<span id="cb60-12"><a href="#cb60-12"></a>In [<span class="dv">150</span>]: whole_part</span>
+<span id="cb60-13"><a href="#cb60-13"></a>Out[<span class="dv">150</span>]: array([<span class="op">-</span><span class="fl">3.</span>, <span class="op">-</span><span class="fl">6.</span>, <span class="op">-</span><span class="fl">6.</span>,  <span class="fl">5.</span>,  <span class="fl">3.</span>,  <span class="fl">3.</span>,  <span class="fl">5.</span>])</span></code></pre></div>
+<p>Ufuncs可以接受一个out可选参数，这样就能在数组原地进行操作：</p>
+<div class="sourceCode" id="cb61"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb61-1"><a href="#cb61-1"></a>In [<span class="dv">151</span>]: arr</span>
+<span id="cb61-2"><a href="#cb61-2"></a>Out[<span class="dv">151</span>]: array([<span class="op">-</span><span class="fl">3.2623</span>, <span class="op">-</span><span class="fl">6.0915</span>, <span class="op">-</span><span class="fl">6.663</span> ,  <span class="fl">5.3731</span>,  <span class="fl">3.6182</span>,  <span class="fl">3.45</span>  ,  <span class="fl">5.0077</span>])</span>
+<span id="cb61-3"><a href="#cb61-3"></a></span>
+<span id="cb61-4"><a href="#cb61-4"></a>In [<span class="dv">152</span>]: np.sqrt(arr)</span>
+<span id="cb61-5"><a href="#cb61-5"></a>Out[<span class="dv">152</span>]: array([    nan,     nan,     nan,  <span class="fl">2.318</span> ,  <span class="fl">1.9022</span>,  <span class="fl">1.8574</span>,  <span class="fl">2.2378</span>])</span>
+<span id="cb61-6"><a href="#cb61-6"></a></span>
+<span id="cb61-7"><a href="#cb61-7"></a>In [<span class="dv">153</span>]: np.sqrt(arr, arr)</span>
+<span id="cb61-8"><a href="#cb61-8"></a>Out[<span class="dv">153</span>]: array([    nan,     nan,     nan,  <span class="fl">2.318</span> ,  <span class="fl">1.9022</span>,  <span class="fl">1.8574</span>,  <span class="fl">2.2378</span>])</span>
+<span id="cb61-9"><a href="#cb61-9"></a></span>
+<span id="cb61-10"><a href="#cb61-10"></a>In [<span class="dv">154</span>]: arr</span>
+<span id="cb61-11"><a href="#cb61-11"></a>Out[<span class="dv">154</span>]: array([    nan,     nan,     nan,  <span class="fl">2.318</span> ,  <span class="fl">1.9022</span>,  <span class="fl">1.8574</span>,  <span class="fl">2.2378</span>])</span></code></pre></div>
+<p>表4-3和表4-4分别列出了一些一元和二元ufunc。</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/7178691-1d494e73b61c7ced.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" /></p>
+<p><img src="http://upload-images.jianshu.io/upload_images/7178691-2be79faf68ab6ff8.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" /></p>
+<p><img src="http://upload-images.jianshu.io/upload_images/7178691-4e38d02a66481530.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" /></p>
+<p><img src="http://upload-images.jianshu.io/upload_images/7178691-eff1e61e5464159f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" /></p>
+<p><img src="http://upload-images.jianshu.io/upload_images/7178691-236dba83b6a420cc.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" /></p>
+<h1 id="利用数组进行数据处理">4.3 利用数组进行数据处理</h1>
+<p>NumPy数组使你可以将许多种数据处理任务表述为简洁的数组表达式（否则需要编写循环）。用数组表达式代替循环的做法，通常被称为矢量化。一般来说，矢量化数组运算要比等价的纯Python方式快上一两个数量级（甚至更多），尤其是各种数值计算。在后面内容中（见附录A）我将介绍广播，这是一种针对矢量化计算的强大手段。</p>
+<p>作为简单的例子，假设我们想要在一组值（网格型）上计算函数<code>sqrt(x^2+y^2)</code>。np.meshgrid函数接受两个一维数组，并产生两个二维矩阵（对应于两个数组中所有的(x,y)对）：</p>
+<div class="sourceCode" id="cb62"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb62-1"><a href="#cb62-1"></a>In [<span class="dv">155</span>]: points <span class="op">=</span> np.arange(<span class="op">-</span><span class="dv">5</span>, <span class="dv">5</span>, <span class="fl">0.01</span>) <span class="co"># 1000 equally spaced points</span></span>
+<span id="cb62-2"><a href="#cb62-2"></a></span>
+<span id="cb62-3"><a href="#cb62-3"></a>In [<span class="dv">156</span>]: xs, ys <span class="op">=</span> np.meshgrid(points, points)</span>
+<span id="cb62-4"><a href="#cb62-4"></a>In [<span class="dv">157</span>]: ys</span>
+<span id="cb62-5"><a href="#cb62-5"></a>Out[<span class="dv">157</span>]: </span>
+<span id="cb62-6"><a href="#cb62-6"></a>array([[<span class="op">-</span><span class="fl">5.</span>  , <span class="op">-</span><span class="fl">5.</span>  , <span class="op">-</span><span class="fl">5.</span>  , ..., <span class="op">-</span><span class="fl">5.</span>  , <span class="op">-</span><span class="fl">5.</span>  , <span class="op">-</span><span class="fl">5.</span>  ],</span>
+<span id="cb62-7"><a href="#cb62-7"></a>       [<span class="op">-</span><span class="fl">4.99</span>, <span class="op">-</span><span class="fl">4.99</span>, <span class="op">-</span><span class="fl">4.99</span>, ..., <span class="op">-</span><span class="fl">4.99</span>, <span class="op">-</span><span class="fl">4.99</span>, <span class="op">-</span><span class="fl">4.99</span>],</span>
+<span id="cb62-8"><a href="#cb62-8"></a>       [<span class="op">-</span><span class="fl">4.98</span>, <span class="op">-</span><span class="fl">4.98</span>, <span class="op">-</span><span class="fl">4.98</span>, ..., <span class="op">-</span><span class="fl">4.98</span>, <span class="op">-</span><span class="fl">4.98</span>, <span class="op">-</span><span class="fl">4.98</span>],</span>
+<span id="cb62-9"><a href="#cb62-9"></a>       ..., </span>
+<span id="cb62-10"><a href="#cb62-10"></a>       [ <span class="fl">4.97</span>,  <span class="fl">4.97</span>,  <span class="fl">4.97</span>, ...,  <span class="fl">4.97</span>,  <span class="fl">4.97</span>,  <span class="fl">4.97</span>],</span>
+<span id="cb62-11"><a href="#cb62-11"></a>       [ <span class="fl">4.98</span>,  <span class="fl">4.98</span>,  <span class="fl">4.98</span>, ...,  <span class="fl">4.98</span>,  <span class="fl">4.98</span>,  <span class="fl">4.98</span>],</span>
+<span id="cb62-12"><a href="#cb62-12"></a>       [ <span class="fl">4.99</span>,  <span class="fl">4.99</span>,  <span class="fl">4.99</span>, ...,  <span class="fl">4.99</span>,  <span class="fl">4.99</span>,  <span class="fl">4.99</span>]])</span></code></pre></div>
+<p>现在，对该函数的求值运算就好办了，把这两个数组当做两个浮点数那样编写表达式即可：</p>
+<div class="sourceCode" id="cb63"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb63-1"><a href="#cb63-1"></a>In [<span class="dv">158</span>]: z <span class="op">=</span> np.sqrt(xs <span class="op">**</span> <span class="dv">2</span> <span class="op">+</span> ys <span class="op">**</span> <span class="dv">2</span>)</span>
+<span id="cb63-2"><a href="#cb63-2"></a></span>
+<span id="cb63-3"><a href="#cb63-3"></a>In [<span class="dv">159</span>]: z</span>
+<span id="cb63-4"><a href="#cb63-4"></a>Out[<span class="dv">159</span>]: </span>
+<span id="cb63-5"><a href="#cb63-5"></a>array([[ <span class="fl">7.0711</span>,  <span class="fl">7.064</span> ,  <span class="fl">7.0569</span>, ...,  <span class="fl">7.0499</span>,  <span class="fl">7.0569</span>,  <span class="fl">7.064</span> ],</span>
+<span id="cb63-6"><a href="#cb63-6"></a>       [ <span class="fl">7.064</span> ,  <span class="fl">7.0569</span>,  <span class="fl">7.0499</span>, ...,  <span class="fl">7.0428</span>,  <span class="fl">7.0499</span>,  <span class="fl">7.0569</span>],</span>
+<span id="cb63-7"><a href="#cb63-7"></a>       [ <span class="fl">7.0569</span>,  <span class="fl">7.0499</span>,  <span class="fl">7.0428</span>, ...,  <span class="fl">7.0357</span>,  <span class="fl">7.0428</span>, <span class="fl">7.0499</span>],</span>
+<span id="cb63-8"><a href="#cb63-8"></a>       ..., </span>
+<span id="cb63-9"><a href="#cb63-9"></a>       [ <span class="fl">7.0499</span>,  <span class="fl">7.0428</span>,  <span class="fl">7.0357</span>, ...,  <span class="fl">7.0286</span>,  <span class="fl">7.0357</span>,  <span class="fl">7.0428</span>],</span>
+<span id="cb63-10"><a href="#cb63-10"></a>       [ <span class="fl">7.0569</span>,  <span class="fl">7.0499</span>,  <span class="fl">7.0428</span>, ...,  <span class="fl">7.0357</span>,  <span class="fl">7.0428</span>,  <span class="fl">7.0499</span>],</span>
+<span id="cb63-11"><a href="#cb63-11"></a>       [ <span class="fl">7.064</span> ,  <span class="fl">7.0569</span>,  <span class="fl">7.0499</span>, ...,  <span class="fl">7.0428</span>,  <span class="fl">7.0499</span>,  <span class="fl">7.0569</span>]])</span></code></pre></div>
+<p>作为第9章的先导，我用matplotlib创建了这个二维数组的可视化：</p>
+<div class="sourceCode" id="cb64"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb64-1"><a href="#cb64-1"></a>In [<span class="dv">160</span>]: <span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb64-2"><a href="#cb64-2"></a></span>
+<span id="cb64-3"><a href="#cb64-3"></a>In [<span class="dv">161</span>]: plt.imshow(z, cmap<span class="op">=</span>plt.cm.gray)<span class="op">;</span> plt.colorbar()</span>
+<span id="cb64-4"><a href="#cb64-4"></a>Out[<span class="dv">161</span>]: <span class="op">&lt;</span>matplotlib.colorbar.Colorbar at <span class="bn">0x7f715e3fa630</span><span class="op">&gt;</span></span>
+<span id="cb64-5"><a href="#cb64-5"></a></span>
+<span id="cb64-6"><a href="#cb64-6"></a>In [<span class="dv">162</span>]: plt.title(<span class="st">&quot;Image plot of $\sqrt{x^2 + y^2}$ for a grid of values&quot;</span>)</span>
+<span id="cb64-7"><a href="#cb64-7"></a>Out[<span class="dv">162</span>]: <span class="op">&lt;</span>matplotlib.text.Text at <span class="bn">0x7f715d2de748</span><span class="op">&gt;</span></span></code></pre></div>
+<p>见图4-3。这张图是用matplotlib的imshow函数创建的。</p>
+<figure>
+<img src="http://upload-images.jianshu.io/upload_images/7178691-3b22000d4cd38650.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="" /><figcaption>图4-3 根据网格对函数求值的结果</figcaption>
+</figure>
+<h2 id="将条件逻辑表述为数组运算">将条件逻辑表述为数组运算</h2>
+<p>numpy.where函数是三元表达式x if condition else y的矢量化版本。假设我们有一个布尔数组和两个值数组：</p>
+<div class="sourceCode" id="cb65"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb65-1"><a href="#cb65-1"></a>In [<span class="dv">165</span>]: xarr <span class="op">=</span> np.array([<span class="fl">1.1</span>, <span class="fl">1.2</span>, <span class="fl">1.3</span>, <span class="fl">1.4</span>, <span class="fl">1.5</span>])</span>
+<span id="cb65-2"><a href="#cb65-2"></a></span>
+<span id="cb65-3"><a href="#cb65-3"></a>In [<span class="dv">166</span>]: yarr <span class="op">=</span> np.array([<span class="fl">2.1</span>, <span class="fl">2.2</span>, <span class="fl">2.3</span>, <span class="fl">2.4</span>, <span class="fl">2.5</span>])</span>
+<span id="cb65-4"><a href="#cb65-4"></a></span>
+<span id="cb65-5"><a href="#cb65-5"></a>In [<span class="dv">167</span>]: cond <span class="op">=</span> np.array([<span class="va">True</span>, <span class="va">False</span>, <span class="va">True</span>, <span class="va">True</span>, <span class="va">False</span>])</span></code></pre></div>
+<p>假设我们想要根据cond中的值选取xarr和yarr的值：当cond中的值为True时，选取xarr的值，否则从yarr中选取。列表推导式的写法应该如下所示：</p>
+<div class="sourceCode" id="cb66"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb66-1"><a href="#cb66-1"></a>In [<span class="dv">168</span>]: result <span class="op">=</span> [(x <span class="cf">if</span> c <span class="cf">else</span> y)</span>
+<span id="cb66-2"><a href="#cb66-2"></a>   .....:           <span class="cf">for</span> x, y, c <span class="kw">in</span> <span class="bu">zip</span>(xarr, yarr, cond)]</span>
+<span id="cb66-3"><a href="#cb66-3"></a></span>
+<span id="cb66-4"><a href="#cb66-4"></a>In [<span class="dv">169</span>]: result</span>
+<span id="cb66-5"><a href="#cb66-5"></a>Out[<span class="dv">169</span>]: [<span class="fl">1.1000000000000001</span>, <span class="fl">2.2000000000000002</span>, <span class="fl">1.3</span>, <span class="fl">1.3999999999999999</span>, <span class="fl">2.5</span>]</span></code></pre></div>
+<p>这有几个问题。第一，它对大数组的处理速度不是很快（因为所有工作都是由纯Python完成的）。第二，无法用于多维数组。若使用np.where，则可以将该功能写得非常简洁：</p>
+<div class="sourceCode" id="cb67"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb67-1"><a href="#cb67-1"></a>In [<span class="dv">170</span>]: result <span class="op">=</span> np.where(cond, xarr, yarr)</span>
+<span id="cb67-2"><a href="#cb67-2"></a></span>
+<span id="cb67-3"><a href="#cb67-3"></a>In [<span class="dv">171</span>]: result</span>
+<span id="cb67-4"><a href="#cb67-4"></a>Out[<span class="dv">171</span>]: array([ <span class="fl">1.1</span>,  <span class="fl">2.2</span>,  <span class="fl">1.3</span>,  <span class="fl">1.4</span>,  <span class="fl">2.5</span>])</span></code></pre></div>
+<p>np.where的第二个和第三个参数不必是数组，它们都可以是标量值。在数据分析工作中，where通常用于根据另一个数组而产生一个新的数组。假设有一个由随机数据组成的矩阵，你希望将所有正值替换为2，将所有负值替换为－2。若利用np.where，则会非常简单：</p>
+<div class="sourceCode" id="cb68"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb68-1"><a href="#cb68-1"></a>In [<span class="dv">172</span>]: arr <span class="op">=</span> np.random.randn(<span class="dv">4</span>, <span class="dv">4</span>)</span>
+<span id="cb68-2"><a href="#cb68-2"></a></span>
+<span id="cb68-3"><a href="#cb68-3"></a>In [<span class="dv">173</span>]: arr</span>
+<span id="cb68-4"><a href="#cb68-4"></a>Out[<span class="dv">173</span>]: </span>
+<span id="cb68-5"><a href="#cb68-5"></a>array([[<span class="op">-</span><span class="fl">0.5031</span>, <span class="op">-</span><span class="fl">0.6223</span>, <span class="op">-</span><span class="fl">0.9212</span>, <span class="op">-</span><span class="fl">0.7262</span>],</span>
+<span id="cb68-6"><a href="#cb68-6"></a>       [ <span class="fl">0.2229</span>,  <span class="fl">0.0513</span>, <span class="op">-</span><span class="fl">1.1577</span>,  <span class="fl">0.8167</span>],</span>
+<span id="cb68-7"><a href="#cb68-7"></a>       [ <span class="fl">0.4336</span>,  <span class="fl">1.0107</span>,  <span class="fl">1.8249</span>, <span class="op">-</span><span class="fl">0.9975</span>],</span>
+<span id="cb68-8"><a href="#cb68-8"></a>       [ <span class="fl">0.8506</span>, <span class="op">-</span><span class="fl">0.1316</span>,  <span class="fl">0.9124</span>,  <span class="fl">0.1882</span>]])</span>
+<span id="cb68-9"><a href="#cb68-9"></a></span>
+<span id="cb68-10"><a href="#cb68-10"></a>In [<span class="dv">174</span>]: arr <span class="op">&gt;</span> <span class="dv">0</span></span>
+<span id="cb68-11"><a href="#cb68-11"></a>Out[<span class="dv">174</span>]: </span>
+<span id="cb68-12"><a href="#cb68-12"></a>array([[<span class="va">False</span>, <span class="va">False</span>, <span class="va">False</span>, <span class="va">False</span>],</span>
+<span id="cb68-13"><a href="#cb68-13"></a>       [ <span class="va">True</span>,  <span class="va">True</span>, <span class="va">False</span>,  <span class="va">True</span>],</span>
+<span id="cb68-14"><a href="#cb68-14"></a>       [ <span class="va">True</span>,  <span class="va">True</span>,  <span class="va">True</span>, <span class="va">False</span>],</span>
+<span id="cb68-15"><a href="#cb68-15"></a>       [ <span class="va">True</span>, <span class="va">False</span>,  <span class="va">True</span>,  <span class="va">True</span>]], dtype<span class="op">=</span><span class="bu">bool</span>)</span>
+<span id="cb68-16"><a href="#cb68-16"></a></span>
+<span id="cb68-17"><a href="#cb68-17"></a>In [<span class="dv">175</span>]: np.where(arr <span class="op">&gt;</span> <span class="dv">0</span>, <span class="dv">2</span>, <span class="op">-</span><span class="dv">2</span>)</span>
+<span id="cb68-18"><a href="#cb68-18"></a>Out[<span class="dv">175</span>]: </span>
+<span id="cb68-19"><a href="#cb68-19"></a>array([[<span class="op">-</span><span class="dv">2</span>, <span class="op">-</span><span class="dv">2</span>, <span class="op">-</span><span class="dv">2</span>, <span class="op">-</span><span class="dv">2</span>],</span>
+<span id="cb68-20"><a href="#cb68-20"></a>       [ <span class="dv">2</span>,  <span class="dv">2</span>, <span class="op">-</span><span class="dv">2</span>,  <span class="dv">2</span>],</span>
+<span id="cb68-21"><a href="#cb68-21"></a>       [ <span class="dv">2</span>,  <span class="dv">2</span>,  <span class="dv">2</span>, <span class="op">-</span><span class="dv">2</span>],</span>
+<span id="cb68-22"><a href="#cb68-22"></a>       [ <span class="dv">2</span>, <span class="op">-</span><span class="dv">2</span>,  <span class="dv">2</span>,  <span class="dv">2</span>]])</span></code></pre></div>
+<p>使用np.where，可以将标量和数组结合起来。例如，我可用常数2替换arr中所有正的值：</p>
+<div class="sourceCode" id="cb69"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb69-1"><a href="#cb69-1"></a>In [<span class="dv">176</span>]: np.where(arr <span class="op">&gt;</span> <span class="dv">0</span>, <span class="dv">2</span>, arr) <span class="co"># set only positive values to 2</span></span>
+<span id="cb69-2"><a href="#cb69-2"></a>Out[<span class="dv">176</span>]: </span>
+<span id="cb69-3"><a href="#cb69-3"></a>array([[<span class="op">-</span><span class="fl">0.5031</span>, <span class="op">-</span><span class="fl">0.6223</span>, <span class="op">-</span><span class="fl">0.9212</span>, <span class="op">-</span><span class="fl">0.7262</span>],</span>
+<span id="cb69-4"><a href="#cb69-4"></a>       [ <span class="fl">2.</span>    ,  <span class="fl">2.</span>    , <span class="op">-</span><span class="fl">1.1577</span>,  <span class="fl">2.</span>    ],</span>
+<span id="cb69-5"><a href="#cb69-5"></a>       [ <span class="fl">2.</span>    ,  <span class="fl">2.</span>    ,  <span class="fl">2.</span>    , <span class="op">-</span><span class="fl">0.9975</span>],</span>
+<span id="cb69-6"><a href="#cb69-6"></a>       [ <span class="fl">2.</span>    , <span class="op">-</span><span class="fl">0.1316</span>,  <span class="fl">2.</span>    ,  <span class="fl">2.</span>    ]])</span></code></pre></div>
+<p>传递给where的数组大小可以不相等，甚至可以是标量值。</p>
+<h2 id="数学和统计方法">数学和统计方法</h2>
+<p>可以通过数组上的一组数学函数对整个数组或某个轴向的数据进行统计计算。sum、mean以及标准差std等聚合计算（aggregation，通常叫做约简（reduction））既可以当做数组的实例方法调用，也可以当做顶级NumPy函数使用。</p>
+<p>这里，我生成了一些正态分布随机数据，然后做了聚类统计：</p>
+<div class="sourceCode" id="cb70"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb70-1"><a href="#cb70-1"></a>In [<span class="dv">177</span>]: arr <span class="op">=</span> np.random.randn(<span class="dv">5</span>, <span class="dv">4</span>)</span>
+<span id="cb70-2"><a href="#cb70-2"></a></span>
+<span id="cb70-3"><a href="#cb70-3"></a>In [<span class="dv">178</span>]: arr</span>
+<span id="cb70-4"><a href="#cb70-4"></a>Out[<span class="dv">178</span>]: </span>
+<span id="cb70-5"><a href="#cb70-5"></a>array([[ <span class="fl">2.1695</span>, <span class="op">-</span><span class="fl">0.1149</span>,  <span class="fl">2.0037</span>,  <span class="fl">0.0296</span>],</span>
+<span id="cb70-6"><a href="#cb70-6"></a>       [ <span class="fl">0.7953</span>,  <span class="fl">0.1181</span>, <span class="op">-</span><span class="fl">0.7485</span>,  <span class="fl">0.585</span> ],</span>
+<span id="cb70-7"><a href="#cb70-7"></a>       [ <span class="fl">0.1527</span>, <span class="op">-</span><span class="fl">1.5657</span>, <span class="op">-</span><span class="fl">0.5625</span>, <span class="op">-</span><span class="fl">0.0327</span>],</span>
+<span id="cb70-8"><a href="#cb70-8"></a>       [<span class="op">-</span><span class="fl">0.929</span> , <span class="op">-</span><span class="fl">0.4826</span>, <span class="op">-</span><span class="fl">0.0363</span>,  <span class="fl">1.0954</span>],</span>
+<span id="cb70-9"><a href="#cb70-9"></a>       [ <span class="fl">0.9809</span>, <span class="op">-</span><span class="fl">0.5895</span>,  <span class="fl">1.5817</span>, <span class="op">-</span><span class="fl">0.5287</span>]])</span>
+<span id="cb70-10"><a href="#cb70-10"></a></span>
+<span id="cb70-11"><a href="#cb70-11"></a>In [<span class="dv">179</span>]: arr.mean()</span>
+<span id="cb70-12"><a href="#cb70-12"></a>Out[<span class="dv">179</span>]: <span class="fl">0.19607051119998253</span></span>
+<span id="cb70-13"><a href="#cb70-13"></a></span>
+<span id="cb70-14"><a href="#cb70-14"></a>In [<span class="dv">180</span>]: np.mean(arr)</span>
+<span id="cb70-15"><a href="#cb70-15"></a>Out[<span class="dv">180</span>]: <span class="fl">0.19607051119998253</span></span>
+<span id="cb70-16"><a href="#cb70-16"></a></span>
+<span id="cb70-17"><a href="#cb70-17"></a>In [<span class="dv">181</span>]: arr.<span class="bu">sum</span>()</span>
+<span id="cb70-18"><a href="#cb70-18"></a>Out[<span class="dv">181</span>]: <span class="fl">3.9214102239996507</span></span></code></pre></div>
+<p>mean和sum这类的函数可以接受一个axis选项参数，用于计算该轴向上的统计值，最终结果是一个少一维的数组：</p>
+<div class="sourceCode" id="cb71"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb71-1"><a href="#cb71-1"></a>In [<span class="dv">182</span>]: arr.mean(axis<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb71-2"><a href="#cb71-2"></a>Out[<span class="dv">182</span>]: array([ <span class="fl">1.022</span> ,  <span class="fl">0.1875</span>, <span class="op">-</span><span class="fl">0.502</span> , <span class="op">-</span><span class="fl">0.0881</span>,  <span class="fl">0.3611</span>])</span>
+<span id="cb71-3"><a href="#cb71-3"></a></span>
+<span id="cb71-4"><a href="#cb71-4"></a>In [<span class="dv">183</span>]: arr.<span class="bu">sum</span>(axis<span class="op">=</span><span class="dv">0</span>)</span>
+<span id="cb71-5"><a href="#cb71-5"></a>Out[<span class="dv">183</span>]: array([ <span class="fl">3.1693</span>, <span class="op">-</span><span class="fl">2.6345</span>,  <span class="fl">2.2381</span>,  <span class="fl">1.1486</span>])</span></code></pre></div>
+<p>这里，arr.mean(1)是“计算行的平均值”，arr.sum(0)是“计算每列的和”。</p>
+<p>其他如cumsum和cumprod之类的方法则不聚合，而是产生一个由中间结果组成的数组：</p>
+<div class="sourceCode" id="cb72"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb72-1"><a href="#cb72-1"></a>In [<span class="dv">184</span>]: arr <span class="op">=</span> np.array([<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">5</span>, <span class="dv">6</span>, <span class="dv">7</span>])</span>
+<span id="cb72-2"><a href="#cb72-2"></a></span>
+<span id="cb72-3"><a href="#cb72-3"></a>In [<span class="dv">185</span>]: arr.cumsum()</span>
+<span id="cb72-4"><a href="#cb72-4"></a>Out[<span class="dv">185</span>]: array([ <span class="dv">0</span>,  <span class="dv">1</span>,  <span class="dv">3</span>,  <span class="dv">6</span>, <span class="dv">10</span>, <span class="dv">15</span>, <span class="dv">21</span>, <span class="dv">28</span>])</span></code></pre></div>
+<p>在多维数组中，累加函数（如cumsum）返回的是同样大小的数组，但是会根据每个低维的切片沿着标记轴计算部分聚类：</p>
+<div class="sourceCode" id="cb73"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb73-1"><a href="#cb73-1"></a>In [<span class="dv">186</span>]: arr <span class="op">=</span> np.array([[<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">2</span>], [<span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">5</span>], [<span class="dv">6</span>, <span class="dv">7</span>, <span class="dv">8</span>]])</span>
+<span id="cb73-2"><a href="#cb73-2"></a></span>
+<span id="cb73-3"><a href="#cb73-3"></a>In [<span class="dv">187</span>]: arr</span>
+<span id="cb73-4"><a href="#cb73-4"></a>Out[<span class="dv">187</span>]: </span>
+<span id="cb73-5"><a href="#cb73-5"></a>array([[<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">2</span>],</span>
+<span id="cb73-6"><a href="#cb73-6"></a>       [<span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">5</span>],</span>
+<span id="cb73-7"><a href="#cb73-7"></a>       [<span class="dv">6</span>, <span class="dv">7</span>, <span class="dv">8</span>]])</span>
+<span id="cb73-8"><a href="#cb73-8"></a></span>
+<span id="cb73-9"><a href="#cb73-9"></a>In [<span class="dv">188</span>]: arr.cumsum(axis<span class="op">=</span><span class="dv">0</span>)</span>
+<span id="cb73-10"><a href="#cb73-10"></a>Out[<span class="dv">188</span>]: </span>
+<span id="cb73-11"><a href="#cb73-11"></a>array([[ <span class="dv">0</span>,  <span class="dv">1</span>,  <span class="dv">2</span>],</span>
+<span id="cb73-12"><a href="#cb73-12"></a>       [ <span class="dv">3</span>,  <span class="dv">5</span>,  <span class="dv">7</span>],</span>
+<span id="cb73-13"><a href="#cb73-13"></a>       [ <span class="dv">9</span>, <span class="dv">12</span>, <span class="dv">15</span>]])</span>
+<span id="cb73-14"><a href="#cb73-14"></a></span>
+<span id="cb73-15"><a href="#cb73-15"></a>In [<span class="dv">189</span>]: arr.cumprod(axis<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb73-16"><a href="#cb73-16"></a>Out[<span class="dv">189</span>]: </span>
+<span id="cb73-17"><a href="#cb73-17"></a>array([[  <span class="dv">0</span>,   <span class="dv">0</span>,   <span class="dv">0</span>],</span>
+<span id="cb73-18"><a href="#cb73-18"></a>       [  <span class="dv">3</span>,  <span class="dv">12</span>,  <span class="dv">60</span>],</span>
+<span id="cb73-19"><a href="#cb73-19"></a>       [  <span class="dv">6</span>,  <span class="dv">42</span>, <span class="dv">336</span>]])</span></code></pre></div>
+<p>表4-5列出了全部的基本数组统计方法。后续章节中有很多例子都会用到这些方法。</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/7178691-a6c6df3ca8e0b98e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" /></p>
+<p><img src="http://upload-images.jianshu.io/upload_images/7178691-866fcde885b1d357.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" /></p>
+<h2 id="用于布尔型数组的方法">用于布尔型数组的方法</h2>
+<p>在上面这些方法中，布尔值会被强制转换为1（True）和0（False）。因此，sum经常被用来对布尔型数组中的True值计数：</p>
+<div class="sourceCode" id="cb74"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb74-1"><a href="#cb74-1"></a>In [<span class="dv">190</span>]: arr <span class="op">=</span> np.random.randn(<span class="dv">100</span>)</span>
+<span id="cb74-2"><a href="#cb74-2"></a></span>
+<span id="cb74-3"><a href="#cb74-3"></a>In [<span class="dv">191</span>]: (arr <span class="op">&gt;</span> <span class="dv">0</span>).<span class="bu">sum</span>() <span class="co"># Number of positive values</span></span>
+<span id="cb74-4"><a href="#cb74-4"></a>Out[<span class="dv">191</span>]: <span class="dv">42</span></span></code></pre></div>
+<p>另外还有两个方法any和all，它们对布尔型数组非常有用。any用于测试数组中是否存在一个或多个True，而all则检查数组中所有值是否都是True：</p>
+<div class="sourceCode" id="cb75"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb75-1"><a href="#cb75-1"></a>In [<span class="dv">192</span>]: bools <span class="op">=</span> np.array([<span class="va">False</span>, <span class="va">False</span>, <span class="va">True</span>, <span class="va">False</span>])</span>
+<span id="cb75-2"><a href="#cb75-2"></a></span>
+<span id="cb75-3"><a href="#cb75-3"></a>In [<span class="dv">193</span>]: bools.<span class="bu">any</span>()</span>
+<span id="cb75-4"><a href="#cb75-4"></a>Out[<span class="dv">193</span>]: <span class="va">True</span></span>
+<span id="cb75-5"><a href="#cb75-5"></a></span>
+<span id="cb75-6"><a href="#cb75-6"></a>In [<span class="dv">194</span>]: bools.<span class="bu">all</span>()</span>
+<span id="cb75-7"><a href="#cb75-7"></a>Out[<span class="dv">194</span>]: <span class="va">False</span></span></code></pre></div>
+<p>这两个方法也能用于非布尔型数组，所有非0元素将会被当做True。</p>
+<h2 id="排序">排序</h2>
+<p>跟Python内置的列表类型一样，NumPy数组也可以通过sort方法就地排序：</p>
+<div class="sourceCode" id="cb76"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb76-1"><a href="#cb76-1"></a>In [<span class="dv">195</span>]: arr <span class="op">=</span> np.random.randn(<span class="dv">6</span>)</span>
+<span id="cb76-2"><a href="#cb76-2"></a></span>
+<span id="cb76-3"><a href="#cb76-3"></a>In [<span class="dv">196</span>]: arr</span>
+<span id="cb76-4"><a href="#cb76-4"></a>Out[<span class="dv">196</span>]: array([ <span class="fl">0.6095</span>, <span class="op">-</span><span class="fl">0.4938</span>,  <span class="fl">1.24</span>  , <span class="op">-</span><span class="fl">0.1357</span>,  <span class="fl">1.43</span>  , <span class="op">-</span><span class="fl">0.8469</span>])</span>
+<span id="cb76-5"><a href="#cb76-5"></a></span>
+<span id="cb76-6"><a href="#cb76-6"></a>In [<span class="dv">197</span>]: arr.sort()</span>
+<span id="cb76-7"><a href="#cb76-7"></a></span>
+<span id="cb76-8"><a href="#cb76-8"></a>In [<span class="dv">198</span>]: arr</span>
+<span id="cb76-9"><a href="#cb76-9"></a>Out[<span class="dv">198</span>]: array([<span class="op">-</span><span class="fl">0.8469</span>, <span class="op">-</span><span class="fl">0.4938</span>, <span class="op">-</span><span class="fl">0.1357</span>,  <span class="fl">0.6095</span>,  <span class="fl">1.24</span>  ,  <span class="fl">1.43</span>  ])</span></code></pre></div>
+<p>多维数组可以在任何一个轴向上进行排序，只需将轴编号传给sort即可：</p>
+<div class="sourceCode" id="cb77"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb77-1"><a href="#cb77-1"></a>In [<span class="dv">199</span>]: arr <span class="op">=</span> np.random.randn(<span class="dv">5</span>, <span class="dv">3</span>)</span>
+<span id="cb77-2"><a href="#cb77-2"></a></span>
+<span id="cb77-3"><a href="#cb77-3"></a>In [<span class="dv">200</span>]: arr</span>
+<span id="cb77-4"><a href="#cb77-4"></a>Out[<span class="dv">200</span>]: </span>
+<span id="cb77-5"><a href="#cb77-5"></a>array([[ <span class="fl">0.6033</span>,  <span class="fl">1.2636</span>, <span class="op">-</span><span class="fl">0.2555</span>],</span>
+<span id="cb77-6"><a href="#cb77-6"></a>       [<span class="op">-</span><span class="fl">0.4457</span>,  <span class="fl">0.4684</span>, <span class="op">-</span><span class="fl">0.9616</span>],</span>
+<span id="cb77-7"><a href="#cb77-7"></a>       [<span class="op">-</span><span class="fl">1.8245</span>,  <span class="fl">0.6254</span>,  <span class="fl">1.0229</span>],</span>
+<span id="cb77-8"><a href="#cb77-8"></a>       [ <span class="fl">1.1074</span>,  <span class="fl">0.0909</span>, <span class="op">-</span><span class="fl">0.3501</span>],</span>
+<span id="cb77-9"><a href="#cb77-9"></a>       [ <span class="fl">0.218</span> , <span class="op">-</span><span class="fl">0.8948</span>, <span class="op">-</span><span class="fl">1.7415</span>]])</span>
+<span id="cb77-10"><a href="#cb77-10"></a></span>
+<span id="cb77-11"><a href="#cb77-11"></a>In [<span class="dv">201</span>]: arr.sort(<span class="dv">1</span>)</span>
+<span id="cb77-12"><a href="#cb77-12"></a></span>
+<span id="cb77-13"><a href="#cb77-13"></a>In [<span class="dv">202</span>]: arr</span>
+<span id="cb77-14"><a href="#cb77-14"></a>Out[<span class="dv">202</span>]: </span>
+<span id="cb77-15"><a href="#cb77-15"></a>array([[<span class="op">-</span><span class="fl">0.2555</span>,  <span class="fl">0.6033</span>,  <span class="fl">1.2636</span>],</span>
+<span id="cb77-16"><a href="#cb77-16"></a>       [<span class="op">-</span><span class="fl">0.9616</span>, <span class="op">-</span><span class="fl">0.4457</span>,  <span class="fl">0.4684</span>],</span>
+<span id="cb77-17"><a href="#cb77-17"></a>       [<span class="op">-</span><span class="fl">1.8245</span>,  <span class="fl">0.6254</span>,  <span class="fl">1.0229</span>],</span>
+<span id="cb77-18"><a href="#cb77-18"></a>       [<span class="op">-</span><span class="fl">0.3501</span>,  <span class="fl">0.0909</span>,  <span class="fl">1.1074</span>],</span>
+<span id="cb77-19"><a href="#cb77-19"></a>       [<span class="op">-</span><span class="fl">1.7415</span>, <span class="op">-</span><span class="fl">0.8948</span>,  <span class="fl">0.218</span> ]])</span></code></pre></div>
+<p>顶级方法np.sort返回的是数组的已排序副本，而就地排序则会修改数组本身。计算数组分位数最简单的办法是对其进行排序，然后选取特定位置的值：</p>
+<div class="sourceCode" id="cb78"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb78-1"><a href="#cb78-1"></a>In [<span class="dv">203</span>]: large_arr <span class="op">=</span> np.random.randn(<span class="dv">1000</span>)</span>
+<span id="cb78-2"><a href="#cb78-2"></a></span>
+<span id="cb78-3"><a href="#cb78-3"></a>In [<span class="dv">204</span>]: large_arr.sort()</span>
+<span id="cb78-4"><a href="#cb78-4"></a></span>
+<span id="cb78-5"><a href="#cb78-5"></a>In [<span class="dv">205</span>]: large_arr[<span class="bu">int</span>(<span class="fl">0.05</span> <span class="op">*</span> <span class="bu">len</span>(large_arr))] <span class="co"># 5% quantile</span></span>
+<span id="cb78-6"><a href="#cb78-6"></a>Out[<span class="dv">205</span>]: <span class="op">-</span><span class="fl">1.5311513550102103</span></span></code></pre></div>
+<p>更多关于NumPy排序方法以及诸如间接排序之类的高级技术，请参阅附录A。在pandas中还可以找到一些其他跟排序有关的数据操作（比如根据一列或多列对表格型数据进行排序）。</p>
+<h2 id="唯一化以及其它的集合逻辑">唯一化以及其它的集合逻辑</h2>
+<p>NumPy提供了一些针对一维ndarray的基本集合运算。最常用的可能要数np.unique了，它用于找出数组中的唯一值并返回已排序的结果：</p>
+<div class="sourceCode" id="cb79"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb79-1"><a href="#cb79-1"></a>In [<span class="dv">206</span>]: names <span class="op">=</span> np.array([<span class="st">&#39;Bob&#39;</span>, <span class="st">&#39;Joe&#39;</span>, <span class="st">&#39;Will&#39;</span>, <span class="st">&#39;Bob&#39;</span>, <span class="st">&#39;Will&#39;</span>, <span class="st">&#39;Joe&#39;</span>, <span class="st">&#39;Joe&#39;</span>])</span>
+<span id="cb79-2"><a href="#cb79-2"></a></span>
+<span id="cb79-3"><a href="#cb79-3"></a>In [<span class="dv">207</span>]: np.unique(names)</span>
+<span id="cb79-4"><a href="#cb79-4"></a>Out[<span class="dv">207</span>]: </span>
+<span id="cb79-5"><a href="#cb79-5"></a>array([<span class="st">&#39;Bob&#39;</span>, <span class="st">&#39;Joe&#39;</span>, <span class="st">&#39;Will&#39;</span>],</span>
+<span id="cb79-6"><a href="#cb79-6"></a>      dtype<span class="op">=</span><span class="st">&#39;&lt;U4&#39;</span>)</span>
+<span id="cb79-7"><a href="#cb79-7"></a></span>
+<span id="cb79-8"><a href="#cb79-8"></a>In [<span class="dv">208</span>]: ints <span class="op">=</span> np.array([<span class="dv">3</span>, <span class="dv">3</span>, <span class="dv">3</span>, <span class="dv">2</span>, <span class="dv">2</span>, <span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">4</span>, <span class="dv">4</span>])</span>
+<span id="cb79-9"><a href="#cb79-9"></a></span>
+<span id="cb79-10"><a href="#cb79-10"></a>In [<span class="dv">209</span>]: np.unique(ints)</span>
+<span id="cb79-11"><a href="#cb79-11"></a>Out[<span class="dv">209</span>]: array([<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>])</span></code></pre></div>
+<p>拿跟np.unique等价的纯Python代码来对比一下：</p>
+<div class="sourceCode" id="cb80"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb80-1"><a href="#cb80-1"></a>In [<span class="dv">210</span>]: <span class="bu">sorted</span>(<span class="bu">set</span>(names))</span>
+<span id="cb80-2"><a href="#cb80-2"></a>Out[<span class="dv">210</span>]: [<span class="st">&#39;Bob&#39;</span>, <span class="st">&#39;Joe&#39;</span>, <span class="st">&#39;Will&#39;</span>]</span></code></pre></div>
+<p>另一个函数np.in1d用于测试一个数组中的值在另一个数组中的成员资格，返回一个布尔型数组：</p>
+<div class="sourceCode" id="cb81"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb81-1"><a href="#cb81-1"></a>In [<span class="dv">211</span>]: values <span class="op">=</span> np.array([<span class="dv">6</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">3</span>, <span class="dv">2</span>, <span class="dv">5</span>, <span class="dv">6</span>])</span>
+<span id="cb81-2"><a href="#cb81-2"></a></span>
+<span id="cb81-3"><a href="#cb81-3"></a>In [<span class="dv">212</span>]: np.in1d(values, [<span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">6</span>])</span>
+<span id="cb81-4"><a href="#cb81-4"></a>Out[<span class="dv">212</span>]: array([ <span class="va">True</span>, <span class="va">False</span>, <span class="va">False</span>,  <span class="va">True</span>,  <span class="va">True</span>, <span class="va">False</span>,  <span class="va">True</span>], dtype<span class="op">=</span><span class="bu">bool</span>)</span></code></pre></div>
+<p>NumPy中的集合函数请参见表4-6。 <img src="http://upload-images.jianshu.io/upload_images/7178691-80e85ae6b9c89ada.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" /></p>
+<h1 id="用于数组的文件输入输出">4.4 用于数组的文件输入输出</h1>
+<p>NumPy能够读写磁盘上的文本数据或二进制数据。这一小节只讨论NumPy的内置二进制格式，因为更多的用户会使用pandas或其它工具加载文本或表格数据（见第6章）。</p>
+<p>np.save和np.load是读写磁盘数组数据的两个主要函数。默认情况下，数组是以未压缩的原始二进制格式保存在扩展名为.npy的文件中的：</p>
+<div class="sourceCode" id="cb82"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb82-1"><a href="#cb82-1"></a>In [<span class="dv">213</span>]: arr <span class="op">=</span> np.arange(<span class="dv">10</span>)</span>
+<span id="cb82-2"><a href="#cb82-2"></a></span>
+<span id="cb82-3"><a href="#cb82-3"></a>In [<span class="dv">214</span>]: np.save(<span class="st">&#39;some_array&#39;</span>, arr)</span></code></pre></div>
+<p>如果文件路径末尾没有扩展名.npy，则该扩展名会被自动加上。然后就可以通过np.load读取磁盘上的数组：</p>
+<div class="sourceCode" id="cb83"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb83-1"><a href="#cb83-1"></a>In [<span class="dv">215</span>]: np.load(<span class="st">&#39;some_array.npy&#39;</span>)</span>
+<span id="cb83-2"><a href="#cb83-2"></a>Out[<span class="dv">215</span>]: array([<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">5</span>, <span class="dv">6</span>, <span class="dv">7</span>, <span class="dv">8</span>, <span class="dv">9</span>])</span></code></pre></div>
+<p>通过np.savez可以将多个数组保存到一个未压缩文件中，将数组以关键字参数的形式传入即可：</p>
+<div class="sourceCode" id="cb84"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb84-1"><a href="#cb84-1"></a>In [<span class="dv">216</span>]: np.savez(<span class="st">&#39;array_archive.npz&#39;</span>, a<span class="op">=</span>arr, b<span class="op">=</span>arr)</span></code></pre></div>
+<p>加载.npz文件时，你会得到一个类似字典的对象，该对象会对各个数组进行延迟加载：</p>
+<div class="sourceCode" id="cb85"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb85-1"><a href="#cb85-1"></a>In [<span class="dv">217</span>]: arch <span class="op">=</span> np.load(<span class="st">&#39;array_archive.npz&#39;</span>)</span>
+<span id="cb85-2"><a href="#cb85-2"></a></span>
+<span id="cb85-3"><a href="#cb85-3"></a>In [<span class="dv">218</span>]: arch[<span class="st">&#39;b&#39;</span>]</span>
+<span id="cb85-4"><a href="#cb85-4"></a>Out[<span class="dv">218</span>]: array([<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">5</span>, <span class="dv">6</span>, <span class="dv">7</span>, <span class="dv">8</span>, <span class="dv">9</span>])</span></code></pre></div>
+<p>如果要将数据压缩，可以使用numpy.savez_compressed：</p>
+<div class="sourceCode" id="cb86"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb86-1"><a href="#cb86-1"></a>In [<span class="dv">219</span>]: np.savez_compressed(<span class="st">&#39;arrays_compressed.npz&#39;</span>, a<span class="op">=</span>arr, b<span class="op">=</span>arr)</span></code></pre></div>
+<h1 id="线性代数">4.5 线性代数</h1>
+<p>线性代数（如矩阵乘法、矩阵分解、行列式以及其他方阵数学等）是任何数组库的重要组成部分。不像某些语言（如MATLAB），通过*对两个二维数组相乘得到的是一个元素级的积，而不是一个矩阵点积。因此，NumPy提供了一个用于矩阵乘法的dot函数（既是一个数组方法也是numpy命名空间中的一个函数）：</p>
+<div class="sourceCode" id="cb87"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb87-1"><a href="#cb87-1"></a>In [<span class="dv">223</span>]: x <span class="op">=</span> np.array([[<span class="fl">1.</span>, <span class="fl">2.</span>, <span class="fl">3.</span>], [<span class="fl">4.</span>, <span class="fl">5.</span>, <span class="fl">6.</span>]])</span>
+<span id="cb87-2"><a href="#cb87-2"></a></span>
+<span id="cb87-3"><a href="#cb87-3"></a>In [<span class="dv">224</span>]: y <span class="op">=</span> np.array([[<span class="fl">6.</span>, <span class="fl">23.</span>], [<span class="op">-</span><span class="dv">1</span>, <span class="dv">7</span>], [<span class="dv">8</span>, <span class="dv">9</span>]])</span>
+<span id="cb87-4"><a href="#cb87-4"></a></span>
+<span id="cb87-5"><a href="#cb87-5"></a>In [<span class="dv">225</span>]: x</span>
+<span id="cb87-6"><a href="#cb87-6"></a>Out[<span class="dv">225</span>]: </span>
+<span id="cb87-7"><a href="#cb87-7"></a>array([[ <span class="fl">1.</span>,  <span class="fl">2.</span>,  <span class="fl">3.</span>],</span>
+<span id="cb87-8"><a href="#cb87-8"></a>       [ <span class="fl">4.</span>,  <span class="fl">5.</span>,  <span class="fl">6.</span>]])</span>
+<span id="cb87-9"><a href="#cb87-9"></a></span>
+<span id="cb87-10"><a href="#cb87-10"></a>In [<span class="dv">226</span>]: y</span>
+<span id="cb87-11"><a href="#cb87-11"></a>Out[<span class="dv">226</span>]: </span>
+<span id="cb87-12"><a href="#cb87-12"></a>array([[  <span class="fl">6.</span>,  <span class="fl">23.</span>],</span>
+<span id="cb87-13"><a href="#cb87-13"></a>       [ <span class="op">-</span><span class="fl">1.</span>,   <span class="fl">7.</span>],</span>
+<span id="cb87-14"><a href="#cb87-14"></a>       [  <span class="fl">8.</span>,   <span class="fl">9.</span>]])</span>
+<span id="cb87-15"><a href="#cb87-15"></a></span>
+<span id="cb87-16"><a href="#cb87-16"></a>In [<span class="dv">227</span>]: x.dot(y)</span>
+<span id="cb87-17"><a href="#cb87-17"></a>Out[<span class="dv">227</span>]: </span>
+<span id="cb87-18"><a href="#cb87-18"></a>array([[  <span class="fl">28.</span>,   <span class="fl">64.</span>],</span>
+<span id="cb87-19"><a href="#cb87-19"></a>       [  <span class="fl">67.</span>,  <span class="fl">181.</span>]])</span></code></pre></div>
+<p>x.dot(y)等价于np.dot(x, y)：</p>
+<div class="sourceCode" id="cb88"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb88-1"><a href="#cb88-1"></a>In [<span class="dv">228</span>]: np.dot(x, y)</span>
+<span id="cb88-2"><a href="#cb88-2"></a>Out[<span class="dv">228</span>]: </span>
+<span id="cb88-3"><a href="#cb88-3"></a>array([[  <span class="fl">28.</span>,   <span class="fl">64.</span>],</span>
+<span id="cb88-4"><a href="#cb88-4"></a>       [  <span class="fl">67.</span>,  <span class="fl">181.</span>]])</span></code></pre></div>
+<p>一个二维数组跟一个大小合适的一维数组的矩阵点积运算之后将会得到一个一维数组：</p>
+<div class="sourceCode" id="cb89"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb89-1"><a href="#cb89-1"></a>In [<span class="dv">229</span>]: np.dot(x, np.ones(<span class="dv">3</span>))</span>
+<span id="cb89-2"><a href="#cb89-2"></a>Out[<span class="dv">229</span>]: array([  <span class="fl">6.</span>,  <span class="fl">15.</span>])</span></code></pre></div>
+<p><span class="citation" data-cites="符">@符</span>（类似Python 3.5）也可以用作中缀运算符，进行矩阵乘法：</p>
+<div class="sourceCode" id="cb90"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb90-1"><a href="#cb90-1"></a>In [<span class="dv">230</span>]: x <span class="op">@</span> np.ones(<span class="dv">3</span>)</span>
+<span id="cb90-2"><a href="#cb90-2"></a>Out[<span class="dv">230</span>]: array([  <span class="fl">6.</span>,  <span class="fl">15.</span>])</span></code></pre></div>
+<p>numpy.linalg中有一组标准的矩阵分解运算以及诸如求逆和行列式之类的东西。它们跟MATLAB和R等语言所使用的是相同的行业标准线性代数库，如BLAS、LAPACK、Intel MKL（Math Kernel Library，可能有，取决于你的NumPy版本）等：</p>
+<div class="sourceCode" id="cb91"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb91-1"><a href="#cb91-1"></a>In [<span class="dv">231</span>]: <span class="im">from</span> numpy.linalg <span class="im">import</span> inv, qr</span>
+<span id="cb91-2"><a href="#cb91-2"></a></span>
+<span id="cb91-3"><a href="#cb91-3"></a>In [<span class="dv">232</span>]: X <span class="op">=</span> np.random.randn(<span class="dv">5</span>, <span class="dv">5</span>)</span>
+<span id="cb91-4"><a href="#cb91-4"></a></span>
+<span id="cb91-5"><a href="#cb91-5"></a>In [<span class="dv">233</span>]: mat <span class="op">=</span> X.T.dot(X)</span>
+<span id="cb91-6"><a href="#cb91-6"></a></span>
+<span id="cb91-7"><a href="#cb91-7"></a>In [<span class="dv">234</span>]: inv(mat)</span>
+<span id="cb91-8"><a href="#cb91-8"></a>Out[<span class="dv">234</span>]: </span>
+<span id="cb91-9"><a href="#cb91-9"></a>array([[  <span class="fl">933.1189</span>,   <span class="fl">871.8258</span>, <span class="op">-</span><span class="fl">1417.6902</span>, <span class="op">-</span><span class="fl">1460.4005</span>,  <span class="fl">1782.1391</span>],</span>
+<span id="cb91-10"><a href="#cb91-10"></a>       [  <span class="fl">871.8258</span>,   <span class="fl">815.3929</span>, <span class="op">-</span><span class="fl">1325.9965</span>, <span class="op">-</span><span class="fl">1365.9242</span>,  <span class="fl">1666.9347</span>],</span>
+<span id="cb91-11"><a href="#cb91-11"></a>       [<span class="op">-</span><span class="fl">1417.6902</span>, <span class="op">-</span><span class="fl">1325.9965</span>,  <span class="fl">2158.4424</span>,  <span class="fl">2222.0191</span>, <span class="op">-</span><span class="fl">2711.6822</span>],</span>
+<span id="cb91-12"><a href="#cb91-12"></a>       [<span class="op">-</span><span class="fl">1460.4005</span>, <span class="op">-</span><span class="fl">1365.9242</span>,  <span class="fl">2222.0191</span>,  <span class="fl">2289.0575</span>, <span class="op">-</span><span class="fl">2793.422</span> ],</span>
+<span id="cb91-13"><a href="#cb91-13"></a>       [ <span class="fl">1782.1391</span>,  <span class="fl">1666.9347</span>, <span class="op">-</span><span class="fl">2711.6822</span>, <span class="op">-</span><span class="fl">2793.422</span> ,  <span class="fl">3409.5128</span>]])</span>
+<span id="cb91-14"><a href="#cb91-14"></a></span>
+<span id="cb91-15"><a href="#cb91-15"></a>In [<span class="dv">235</span>]: mat.dot(inv(mat))</span>
+<span id="cb91-16"><a href="#cb91-16"></a>Out[<span class="dv">235</span>]: </span>
+<span id="cb91-17"><a href="#cb91-17"></a>array([[ <span class="fl">1.</span>,  <span class="fl">0.</span>, <span class="op">-</span><span class="fl">0.</span>, <span class="op">-</span><span class="fl">0.</span>, <span class="op">-</span><span class="fl">0.</span>],</span>
+<span id="cb91-18"><a href="#cb91-18"></a>       [<span class="op">-</span><span class="fl">0.</span>,  <span class="fl">1.</span>,  <span class="fl">0.</span>,  <span class="fl">0.</span>,  <span class="fl">0.</span>],</span>
+<span id="cb91-19"><a href="#cb91-19"></a>       [ <span class="fl">0.</span>,  <span class="fl">0.</span>,  <span class="fl">1.</span>,  <span class="fl">0.</span>,  <span class="fl">0.</span>],</span>
+<span id="cb91-20"><a href="#cb91-20"></a>       [<span class="op">-</span><span class="fl">0.</span>,  <span class="fl">0.</span>,  <span class="fl">0.</span>,  <span class="fl">1.</span>, <span class="op">-</span><span class="fl">0.</span>],</span>
+<span id="cb91-21"><a href="#cb91-21"></a>       [<span class="op">-</span><span class="fl">0.</span>,  <span class="fl">0.</span>,  <span class="fl">0.</span>,  <span class="fl">0.</span>,  <span class="fl">1.</span>]])</span>
+<span id="cb91-22"><a href="#cb91-22"></a></span>
+<span id="cb91-23"><a href="#cb91-23"></a>In [<span class="dv">236</span>]: q, r <span class="op">=</span> qr(mat)</span>
+<span id="cb91-24"><a href="#cb91-24"></a></span>
+<span id="cb91-25"><a href="#cb91-25"></a>In [<span class="dv">237</span>]: r</span>
+<span id="cb91-26"><a href="#cb91-26"></a>Out[<span class="dv">237</span>]: </span>
+<span id="cb91-27"><a href="#cb91-27"></a>array([[<span class="op">-</span><span class="fl">1.6914</span>,  <span class="fl">4.38</span>  ,  <span class="fl">0.1757</span>,  <span class="fl">0.4075</span>, <span class="op">-</span><span class="fl">0.7838</span>],</span>
+<span id="cb91-28"><a href="#cb91-28"></a>       [ <span class="fl">0.</span>    , <span class="op">-</span><span class="fl">2.6436</span>,  <span class="fl">0.1939</span>, <span class="op">-</span><span class="fl">3.072</span> , <span class="op">-</span><span class="fl">1.0702</span>],</span>
+<span id="cb91-29"><a href="#cb91-29"></a>       [ <span class="fl">0.</span>    ,  <span class="fl">0.</span>    , <span class="op">-</span><span class="fl">0.8138</span>,  <span class="fl">1.5414</span>,  <span class="fl">0.6155</span>],</span>
+<span id="cb91-30"><a href="#cb91-30"></a>       [ <span class="fl">0.</span>    ,  <span class="fl">0.</span>    ,  <span class="fl">0.</span>    , <span class="op">-</span><span class="fl">2.6445</span>, <span class="op">-</span><span class="fl">2.1669</span>],</span>
+<span id="cb91-31"><a href="#cb91-31"></a>       [ <span class="fl">0.</span>    ,  <span class="fl">0.</span>    ,  <span class="fl">0.</span>    ,  <span class="fl">0.</span>    ,  <span class="fl">0.0002</span>]])</span></code></pre></div>
+<p>表达式X.T.dot(X)计算X和它的转置X.T的点积。</p>
+<p>表4-7中列出了一些最常用的线性代数函数。</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/7178691-dcdb66e49e5f70ea.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" /></p>
+<h1 id="伪随机数生成">4.6 伪随机数生成</h1>
+<p>numpy.random模块对Python内置的random进行了补充，增加了一些用于高效生成多种概率分布的样本值的函数。例如，你可以用normal来得到一个标准正态分布的4×4样本数组：</p>
+<div class="sourceCode" id="cb92"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb92-1"><a href="#cb92-1"></a>In [<span class="dv">238</span>]: samples <span class="op">=</span> np.random.normal(size<span class="op">=</span>(<span class="dv">4</span>, <span class="dv">4</span>))</span>
+<span id="cb92-2"><a href="#cb92-2"></a></span>
+<span id="cb92-3"><a href="#cb92-3"></a>In [<span class="dv">239</span>]: samples</span>
+<span id="cb92-4"><a href="#cb92-4"></a>Out[<span class="dv">239</span>]: </span>
+<span id="cb92-5"><a href="#cb92-5"></a>array([[ <span class="fl">0.5732</span>,  <span class="fl">0.1933</span>,  <span class="fl">0.4429</span>,  <span class="fl">1.2796</span>],</span>
+<span id="cb92-6"><a href="#cb92-6"></a>       [ <span class="fl">0.575</span> ,  <span class="fl">0.4339</span>, <span class="op">-</span><span class="fl">0.7658</span>, <span class="op">-</span><span class="fl">1.237</span> ],</span>
+<span id="cb92-7"><a href="#cb92-7"></a>       [<span class="op">-</span><span class="fl">0.5367</span>,  <span class="fl">1.8545</span>, <span class="op">-</span><span class="fl">0.92</span>  , <span class="op">-</span><span class="fl">0.1082</span>],</span>
+<span id="cb92-8"><a href="#cb92-8"></a>       [ <span class="fl">0.1525</span>,  <span class="fl">0.9435</span>, <span class="op">-</span><span class="fl">1.0953</span>, <span class="op">-</span><span class="fl">0.144</span> ]])</span></code></pre></div>
+<p>而Python内置的random模块则只能一次生成一个样本值。从下面的测试结果中可以看出，如果需要产生大量样本值，numpy.random快了不止一个数量级：</p>
+<div class="sourceCode" id="cb93"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb93-1"><a href="#cb93-1"></a>In [<span class="dv">240</span>]: <span class="im">from</span> random <span class="im">import</span> normalvariate</span>
+<span id="cb93-2"><a href="#cb93-2"></a></span>
+<span id="cb93-3"><a href="#cb93-3"></a>In [<span class="dv">241</span>]: N <span class="op">=</span> <span class="dv">1000000</span></span>
+<span id="cb93-4"><a href="#cb93-4"></a></span>
+<span id="cb93-5"><a href="#cb93-5"></a>In [<span class="dv">242</span>]: <span class="op">%</span>timeit samples <span class="op">=</span> [normalvariate(<span class="dv">0</span>, <span class="dv">1</span>) <span class="cf">for</span> _ <span class="kw">in</span> <span class="bu">range</span>(N)]</span>
+<span id="cb93-6"><a href="#cb93-6"></a><span class="fl">1.77</span> s <span class="op">+-</span> <span class="dv">126</span> ms per loop (mean <span class="op">+-</span> std. dev. of <span class="dv">7</span> runs, <span class="dv">1</span> loop each)</span>
+<span id="cb93-7"><a href="#cb93-7"></a></span>
+<span id="cb93-8"><a href="#cb93-8"></a>In [<span class="dv">243</span>]: <span class="op">%</span>timeit np.random.normal(size<span class="op">=</span>N)</span>
+<span id="cb93-9"><a href="#cb93-9"></a><span class="fl">61.7</span> ms <span class="op">+-</span> <span class="fl">1.32</span> ms per loop (mean <span class="op">+-</span> std. dev. of <span class="dv">7</span> runs, <span class="dv">10</span> loops each)</span></code></pre></div>
+<p>我们说这些都是伪随机数，是因为它们都是通过算法基于随机数生成器种子，在确定性的条件下生成的。你可以用NumPy的np.random.seed更改随机数生成种子：</p>
+<div class="sourceCode" id="cb94"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb94-1"><a href="#cb94-1"></a>In [<span class="dv">244</span>]: np.random.seed(<span class="dv">1234</span>)</span></code></pre></div>
+<p>numpy.random的数据生成函数使用了全局的随机种子。要避免全局状态，你可以使用numpy.random.RandomState，创建一个与其它隔离的随机数生成器：</p>
+<div class="sourceCode" id="cb95"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb95-1"><a href="#cb95-1"></a>In [<span class="dv">245</span>]: rng <span class="op">=</span> np.random.RandomState(<span class="dv">1234</span>)</span>
+<span id="cb95-2"><a href="#cb95-2"></a></span>
+<span id="cb95-3"><a href="#cb95-3"></a>In [<span class="dv">246</span>]: rng.randn(<span class="dv">10</span>)</span>
+<span id="cb95-4"><a href="#cb95-4"></a>Out[<span class="dv">246</span>]: </span>
+<span id="cb95-5"><a href="#cb95-5"></a>array([ <span class="fl">0.4714</span>, <span class="op">-</span><span class="fl">1.191</span> ,  <span class="fl">1.4327</span>, <span class="op">-</span><span class="fl">0.3127</span>, <span class="op">-</span><span class="fl">0.7206</span>,  <span class="fl">0.8872</span>,  <span class="fl">0.8596</span>,</span>
+<span id="cb95-6"><a href="#cb95-6"></a>       <span class="op">-</span><span class="fl">0.6365</span>,  <span class="fl">0.0157</span>, <span class="op">-</span><span class="fl">2.2427</span>])</span></code></pre></div>
+<p>表4-8列出了numpy.random中的部分函数。在下一节中，我将给出一些利用这些函数一次性生成大量样本值的范例。</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/7178691-97ba09c96dab93a2.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" /></p>
+<p><img src="http://upload-images.jianshu.io/upload_images/7178691-6ed04fae3d1178e2.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" /></p>
+<h1 id="示例随机漫步">4.7 示例：随机漫步</h1>
+<p>我们通过模拟随机漫步来说明如何运用数组运算。先来看一个简单的随机漫步的例子：从0开始，步长1和－1出现的概率相等。</p>
+<p>下面是一个通过内置的random模块以纯Python的方式实现1000步的随机漫步：</p>
+<div class="sourceCode" id="cb96"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb96-1"><a href="#cb96-1"></a>In [<span class="dv">247</span>]: <span class="im">import</span> random</span>
+<span id="cb96-2"><a href="#cb96-2"></a>   .....: position <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb96-3"><a href="#cb96-3"></a>   .....: walk <span class="op">=</span> [position]</span>
+<span id="cb96-4"><a href="#cb96-4"></a>   .....: steps <span class="op">=</span> <span class="dv">1000</span></span>
+<span id="cb96-5"><a href="#cb96-5"></a>   .....: <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(steps):</span>
+<span id="cb96-6"><a href="#cb96-6"></a>   .....:     step <span class="op">=</span> <span class="dv">1</span> <span class="cf">if</span> random.randint(<span class="dv">0</span>, <span class="dv">1</span>) <span class="cf">else</span> <span class="op">-</span><span class="dv">1</span></span>
+<span id="cb96-7"><a href="#cb96-7"></a>   .....:     position <span class="op">+=</span> step</span>
+<span id="cb96-8"><a href="#cb96-8"></a>   .....:     walk.append(position)</span>
+<span id="cb96-9"><a href="#cb96-9"></a>   .....:</span></code></pre></div>
+<p>图4-4是根据前100个随机漫步值生成的折线图：</p>
+<div class="sourceCode" id="cb97"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb97-1"><a href="#cb97-1"></a>In [<span class="dv">249</span>]: plt.plot(walk[:<span class="dv">100</span>])</span></code></pre></div>
+<figure>
+<img src="http://upload-images.jianshu.io/upload_images/7178691-0833621694f6dda0.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="" /><figcaption>图4-4 简单的随机漫步</figcaption>
+</figure>
+<p>不难看出，这其实就是随机漫步中各步的累计和，可以用一个数组运算来实现。因此，我用np.random模块一次性随机产生1000个“掷硬币”结果（即两个数中任选一个），将其分别设置为1或－1，然后计算累计和：</p>
+<div class="sourceCode" id="cb98"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb98-1"><a href="#cb98-1"></a>In [<span class="dv">251</span>]: nsteps <span class="op">=</span> <span class="dv">1000</span></span>
+<span id="cb98-2"><a href="#cb98-2"></a></span>
+<span id="cb98-3"><a href="#cb98-3"></a>In [<span class="dv">252</span>]: draws <span class="op">=</span> np.random.randint(<span class="dv">0</span>, <span class="dv">2</span>, size<span class="op">=</span>nsteps)</span>
+<span id="cb98-4"><a href="#cb98-4"></a></span>
+<span id="cb98-5"><a href="#cb98-5"></a>In [<span class="dv">253</span>]: steps <span class="op">=</span> np.where(draws <span class="op">&gt;</span> <span class="dv">0</span>, <span class="dv">1</span>, <span class="op">-</span><span class="dv">1</span>)</span>
+<span id="cb98-6"><a href="#cb98-6"></a></span>
+<span id="cb98-7"><a href="#cb98-7"></a>In [<span class="dv">254</span>]: walk <span class="op">=</span> steps.cumsum()</span></code></pre></div>
+<p>有了这些数据之后，我们就可以沿着漫步路径做一些统计工作了，比如求取最大值和最小值：</p>
+<div class="sourceCode" id="cb99"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb99-1"><a href="#cb99-1"></a>In [<span class="dv">255</span>]: walk.<span class="bu">min</span>()</span>
+<span id="cb99-2"><a href="#cb99-2"></a>Out[<span class="dv">255</span>]: <span class="op">-</span><span class="dv">3</span></span>
+<span id="cb99-3"><a href="#cb99-3"></a></span>
+<span id="cb99-4"><a href="#cb99-4"></a>In [<span class="dv">256</span>]: walk.<span class="bu">max</span>()</span>
+<span id="cb99-5"><a href="#cb99-5"></a>Out[<span class="dv">256</span>]: <span class="dv">31</span></span></code></pre></div>
+<p>现在来看一个复杂点的统计任务——首次穿越时间，即随机漫步过程中第一次到达某个特定值的时间。假设我们想要知道本次随机漫步需要多久才能距离初始0点至少10步远（任一方向均可）。np.abs(walk)&gt;=10可以得到一个布尔型数组，它表示的是距离是否达到或超过10，而我们想要知道的是第一个10或－10的索引。可以用argmax来解决这个问题，它返回的是该布尔型数组第一个最大值的索引（True就是最大值）：</p>
+<div class="sourceCode" id="cb100"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb100-1"><a href="#cb100-1"></a>In [<span class="dv">257</span>]: (np.<span class="bu">abs</span>(walk) <span class="op">&gt;=</span> <span class="dv">10</span>).argmax()</span>
+<span id="cb100-2"><a href="#cb100-2"></a>Out[<span class="dv">257</span>]: <span class="dv">37</span></span></code></pre></div>
+<p>注意，这里使用argmax并不是很高效，因为它无论如何都会对数组进行完全扫描。在本例中，只要发现了一个True，那我们就知道它是个最大值了。</p>
+<h2 id="一次模拟多个随机漫步">一次模拟多个随机漫步</h2>
+<p>如果你希望模拟多个随机漫步过程（比如5000个），只需对上面的代码做一点点修改即可生成所有的随机漫步过程。只要给numpy.random的函数传入一个二元元组就可以产生一个二维数组，然后我们就可以一次性计算5000个随机漫步过程（一行一个）的累计和了：</p>
+<div class="sourceCode" id="cb101"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb101-1"><a href="#cb101-1"></a>In [<span class="dv">258</span>]: nwalks <span class="op">=</span> <span class="dv">5000</span></span>
+<span id="cb101-2"><a href="#cb101-2"></a></span>
+<span id="cb101-3"><a href="#cb101-3"></a>In [<span class="dv">259</span>]: nsteps <span class="op">=</span> <span class="dv">1000</span></span>
+<span id="cb101-4"><a href="#cb101-4"></a></span>
+<span id="cb101-5"><a href="#cb101-5"></a>In [<span class="dv">260</span>]: draws <span class="op">=</span> np.random.randint(<span class="dv">0</span>, <span class="dv">2</span>, size<span class="op">=</span>(nwalks, nsteps)) <span class="co"># 0 or 1</span></span>
+<span id="cb101-6"><a href="#cb101-6"></a></span>
+<span id="cb101-7"><a href="#cb101-7"></a>In [<span class="dv">261</span>]: steps <span class="op">=</span> np.where(draws <span class="op">&gt;</span> <span class="dv">0</span>, <span class="dv">1</span>, <span class="op">-</span><span class="dv">1</span>)</span>
+<span id="cb101-8"><a href="#cb101-8"></a></span>
+<span id="cb101-9"><a href="#cb101-9"></a>In [<span class="dv">262</span>]: walks <span class="op">=</span> steps.cumsum(<span class="dv">1</span>)</span>
+<span id="cb101-10"><a href="#cb101-10"></a></span>
+<span id="cb101-11"><a href="#cb101-11"></a>In [<span class="dv">263</span>]: walks</span>
+<span id="cb101-12"><a href="#cb101-12"></a>Out[<span class="dv">263</span>]: </span>
+<span id="cb101-13"><a href="#cb101-13"></a>array([[  <span class="dv">1</span>,   <span class="dv">0</span>,   <span class="dv">1</span>, ...,   <span class="dv">8</span>,   <span class="dv">7</span>,   <span class="dv">8</span>],</span>
+<span id="cb101-14"><a href="#cb101-14"></a>       [  <span class="dv">1</span>,   <span class="dv">0</span>,  <span class="op">-</span><span class="dv">1</span>, ...,  <span class="dv">34</span>,  <span class="dv">33</span>,  <span class="dv">32</span>],</span>
+<span id="cb101-15"><a href="#cb101-15"></a>       [  <span class="dv">1</span>,   <span class="dv">0</span>,  <span class="op">-</span><span class="dv">1</span>, ...,   <span class="dv">4</span>,   <span class="dv">5</span>,   <span class="dv">4</span>],</span>
+<span id="cb101-16"><a href="#cb101-16"></a>       ..., </span>
+<span id="cb101-17"><a href="#cb101-17"></a>       [  <span class="dv">1</span>,   <span class="dv">2</span>,   <span class="dv">1</span>, ...,  <span class="dv">24</span>,  <span class="dv">25</span>,  <span class="dv">26</span>],</span>
+<span id="cb101-18"><a href="#cb101-18"></a>       [  <span class="dv">1</span>,   <span class="dv">2</span>,   <span class="dv">3</span>, ...,  <span class="dv">14</span>,  <span class="dv">13</span>,  <span class="dv">14</span>],</span>
+<span id="cb101-19"><a href="#cb101-19"></a>       [ <span class="op">-</span><span class="dv">1</span>,  <span class="op">-</span><span class="dv">2</span>,  <span class="op">-</span><span class="dv">3</span>, ..., <span class="op">-</span><span class="dv">24</span>, <span class="op">-</span><span class="dv">23</span>, <span class="op">-</span><span class="dv">22</span>]])</span></code></pre></div>
+<p>现在，我们来计算所有随机漫步过程的最大值和最小值：</p>
+<div class="sourceCode" id="cb102"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb102-1"><a href="#cb102-1"></a>In [<span class="dv">264</span>]: walks.<span class="bu">max</span>()</span>
+<span id="cb102-2"><a href="#cb102-2"></a>Out[<span class="dv">264</span>]: <span class="dv">138</span></span>
+<span id="cb102-3"><a href="#cb102-3"></a></span>
+<span id="cb102-4"><a href="#cb102-4"></a>In [<span class="dv">265</span>]: walks.<span class="bu">min</span>()</span>
+<span id="cb102-5"><a href="#cb102-5"></a>Out[<span class="dv">265</span>]: <span class="op">-</span><span class="dv">133</span></span></code></pre></div>
+<p>得到这些数据之后，我们来计算30或－30的最小穿越时间。这里稍微复杂些，因为不是5000个过程都到达了30。我们可以用any方法来对此进行检查：</p>
+<div class="sourceCode" id="cb103"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb103-1"><a href="#cb103-1"></a>In [<span class="dv">266</span>]: hits30 <span class="op">=</span> (np.<span class="bu">abs</span>(walks) <span class="op">&gt;=</span> <span class="dv">30</span>).<span class="bu">any</span>(<span class="dv">1</span>)</span>
+<span id="cb103-2"><a href="#cb103-2"></a></span>
+<span id="cb103-3"><a href="#cb103-3"></a>In [<span class="dv">267</span>]: hits30</span>
+<span id="cb103-4"><a href="#cb103-4"></a>Out[<span class="dv">267</span>]: array([<span class="va">False</span>,  <span class="va">True</span>, <span class="va">False</span>, ..., <span class="va">False</span>,  <span class="va">True</span>, <span class="va">False</span>], dtype<span class="op">=</span><span class="bu">bool</span>)</span>
+<span id="cb103-5"><a href="#cb103-5"></a></span>
+<span id="cb103-6"><a href="#cb103-6"></a>In [<span class="dv">268</span>]: hits30.<span class="bu">sum</span>() <span class="co"># Number that hit 30 or -30</span></span>
+<span id="cb103-7"><a href="#cb103-7"></a>Out[<span class="dv">268</span>]: <span class="dv">3410</span></span></code></pre></div>
+<p>然后我们利用这个布尔型数组选出那些穿越了30（绝对值）的随机漫步（行），并调用argmax在轴1上获取穿越时间：</p>
+<div class="sourceCode" id="cb104"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb104-1"><a href="#cb104-1"></a>In [<span class="dv">269</span>]: crossing_times <span class="op">=</span> (np.<span class="bu">abs</span>(walks[hits30]) <span class="op">&gt;=</span> <span class="dv">30</span>).argmax(<span class="dv">1</span>)</span>
+<span id="cb104-2"><a href="#cb104-2"></a></span>
+<span id="cb104-3"><a href="#cb104-3"></a>In [<span class="dv">270</span>]: crossing_times.mean()</span>
+<span id="cb104-4"><a href="#cb104-4"></a>Out[<span class="dv">270</span>]: <span class="fl">498.88973607038122</span></span></code></pre></div>
+<p>请尝试用其他分布方式得到漫步数据。只需使用不同的随机数生成函数即可，如normal用于生成指定均值和标准差的正态分布数据：</p>
+<div class="sourceCode" id="cb105"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb105-1"><a href="#cb105-1"></a>In [<span class="dv">271</span>]: steps <span class="op">=</span> np.random.normal(loc<span class="op">=</span><span class="dv">0</span>, scale<span class="op">=</span><span class="fl">0.25</span>,</span>
+<span id="cb105-2"><a href="#cb105-2"></a>   .....:                          size<span class="op">=</span>(nwalks, nsteps))</span></code></pre></div>
+<h1 id="结论">4.8 结论</h1>
+<p>虽然本书剩下的章节大部分是用pandas规整数据，我们还是会用到相似的基于数组的计算。在附录A中，我们会深入挖掘NumPy的特点，进一步学习数组的技巧。</p>

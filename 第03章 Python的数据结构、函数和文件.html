@@ -1,0 +1,1053 @@
+<p>本章讨论Python的内置功能，这些功能本书会用到很多。虽然扩展库，比如pandas和Numpy，使处理大数据集很方便，但它们是和Python的内置数据处理工具一同使用的。</p>
+<p>我们会从Python最基础的数据结构开始：元组、列表、字典和集合。然后会讨论创建你自己的、可重复使用的Python函数。最后，会学习Python的文件对象，以及如何与本地硬盘交互。</p>
+<h1 id="数据结构和序列">3.1 数据结构和序列</h1>
+<p>Python的数据结构简单而强大。通晓它们才能成为熟练的Python程序员。</p>
+<h2 id="元组">元组</h2>
+<p>元组是一个固定长度，不可改变的Python序列对象。创建元组的最简单方式，是用逗号分隔一列值：</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1"></a>In [<span class="dv">1</span>]: tup <span class="op">=</span> <span class="dv">4</span>, <span class="dv">5</span>, <span class="dv">6</span></span>
+<span id="cb1-2"><a href="#cb1-2"></a></span>
+<span id="cb1-3"><a href="#cb1-3"></a>In [<span class="dv">2</span>]: tup</span>
+<span id="cb1-4"><a href="#cb1-4"></a>Out[<span class="dv">2</span>]: (<span class="dv">4</span>, <span class="dv">5</span>, <span class="dv">6</span>)</span></code></pre></div>
+<p>当用复杂的表达式定义元组，最好将值放到圆括号内，如下所示：</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1"></a>In [<span class="dv">3</span>]: nested_tup <span class="op">=</span> (<span class="dv">4</span>, <span class="dv">5</span>, <span class="dv">6</span>), (<span class="dv">7</span>, <span class="dv">8</span>)</span>
+<span id="cb2-2"><a href="#cb2-2"></a></span>
+<span id="cb2-3"><a href="#cb2-3"></a>In [<span class="dv">4</span>]: nested_tup</span>
+<span id="cb2-4"><a href="#cb2-4"></a>Out[<span class="dv">4</span>]: ((<span class="dv">4</span>, <span class="dv">5</span>, <span class="dv">6</span>), (<span class="dv">7</span>, <span class="dv">8</span>))</span></code></pre></div>
+<p>用<code>tuple</code>可以将任意序列或迭代器转换成元组：</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1"></a>In [<span class="dv">5</span>]: <span class="bu">tuple</span>([<span class="dv">4</span>, <span class="dv">0</span>, <span class="dv">2</span>])</span>
+<span id="cb3-2"><a href="#cb3-2"></a>Out[<span class="dv">5</span>]: (<span class="dv">4</span>, <span class="dv">0</span>, <span class="dv">2</span>)</span>
+<span id="cb3-3"><a href="#cb3-3"></a></span>
+<span id="cb3-4"><a href="#cb3-4"></a>In [<span class="dv">6</span>]: tup <span class="op">=</span> <span class="bu">tuple</span>(<span class="st">&#39;string&#39;</span>)</span>
+<span id="cb3-5"><a href="#cb3-5"></a></span>
+<span id="cb3-6"><a href="#cb3-6"></a>In [<span class="dv">7</span>]: tup</span>
+<span id="cb3-7"><a href="#cb3-7"></a>Out[<span class="dv">7</span>]: (<span class="st">&#39;s&#39;</span>, <span class="st">&#39;t&#39;</span>, <span class="st">&#39;r&#39;</span>, <span class="st">&#39;i&#39;</span>, <span class="st">&#39;n&#39;</span>, <span class="st">&#39;g&#39;</span>)</span></code></pre></div>
+<p>可以用方括号访问元组中的元素。和C、C++、JAVA等语言一样，序列是从0开始的：</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1"></a>In [<span class="dv">8</span>]: tup[<span class="dv">0</span>]</span>
+<span id="cb4-2"><a href="#cb4-2"></a>Out[<span class="dv">8</span>]: <span class="st">&#39;s&#39;</span></span></code></pre></div>
+<p>元组中存储的对象可能是可变对象。一旦创建了元组，元组中的对象就不能修改了：</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1"></a>In [<span class="dv">9</span>]: tup <span class="op">=</span> <span class="bu">tuple</span>([<span class="st">&#39;foo&#39;</span>, [<span class="dv">1</span>, <span class="dv">2</span>], <span class="va">True</span>])</span>
+<span id="cb5-2"><a href="#cb5-2"></a></span>
+<span id="cb5-3"><a href="#cb5-3"></a>In [<span class="dv">10</span>]: tup[<span class="dv">2</span>] <span class="op">=</span> <span class="va">False</span></span>
+<span id="cb5-4"><a href="#cb5-4"></a><span class="op">---------------------------------------------------------------------------</span></span>
+<span id="cb5-5"><a href="#cb5-5"></a><span class="pp">TypeError</span>                                 Traceback (most recent call last)</span>
+<span id="cb5-6"><a href="#cb5-6"></a><span class="op">&lt;</span>ipython<span class="op">-</span><span class="bu">input</span><span class="op">-</span><span class="dv">10</span><span class="op">-</span>c7308343b841<span class="op">&gt;</span> <span class="kw">in</span> <span class="op">&lt;</span>module<span class="op">&gt;</span>()</span>
+<span id="cb5-7"><a href="#cb5-7"></a><span class="op">----&gt;</span> <span class="dv">1</span> tup[<span class="dv">2</span>] <span class="op">=</span> <span class="va">False</span></span>
+<span id="cb5-8"><a href="#cb5-8"></a><span class="pp">TypeError</span>: <span class="st">&#39;tuple&#39;</span> <span class="bu">object</span> does <span class="kw">not</span> support item assignment</span></code></pre></div>
+<p>如果元组中的某个对象是可变的，比如列表，可以在原位进行修改：</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1"></a>In [<span class="dv">11</span>]: tup[<span class="dv">1</span>].append(<span class="dv">3</span>)</span>
+<span id="cb6-2"><a href="#cb6-2"></a></span>
+<span id="cb6-3"><a href="#cb6-3"></a>In [<span class="dv">12</span>]: tup</span>
+<span id="cb6-4"><a href="#cb6-4"></a>Out[<span class="dv">12</span>]: (<span class="st">&#39;foo&#39;</span>, [<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>], <span class="va">True</span>)</span></code></pre></div>
+<p>可以用加号运算符将元组串联起来：</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1"></a>In [<span class="dv">13</span>]: (<span class="dv">4</span>, <span class="va">None</span>, <span class="st">&#39;foo&#39;</span>) <span class="op">+</span> (<span class="dv">6</span>, <span class="dv">0</span>) <span class="op">+</span> (<span class="st">&#39;bar&#39;</span>,)</span>
+<span id="cb7-2"><a href="#cb7-2"></a>Out[<span class="dv">13</span>]: (<span class="dv">4</span>, <span class="va">None</span>, <span class="st">&#39;foo&#39;</span>, <span class="dv">6</span>, <span class="dv">0</span>, <span class="st">&#39;bar&#39;</span>)</span></code></pre></div>
+<p>元组乘以一个整数，像列表一样，会将几个元组的复制串联起来：</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1"></a>In [<span class="dv">14</span>]: (<span class="st">&#39;foo&#39;</span>, <span class="st">&#39;bar&#39;</span>) <span class="op">*</span> <span class="dv">4</span></span>
+<span id="cb8-2"><a href="#cb8-2"></a>Out[<span class="dv">14</span>]: (<span class="st">&#39;foo&#39;</span>, <span class="st">&#39;bar&#39;</span>, <span class="st">&#39;foo&#39;</span>, <span class="st">&#39;bar&#39;</span>, <span class="st">&#39;foo&#39;</span>, <span class="st">&#39;bar&#39;</span>, <span class="st">&#39;foo&#39;</span>, <span class="st">&#39;bar&#39;</span>)</span></code></pre></div>
+<p>对象本身并没有被复制，只是引用了它。</p>
+<h2 id="拆分元组">拆分元组</h2>
+<p>如果你想将元组赋值给类似元组的变量，Python会试图拆分等号右边的值：</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1"></a>In [<span class="dv">15</span>]: tup <span class="op">=</span> (<span class="dv">4</span>, <span class="dv">5</span>, <span class="dv">6</span>)</span>
+<span id="cb9-2"><a href="#cb9-2"></a></span>
+<span id="cb9-3"><a href="#cb9-3"></a>In [<span class="dv">16</span>]: a, b, c <span class="op">=</span> tup</span>
+<span id="cb9-4"><a href="#cb9-4"></a></span>
+<span id="cb9-5"><a href="#cb9-5"></a>In [<span class="dv">17</span>]: b</span>
+<span id="cb9-6"><a href="#cb9-6"></a>Out[<span class="dv">17</span>]: <span class="dv">5</span></span></code></pre></div>
+<p>即使含有元组的元组也会被拆分：</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1"></a>In [<span class="dv">18</span>]: tup <span class="op">=</span> <span class="dv">4</span>, <span class="dv">5</span>, (<span class="dv">6</span>, <span class="dv">7</span>)</span>
+<span id="cb10-2"><a href="#cb10-2"></a></span>
+<span id="cb10-3"><a href="#cb10-3"></a>In [<span class="dv">19</span>]: a, b, (c, d) <span class="op">=</span> tup</span>
+<span id="cb10-4"><a href="#cb10-4"></a></span>
+<span id="cb10-5"><a href="#cb10-5"></a>In [<span class="dv">20</span>]: d</span>
+<span id="cb10-6"><a href="#cb10-6"></a>Out[<span class="dv">20</span>]: <span class="dv">7</span></span></code></pre></div>
+<p>使用这个功能，你可以很容易地替换变量的名字，其它语言可能是这样：</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1"></a>tmp <span class="op">=</span> a</span>
+<span id="cb11-2"><a href="#cb11-2"></a>a <span class="op">=</span> b</span>
+<span id="cb11-3"><a href="#cb11-3"></a>b <span class="op">=</span> tmp</span></code></pre></div>
+<p>但是在Python中，替换可以这样做：</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1"></a>In [<span class="dv">21</span>]: a, b <span class="op">=</span> <span class="dv">1</span>, <span class="dv">2</span></span>
+<span id="cb12-2"><a href="#cb12-2"></a></span>
+<span id="cb12-3"><a href="#cb12-3"></a>In [<span class="dv">22</span>]: a</span>
+<span id="cb12-4"><a href="#cb12-4"></a>Out[<span class="dv">22</span>]: <span class="dv">1</span></span>
+<span id="cb12-5"><a href="#cb12-5"></a></span>
+<span id="cb12-6"><a href="#cb12-6"></a>In [<span class="dv">23</span>]: b</span>
+<span id="cb12-7"><a href="#cb12-7"></a>Out[<span class="dv">23</span>]: <span class="dv">2</span></span>
+<span id="cb12-8"><a href="#cb12-8"></a></span>
+<span id="cb12-9"><a href="#cb12-9"></a>In [<span class="dv">24</span>]: b, a <span class="op">=</span> a, b</span>
+<span id="cb12-10"><a href="#cb12-10"></a></span>
+<span id="cb12-11"><a href="#cb12-11"></a>In [<span class="dv">25</span>]: a</span>
+<span id="cb12-12"><a href="#cb12-12"></a>Out[<span class="dv">25</span>]: <span class="dv">2</span></span>
+<span id="cb12-13"><a href="#cb12-13"></a></span>
+<span id="cb12-14"><a href="#cb12-14"></a>In [<span class="dv">26</span>]: b</span>
+<span id="cb12-15"><a href="#cb12-15"></a>Out[<span class="dv">26</span>]: <span class="dv">1</span></span></code></pre></div>
+<p>变量拆分常用来迭代元组或列表序列：</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1"></a>In [<span class="dv">27</span>]: seq <span class="op">=</span> [(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>), (<span class="dv">4</span>, <span class="dv">5</span>, <span class="dv">6</span>), (<span class="dv">7</span>, <span class="dv">8</span>, <span class="dv">9</span>)]</span>
+<span id="cb13-2"><a href="#cb13-2"></a></span>
+<span id="cb13-3"><a href="#cb13-3"></a>In [<span class="dv">28</span>]: <span class="cf">for</span> a, b, c <span class="kw">in</span> seq:</span>
+<span id="cb13-4"><a href="#cb13-4"></a>   ....:     <span class="bu">print</span>(<span class="st">&#39;a=</span><span class="sc">{0}</span><span class="st">, b=</span><span class="sc">{1}</span><span class="st">, c=</span><span class="sc">{2}</span><span class="st">&#39;</span>.<span class="bu">format</span>(a, b, c))</span>
+<span id="cb13-5"><a href="#cb13-5"></a>a<span class="op">=</span><span class="dv">1</span>, b<span class="op">=</span><span class="dv">2</span>, c<span class="op">=</span><span class="dv">3</span></span>
+<span id="cb13-6"><a href="#cb13-6"></a>a<span class="op">=</span><span class="dv">4</span>, b<span class="op">=</span><span class="dv">5</span>, c<span class="op">=</span><span class="dv">6</span></span>
+<span id="cb13-7"><a href="#cb13-7"></a>a<span class="op">=</span><span class="dv">7</span>, b<span class="op">=</span><span class="dv">8</span>, c<span class="op">=</span><span class="dv">9</span></span></code></pre></div>
+<p>另一个常见用法是从函数返回多个值。后面会详解。</p>
+<p>Python最近新增了更多高级的元组拆分功能，允许从元组的开头“摘取”几个元素。它使用了特殊的语法<code>*rest</code>，这也用在函数签名中以抓取任意长度列表的位置参数：</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1"></a>In [<span class="dv">29</span>]: values <span class="op">=</span> <span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">5</span></span>
+<span id="cb14-2"><a href="#cb14-2"></a></span>
+<span id="cb14-3"><a href="#cb14-3"></a>In [<span class="dv">30</span>]: a, b, <span class="op">*</span>rest <span class="op">=</span> values</span>
+<span id="cb14-4"><a href="#cb14-4"></a></span>
+<span id="cb14-5"><a href="#cb14-5"></a>In [<span class="dv">31</span>]: a, b</span>
+<span id="cb14-6"><a href="#cb14-6"></a>Out[<span class="dv">31</span>]: (<span class="dv">1</span>, <span class="dv">2</span>)</span>
+<span id="cb14-7"><a href="#cb14-7"></a></span>
+<span id="cb14-8"><a href="#cb14-8"></a>In [<span class="dv">32</span>]: rest</span>
+<span id="cb14-9"><a href="#cb14-9"></a>Out[<span class="dv">32</span>]: [<span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">5</span>]</span></code></pre></div>
+<p><code>rest</code>的部分是想要舍弃的部分，rest的名字不重要。作为惯用写法，许多Python程序员会将不需要的变量使用下划线：</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1"></a>In [<span class="dv">33</span>]: a, b, <span class="op">*</span>_ <span class="op">=</span> values</span></code></pre></div>
+<h2 id="tuple方法">tuple方法</h2>
+<p>因为元组的大小和内容不能修改，它的实例方法都很轻量。其中一个很有用的就是<code>count</code>（也适用于列表），它可以统计某个值得出现频率：</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1"></a>In [<span class="dv">34</span>]: a <span class="op">=</span> (<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">2</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">2</span>)</span>
+<span id="cb16-2"><a href="#cb16-2"></a></span>
+<span id="cb16-3"><a href="#cb16-3"></a>In [<span class="dv">35</span>]: a.count(<span class="dv">2</span>)</span>
+<span id="cb16-4"><a href="#cb16-4"></a>Out[<span class="dv">35</span>]: <span class="dv">4</span></span></code></pre></div>
+<h2 id="列表">列表</h2>
+<p>与元组对比，列表的长度可变、内容可以被修改。你可以用方括号定义，或用<code>list</code>函数：</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1"></a>In [<span class="dv">36</span>]: a_list <span class="op">=</span> [<span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">7</span>, <span class="va">None</span>]</span>
+<span id="cb17-2"><a href="#cb17-2"></a></span>
+<span id="cb17-3"><a href="#cb17-3"></a>In [<span class="dv">37</span>]: tup <span class="op">=</span> (<span class="st">&#39;foo&#39;</span>, <span class="st">&#39;bar&#39;</span>, <span class="st">&#39;baz&#39;</span>)</span>
+<span id="cb17-4"><a href="#cb17-4"></a></span>
+<span id="cb17-5"><a href="#cb17-5"></a>In [<span class="dv">38</span>]: b_list <span class="op">=</span> <span class="bu">list</span>(tup)</span>
+<span id="cb17-6"><a href="#cb17-6"></a></span>
+<span id="cb17-7"><a href="#cb17-7"></a>In [<span class="dv">39</span>]: b_list</span>
+<span id="cb17-8"><a href="#cb17-8"></a>Out[<span class="dv">39</span>]: [<span class="st">&#39;foo&#39;</span>, <span class="st">&#39;bar&#39;</span>, <span class="st">&#39;baz&#39;</span>]</span>
+<span id="cb17-9"><a href="#cb17-9"></a></span>
+<span id="cb17-10"><a href="#cb17-10"></a>In [<span class="dv">40</span>]: b_list[<span class="dv">1</span>] <span class="op">=</span> <span class="st">&#39;peekaboo&#39;</span></span>
+<span id="cb17-11"><a href="#cb17-11"></a></span>
+<span id="cb17-12"><a href="#cb17-12"></a>In [<span class="dv">41</span>]: b_list</span>
+<span id="cb17-13"><a href="#cb17-13"></a>Out[<span class="dv">41</span>]: [<span class="st">&#39;foo&#39;</span>, <span class="st">&#39;peekaboo&#39;</span>, <span class="st">&#39;baz&#39;</span>]</span></code></pre></div>
+<p>列表和元组的语义接近，在许多函数中可以交叉使用。</p>
+<p><code>list</code>函数常用来在数据处理中实体化迭代器或生成器：</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1"></a>In [<span class="dv">42</span>]: gen <span class="op">=</span> <span class="bu">range</span>(<span class="dv">10</span>)</span>
+<span id="cb18-2"><a href="#cb18-2"></a></span>
+<span id="cb18-3"><a href="#cb18-3"></a>In [<span class="dv">43</span>]: gen</span>
+<span id="cb18-4"><a href="#cb18-4"></a>Out[<span class="dv">43</span>]: <span class="bu">range</span>(<span class="dv">0</span>, <span class="dv">10</span>)</span>
+<span id="cb18-5"><a href="#cb18-5"></a></span>
+<span id="cb18-6"><a href="#cb18-6"></a>In [<span class="dv">44</span>]: <span class="bu">list</span>(gen)</span>
+<span id="cb18-7"><a href="#cb18-7"></a>Out[<span class="dv">44</span>]: [<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">5</span>, <span class="dv">6</span>, <span class="dv">7</span>, <span class="dv">8</span>, <span class="dv">9</span>]</span></code></pre></div>
+<h2 id="添加和删除元素">添加和删除元素</h2>
+<p>可以用<code>append</code>在列表末尾添加元素：</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1"></a>In [<span class="dv">45</span>]: b_list.append(<span class="st">&#39;dwarf&#39;</span>)</span>
+<span id="cb19-2"><a href="#cb19-2"></a></span>
+<span id="cb19-3"><a href="#cb19-3"></a>In [<span class="dv">46</span>]: b_list</span>
+<span id="cb19-4"><a href="#cb19-4"></a>Out[<span class="dv">46</span>]: [<span class="st">&#39;foo&#39;</span>, <span class="st">&#39;peekaboo&#39;</span>, <span class="st">&#39;baz&#39;</span>, <span class="st">&#39;dwarf&#39;</span>]</span></code></pre></div>
+<p><code>insert</code>可以在特定的位置插入元素：</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1"></a>In [<span class="dv">47</span>]: b_list.insert(<span class="dv">1</span>, <span class="st">&#39;red&#39;</span>)</span>
+<span id="cb20-2"><a href="#cb20-2"></a></span>
+<span id="cb20-3"><a href="#cb20-3"></a>In [<span class="dv">48</span>]: b_list</span>
+<span id="cb20-4"><a href="#cb20-4"></a>Out[<span class="dv">48</span>]: [<span class="st">&#39;foo&#39;</span>, <span class="st">&#39;red&#39;</span>, <span class="st">&#39;peekaboo&#39;</span>, <span class="st">&#39;baz&#39;</span>, <span class="st">&#39;dwarf&#39;</span>]</span></code></pre></div>
+<p>插入的序号必须在0和列表长度之间。</p>
+<blockquote>
+<p>警告：与<code>append</code>相比，<code>insert</code>耗费的计算量大，因为对后续元素的引用必须在内部迁移，以便为新元素提供空间。如果要在序列的头部和尾部插入元素，你可能需要使用<code>collections.deque</code>，一个双尾部队列。</p>
+</blockquote>
+<p>insert的逆运算是pop，它移除并返回指定位置的元素：</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1"></a>In [<span class="dv">49</span>]: b_list.pop(<span class="dv">2</span>)</span>
+<span id="cb21-2"><a href="#cb21-2"></a>Out[<span class="dv">49</span>]: <span class="st">&#39;peekaboo&#39;</span></span>
+<span id="cb21-3"><a href="#cb21-3"></a></span>
+<span id="cb21-4"><a href="#cb21-4"></a>In [<span class="dv">50</span>]: b_list</span>
+<span id="cb21-5"><a href="#cb21-5"></a>Out[<span class="dv">50</span>]: [<span class="st">&#39;foo&#39;</span>, <span class="st">&#39;red&#39;</span>, <span class="st">&#39;baz&#39;</span>, <span class="st">&#39;dwarf&#39;</span>]</span></code></pre></div>
+<p>可以用<code>remove</code>去除某个值，<code>remove</code>会先寻找第一个值并除去：</p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1"></a>In [<span class="dv">51</span>]: b_list.append(<span class="st">&#39;foo&#39;</span>)</span>
+<span id="cb22-2"><a href="#cb22-2"></a></span>
+<span id="cb22-3"><a href="#cb22-3"></a>In [<span class="dv">52</span>]: b_list</span>
+<span id="cb22-4"><a href="#cb22-4"></a>Out[<span class="dv">52</span>]: [<span class="st">&#39;foo&#39;</span>, <span class="st">&#39;red&#39;</span>, <span class="st">&#39;baz&#39;</span>, <span class="st">&#39;dwarf&#39;</span>, <span class="st">&#39;foo&#39;</span>]</span>
+<span id="cb22-5"><a href="#cb22-5"></a></span>
+<span id="cb22-6"><a href="#cb22-6"></a>In [<span class="dv">53</span>]: b_list.remove(<span class="st">&#39;foo&#39;</span>)</span>
+<span id="cb22-7"><a href="#cb22-7"></a></span>
+<span id="cb22-8"><a href="#cb22-8"></a>In [<span class="dv">54</span>]: b_list</span>
+<span id="cb22-9"><a href="#cb22-9"></a>Out[<span class="dv">54</span>]: [<span class="st">&#39;red&#39;</span>, <span class="st">&#39;baz&#39;</span>, <span class="st">&#39;dwarf&#39;</span>, <span class="st">&#39;foo&#39;</span>]</span></code></pre></div>
+<p>如果不考虑性能，使用<code>append</code>和<code>remove</code>，可以把Python的列表当做完美的“多重集”数据结构。</p>
+<p>用<code>in</code>可以检查列表是否包含某个值：</p>
+<div class="sourceCode" id="cb23"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1"></a>In [<span class="dv">55</span>]: <span class="st">&#39;dwarf&#39;</span> <span class="kw">in</span> b_list</span>
+<span id="cb23-2"><a href="#cb23-2"></a>Out[<span class="dv">55</span>]: <span class="va">True</span></span></code></pre></div>
+<p>否定<code>in</code>可以再加一个not：</p>
+<div class="sourceCode" id="cb24"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1"></a>In [<span class="dv">56</span>]: <span class="st">&#39;dwarf&#39;</span> <span class="kw">not</span> <span class="kw">in</span> b_list</span>
+<span id="cb24-2"><a href="#cb24-2"></a>Out[<span class="dv">56</span>]: <span class="va">False</span></span></code></pre></div>
+<p>在列表中检查是否存在某个值远比字典和集合速度慢，因为Python是线性搜索列表中的值，但在字典和集合中，在同样的时间内还可以检查其它项（基于哈希表）。</p>
+<h2 id="串联和组合列表">串联和组合列表</h2>
+<p>与元组类似，可以用加号将两个列表串联起来：</p>
+<div class="sourceCode" id="cb25"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1"></a>In [<span class="dv">57</span>]: [<span class="dv">4</span>, <span class="va">None</span>, <span class="st">&#39;foo&#39;</span>] <span class="op">+</span> [<span class="dv">7</span>, <span class="dv">8</span>, (<span class="dv">2</span>, <span class="dv">3</span>)]</span>
+<span id="cb25-2"><a href="#cb25-2"></a>Out[<span class="dv">57</span>]: [<span class="dv">4</span>, <span class="va">None</span>, <span class="st">&#39;foo&#39;</span>, <span class="dv">7</span>, <span class="dv">8</span>, (<span class="dv">2</span>, <span class="dv">3</span>)]</span></code></pre></div>
+<p>如果已经定义了一个列表，用<code>extend</code>方法可以追加多个元素：</p>
+<div class="sourceCode" id="cb26"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1"></a>In [<span class="dv">58</span>]: x <span class="op">=</span> [<span class="dv">4</span>, <span class="va">None</span>, <span class="st">&#39;foo&#39;</span>]</span>
+<span id="cb26-2"><a href="#cb26-2"></a></span>
+<span id="cb26-3"><a href="#cb26-3"></a>In [<span class="dv">59</span>]: x.extend([<span class="dv">7</span>, <span class="dv">8</span>, (<span class="dv">2</span>, <span class="dv">3</span>)])</span>
+<span id="cb26-4"><a href="#cb26-4"></a></span>
+<span id="cb26-5"><a href="#cb26-5"></a>In [<span class="dv">60</span>]: x</span>
+<span id="cb26-6"><a href="#cb26-6"></a>Out[<span class="dv">60</span>]: [<span class="dv">4</span>, <span class="va">None</span>, <span class="st">&#39;foo&#39;</span>, <span class="dv">7</span>, <span class="dv">8</span>, (<span class="dv">2</span>, <span class="dv">3</span>)]</span></code></pre></div>
+<p>通过加法将列表串联的计算量较大，因为要新建一个列表，并且要复制对象。用<code>extend</code>追加元素，尤其是到一个大列表中，更为可取。因此：</p>
+<div class="sourceCode" id="cb27"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1"></a>everything <span class="op">=</span> []</span>
+<span id="cb27-2"><a href="#cb27-2"></a><span class="cf">for</span> chunk <span class="kw">in</span> list_of_lists:</span>
+<span id="cb27-3"><a href="#cb27-3"></a>    everything.extend(chunk)</span></code></pre></div>
+<p>要比串联方法快：</p>
+<div class="sourceCode" id="cb28"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1"></a>everything <span class="op">=</span> []</span>
+<span id="cb28-2"><a href="#cb28-2"></a><span class="cf">for</span> chunk <span class="kw">in</span> list_of_lists:</span>
+<span id="cb28-3"><a href="#cb28-3"></a>    everything <span class="op">=</span> everything <span class="op">+</span> chunk</span></code></pre></div>
+<h2 id="排序">排序</h2>
+<p>你可以用<code>sort</code>函数将一个列表原地排序（不创建新的对象）：</p>
+<div class="sourceCode" id="cb29"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1"></a>In [<span class="dv">61</span>]: a <span class="op">=</span> [<span class="dv">7</span>, <span class="dv">2</span>, <span class="dv">5</span>, <span class="dv">1</span>, <span class="dv">3</span>]</span>
+<span id="cb29-2"><a href="#cb29-2"></a></span>
+<span id="cb29-3"><a href="#cb29-3"></a>In [<span class="dv">62</span>]: a.sort()</span>
+<span id="cb29-4"><a href="#cb29-4"></a></span>
+<span id="cb29-5"><a href="#cb29-5"></a>In [<span class="dv">63</span>]: a</span>
+<span id="cb29-6"><a href="#cb29-6"></a>Out[<span class="dv">63</span>]: [<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">5</span>, <span class="dv">7</span>]</span></code></pre></div>
+<p><code>sort</code>有一些选项，有时会很好用。其中之一是二级排序key，可以用这个key进行排序。例如，我们可以按长度对字符串进行排序：</p>
+<div class="sourceCode" id="cb30"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1"></a>In [<span class="dv">64</span>]: b <span class="op">=</span> [<span class="st">&#39;saw&#39;</span>, <span class="st">&#39;small&#39;</span>, <span class="st">&#39;He&#39;</span>, <span class="st">&#39;foxes&#39;</span>, <span class="st">&#39;six&#39;</span>]</span>
+<span id="cb30-2"><a href="#cb30-2"></a></span>
+<span id="cb30-3"><a href="#cb30-3"></a>In [<span class="dv">65</span>]: b.sort(key<span class="op">=</span><span class="bu">len</span>)</span>
+<span id="cb30-4"><a href="#cb30-4"></a></span>
+<span id="cb30-5"><a href="#cb30-5"></a>In [<span class="dv">66</span>]: b</span>
+<span id="cb30-6"><a href="#cb30-6"></a>Out[<span class="dv">66</span>]: [<span class="st">&#39;He&#39;</span>, <span class="st">&#39;saw&#39;</span>, <span class="st">&#39;six&#39;</span>, <span class="st">&#39;small&#39;</span>, <span class="st">&#39;foxes&#39;</span>]</span></code></pre></div>
+<p>稍后，我们会学习<code>sorted</code>函数，它可以产生一个排好序的序列副本。</p>
+<h2 id="二分搜索和维护已排序的列表">二分搜索和维护已排序的列表</h2>
+<p><code>bisect</code>模块支持二分查找，和向已排序的列表插入值。<code>bisect.bisect</code>可以找到插入值后仍保证排序的位置，<code>bisect.insort</code>是向这个位置插入值：</p>
+<div class="sourceCode" id="cb31"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb31-1"><a href="#cb31-1"></a>In [<span class="dv">67</span>]: <span class="im">import</span> bisect</span>
+<span id="cb31-2"><a href="#cb31-2"></a></span>
+<span id="cb31-3"><a href="#cb31-3"></a>In [<span class="dv">68</span>]: c <span class="op">=</span> [<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">2</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">7</span>]</span>
+<span id="cb31-4"><a href="#cb31-4"></a></span>
+<span id="cb31-5"><a href="#cb31-5"></a>In [<span class="dv">69</span>]: bisect.bisect(c, <span class="dv">2</span>)</span>
+<span id="cb31-6"><a href="#cb31-6"></a>Out[<span class="dv">69</span>]: <span class="dv">4</span></span>
+<span id="cb31-7"><a href="#cb31-7"></a></span>
+<span id="cb31-8"><a href="#cb31-8"></a>In [<span class="dv">70</span>]: bisect.bisect(c, <span class="dv">5</span>)</span>
+<span id="cb31-9"><a href="#cb31-9"></a>Out[<span class="dv">70</span>]: <span class="dv">6</span></span>
+<span id="cb31-10"><a href="#cb31-10"></a></span>
+<span id="cb31-11"><a href="#cb31-11"></a>In [<span class="dv">71</span>]: bisect.insort(c, <span class="dv">6</span>)</span>
+<span id="cb31-12"><a href="#cb31-12"></a></span>
+<span id="cb31-13"><a href="#cb31-13"></a>In [<span class="dv">72</span>]: c</span>
+<span id="cb31-14"><a href="#cb31-14"></a>Out[<span class="dv">72</span>]: [<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">2</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">6</span>, <span class="dv">7</span>]</span></code></pre></div>
+<blockquote>
+<p>注意：<code>bisect</code>模块不会检查列表是否已排好序，进行检查的话会耗费大量计算。因此，对未排序的列表使用<code>bisect</code>不会产生错误，但结果不一定正确。</p>
+</blockquote>
+<h2 id="切片">切片</h2>
+<p>用切边可以选取大多数序列类型的一部分，切片的基本形式是在方括号中使用<code>start:stop</code>：</p>
+<div class="sourceCode" id="cb32"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb32-1"><a href="#cb32-1"></a>In [<span class="dv">73</span>]: seq <span class="op">=</span> [<span class="dv">7</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">7</span>, <span class="dv">5</span>, <span class="dv">6</span>, <span class="dv">0</span>, <span class="dv">1</span>]</span>
+<span id="cb32-2"><a href="#cb32-2"></a></span>
+<span id="cb32-3"><a href="#cb32-3"></a>In [<span class="dv">74</span>]: seq[<span class="dv">1</span>:<span class="dv">5</span>]</span>
+<span id="cb32-4"><a href="#cb32-4"></a>Out[<span class="dv">74</span>]: [<span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">7</span>, <span class="dv">5</span>]</span></code></pre></div>
+<p>切片也可以被序列赋值：</p>
+<div class="sourceCode" id="cb33"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb33-1"><a href="#cb33-1"></a>In [<span class="dv">75</span>]: seq[<span class="dv">3</span>:<span class="dv">4</span>] <span class="op">=</span> [<span class="dv">6</span>, <span class="dv">3</span>]</span>
+<span id="cb33-2"><a href="#cb33-2"></a></span>
+<span id="cb33-3"><a href="#cb33-3"></a>In [<span class="dv">76</span>]: seq</span>
+<span id="cb33-4"><a href="#cb33-4"></a>Out[<span class="dv">76</span>]: [<span class="dv">7</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">6</span>, <span class="dv">3</span>, <span class="dv">5</span>, <span class="dv">6</span>, <span class="dv">0</span>, <span class="dv">1</span>]</span></code></pre></div>
+<p>切片的起始元素是包括的，不包含结束元素。因此，结果中包含的元素个数是<code>stop - start</code>。</p>
+<p><code>start</code>或<code>stop</code>都可以被省略，省略之后，分别默认序列的开头和结尾：</p>
+<div class="sourceCode" id="cb34"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb34-1"><a href="#cb34-1"></a>In [<span class="dv">77</span>]: seq[:<span class="dv">5</span>]</span>
+<span id="cb34-2"><a href="#cb34-2"></a>Out[<span class="dv">77</span>]: [<span class="dv">7</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">6</span>, <span class="dv">3</span>]</span>
+<span id="cb34-3"><a href="#cb34-3"></a></span>
+<span id="cb34-4"><a href="#cb34-4"></a>In [<span class="dv">78</span>]: seq[<span class="dv">3</span>:]</span>
+<span id="cb34-5"><a href="#cb34-5"></a>Out[<span class="dv">78</span>]: [<span class="dv">6</span>, <span class="dv">3</span>, <span class="dv">5</span>, <span class="dv">6</span>, <span class="dv">0</span>, <span class="dv">1</span>]</span></code></pre></div>
+<p>负数表明从后向前切片：</p>
+<div class="sourceCode" id="cb35"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb35-1"><a href="#cb35-1"></a>In [<span class="dv">79</span>]: seq[<span class="op">-</span><span class="dv">4</span>:]</span>
+<span id="cb35-2"><a href="#cb35-2"></a>Out[<span class="dv">79</span>]: [<span class="dv">5</span>, <span class="dv">6</span>, <span class="dv">0</span>, <span class="dv">1</span>]</span>
+<span id="cb35-3"><a href="#cb35-3"></a></span>
+<span id="cb35-4"><a href="#cb35-4"></a>In [<span class="dv">80</span>]: seq[<span class="op">-</span><span class="dv">6</span>:<span class="op">-</span><span class="dv">2</span>]</span>
+<span id="cb35-5"><a href="#cb35-5"></a>Out[<span class="dv">80</span>]: [<span class="dv">6</span>, <span class="dv">3</span>, <span class="dv">5</span>, <span class="dv">6</span>]</span></code></pre></div>
+<p>需要一段时间来熟悉使用切片，尤其是当你之前学的是R或MATLAB。图3-1展示了正整数和负整数的切片。在图中，指数标示在边缘以表明切片是在哪里开始哪里结束的。</p>
+<figure>
+<img src="http://upload-images.jianshu.io/upload_images/7178691-522e2b688b755ff3.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="" /><figcaption>图3-1 Python切片演示</figcaption>
+</figure>
+<p>在第二个冒号后面使用<code>step</code>，可以隔一个取一个元素：</p>
+<div class="sourceCode" id="cb36"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb36-1"><a href="#cb36-1"></a>In [<span class="dv">81</span>]: seq[::<span class="dv">2</span>]</span>
+<span id="cb36-2"><a href="#cb36-2"></a>Out[<span class="dv">81</span>]: [<span class="dv">7</span>, <span class="dv">3</span>, <span class="dv">3</span>, <span class="dv">6</span>, <span class="dv">1</span>]</span></code></pre></div>
+<p>一个聪明的方法是使用<code>-1</code>，它可以将列表或元组颠倒过来：</p>
+<div class="sourceCode" id="cb37"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb37-1"><a href="#cb37-1"></a>In [<span class="dv">82</span>]: seq[::<span class="op">-</span><span class="dv">1</span>]</span>
+<span id="cb37-2"><a href="#cb37-2"></a>Out[<span class="dv">82</span>]: [<span class="dv">1</span>, <span class="dv">0</span>, <span class="dv">6</span>, <span class="dv">5</span>, <span class="dv">3</span>, <span class="dv">6</span>, <span class="dv">3</span>, <span class="dv">2</span>, <span class="dv">7</span>]</span></code></pre></div>
+<h2 id="序列函数">序列函数</h2>
+<p>Python有一些有用的序列函数。</p>
+<h2 id="enumerate函数">enumerate函数</h2>
+<p>迭代一个序列时，你可能想跟踪当前项的序号。手动的方法可能是下面这样：</p>
+<div class="sourceCode" id="cb38"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb38-1"><a href="#cb38-1"></a>i <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb38-2"><a href="#cb38-2"></a><span class="cf">for</span> value <span class="kw">in</span> collection:</span>
+<span id="cb38-3"><a href="#cb38-3"></a>   <span class="co"># do something with value</span></span>
+<span id="cb38-4"><a href="#cb38-4"></a>   i <span class="op">+=</span> <span class="dv">1</span></span></code></pre></div>
+<p>因为这么做很常见，Python内建了一个<code>enumerate</code>函数，可以返回<code>(i, value)</code>元组序列：</p>
+<div class="sourceCode" id="cb39"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb39-1"><a href="#cb39-1"></a><span class="cf">for</span> i, value <span class="kw">in</span> <span class="bu">enumerate</span>(collection):</span>
+<span id="cb39-2"><a href="#cb39-2"></a>   <span class="co"># do something with value</span></span></code></pre></div>
+<p>当你索引数据时，使用<code>enumerate</code>的一个好方法是计算序列（唯一的）<code>dict</code>映射到位置的值：</p>
+<div class="sourceCode" id="cb40"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb40-1"><a href="#cb40-1"></a>In [<span class="dv">83</span>]: some_list <span class="op">=</span> [<span class="st">&#39;foo&#39;</span>, <span class="st">&#39;bar&#39;</span>, <span class="st">&#39;baz&#39;</span>]</span>
+<span id="cb40-2"><a href="#cb40-2"></a></span>
+<span id="cb40-3"><a href="#cb40-3"></a>In [<span class="dv">84</span>]: mapping <span class="op">=</span> {}</span>
+<span id="cb40-4"><a href="#cb40-4"></a></span>
+<span id="cb40-5"><a href="#cb40-5"></a>In [<span class="dv">85</span>]: <span class="cf">for</span> i, v <span class="kw">in</span> <span class="bu">enumerate</span>(some_list):</span>
+<span id="cb40-6"><a href="#cb40-6"></a>   ....:     mapping[v] <span class="op">=</span> i</span>
+<span id="cb40-7"><a href="#cb40-7"></a></span>
+<span id="cb40-8"><a href="#cb40-8"></a>In [<span class="dv">86</span>]: mapping</span>
+<span id="cb40-9"><a href="#cb40-9"></a>Out[<span class="dv">86</span>]: {<span class="st">&#39;bar&#39;</span>: <span class="dv">1</span>, <span class="st">&#39;baz&#39;</span>: <span class="dv">2</span>, <span class="st">&#39;foo&#39;</span>: <span class="dv">0</span>}</span></code></pre></div>
+<h2 id="sorted函数">sorted函数</h2>
+<p><code>sorted</code>函数可以从任意序列的元素返回一个新的排好序的列表：</p>
+<div class="sourceCode" id="cb41"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb41-1"><a href="#cb41-1"></a>In [<span class="dv">87</span>]: <span class="bu">sorted</span>([<span class="dv">7</span>, <span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">6</span>, <span class="dv">0</span>, <span class="dv">3</span>, <span class="dv">2</span>])</span>
+<span id="cb41-2"><a href="#cb41-2"></a>Out[<span class="dv">87</span>]: [<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">6</span>, <span class="dv">7</span>]</span>
+<span id="cb41-3"><a href="#cb41-3"></a></span>
+<span id="cb41-4"><a href="#cb41-4"></a>In [<span class="dv">88</span>]: <span class="bu">sorted</span>(<span class="st">&#39;horse race&#39;</span>)</span>
+<span id="cb41-5"><a href="#cb41-5"></a>Out[<span class="dv">88</span>]: [<span class="st">&#39; &#39;</span>, <span class="st">&#39;a&#39;</span>, <span class="st">&#39;c&#39;</span>, <span class="st">&#39;e&#39;</span>, <span class="st">&#39;e&#39;</span>, <span class="st">&#39;h&#39;</span>, <span class="st">&#39;o&#39;</span>, <span class="st">&#39;r&#39;</span>, <span class="st">&#39;r&#39;</span>, <span class="st">&#39;s&#39;</span>]</span></code></pre></div>
+<p><code>sorted</code>函数可以接受和<code>sort</code>相同的参数。</p>
+<h2 id="zip函数">zip函数</h2>
+<p><code>zip</code>可以将多个列表、元组或其它序列成对组合成一个元组列表：</p>
+<div class="sourceCode" id="cb42"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb42-1"><a href="#cb42-1"></a>In [<span class="dv">89</span>]: seq1 <span class="op">=</span> [<span class="st">&#39;foo&#39;</span>, <span class="st">&#39;bar&#39;</span>, <span class="st">&#39;baz&#39;</span>]</span>
+<span id="cb42-2"><a href="#cb42-2"></a></span>
+<span id="cb42-3"><a href="#cb42-3"></a>In [<span class="dv">90</span>]: seq2 <span class="op">=</span> [<span class="st">&#39;one&#39;</span>, <span class="st">&#39;two&#39;</span>, <span class="st">&#39;three&#39;</span>]</span>
+<span id="cb42-4"><a href="#cb42-4"></a></span>
+<span id="cb42-5"><a href="#cb42-5"></a>In [<span class="dv">91</span>]: zipped <span class="op">=</span> <span class="bu">zip</span>(seq1, seq2)</span>
+<span id="cb42-6"><a href="#cb42-6"></a></span>
+<span id="cb42-7"><a href="#cb42-7"></a>In [<span class="dv">92</span>]: <span class="bu">list</span>(zipped)</span>
+<span id="cb42-8"><a href="#cb42-8"></a>Out[<span class="dv">92</span>]: [(<span class="st">&#39;foo&#39;</span>, <span class="st">&#39;one&#39;</span>), (<span class="st">&#39;bar&#39;</span>, <span class="st">&#39;two&#39;</span>), (<span class="st">&#39;baz&#39;</span>, <span class="st">&#39;three&#39;</span>)]</span></code></pre></div>
+<p><code>zip</code>可以处理任意多的序列，元素的个数取决于最短的序列：</p>
+<div class="sourceCode" id="cb43"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb43-1"><a href="#cb43-1"></a>In [<span class="dv">93</span>]: seq3 <span class="op">=</span> [<span class="va">False</span>, <span class="va">True</span>]</span>
+<span id="cb43-2"><a href="#cb43-2"></a></span>
+<span id="cb43-3"><a href="#cb43-3"></a>In [<span class="dv">94</span>]: <span class="bu">list</span>(<span class="bu">zip</span>(seq1, seq2, seq3))</span>
+<span id="cb43-4"><a href="#cb43-4"></a>Out[<span class="dv">94</span>]: [(<span class="st">&#39;foo&#39;</span>, <span class="st">&#39;one&#39;</span>, <span class="va">False</span>), (<span class="st">&#39;bar&#39;</span>, <span class="st">&#39;two&#39;</span>, <span class="va">True</span>)]</span></code></pre></div>
+<p><code>zip</code>的常见用法之一是同时迭代多个序列，可能结合<code>enumerate</code>使用：</p>
+<div class="sourceCode" id="cb44"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb44-1"><a href="#cb44-1"></a>In [<span class="dv">95</span>]: <span class="cf">for</span> i, (a, b) <span class="kw">in</span> <span class="bu">enumerate</span>(<span class="bu">zip</span>(seq1, seq2)):</span>
+<span id="cb44-2"><a href="#cb44-2"></a>   ....:     <span class="bu">print</span>(<span class="st">&#39;</span><span class="sc">{0}</span><span class="st">: </span><span class="sc">{1}</span><span class="st">, </span><span class="sc">{2}</span><span class="st">&#39;</span>.<span class="bu">format</span>(i, a, b))</span>
+<span id="cb44-3"><a href="#cb44-3"></a>   ....:</span>
+<span id="cb44-4"><a href="#cb44-4"></a><span class="dv">0</span>: foo, one</span>
+<span id="cb44-5"><a href="#cb44-5"></a><span class="dv">1</span>: bar, two</span>
+<span id="cb44-6"><a href="#cb44-6"></a><span class="dv">2</span>: baz, three</span></code></pre></div>
+<p>给出一个“被压缩的”序列，<code>zip</code>可以被用来解压序列。也可以当作把行的列表转换为列的列表。这个方法看起来有点神奇：</p>
+<div class="sourceCode" id="cb45"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb45-1"><a href="#cb45-1"></a>In [<span class="dv">96</span>]: pitchers <span class="op">=</span> [(<span class="st">&#39;Nolan&#39;</span>, <span class="st">&#39;Ryan&#39;</span>), (<span class="st">&#39;Roger&#39;</span>, <span class="st">&#39;Clemens&#39;</span>),</span>
+<span id="cb45-2"><a href="#cb45-2"></a>   ....:             (<span class="st">&#39;Schilling&#39;</span>, <span class="st">&#39;Curt&#39;</span>)]</span>
+<span id="cb45-3"><a href="#cb45-3"></a></span>
+<span id="cb45-4"><a href="#cb45-4"></a>In [<span class="dv">97</span>]: first_names, last_names <span class="op">=</span> <span class="bu">zip</span>(<span class="op">*</span>pitchers)</span>
+<span id="cb45-5"><a href="#cb45-5"></a></span>
+<span id="cb45-6"><a href="#cb45-6"></a>In [<span class="dv">98</span>]: first_names</span>
+<span id="cb45-7"><a href="#cb45-7"></a>Out[<span class="dv">98</span>]: (<span class="st">&#39;Nolan&#39;</span>, <span class="st">&#39;Roger&#39;</span>, <span class="st">&#39;Schilling&#39;</span>)</span>
+<span id="cb45-8"><a href="#cb45-8"></a></span>
+<span id="cb45-9"><a href="#cb45-9"></a>In [<span class="dv">99</span>]: last_names</span>
+<span id="cb45-10"><a href="#cb45-10"></a>Out[<span class="dv">99</span>]: (<span class="st">&#39;Ryan&#39;</span>, <span class="st">&#39;Clemens&#39;</span>, <span class="st">&#39;Curt&#39;</span>)</span></code></pre></div>
+<h2 id="reversed函数">reversed函数</h2>
+<p><code>reversed</code>可以从后向前迭代一个序列：</p>
+<div class="sourceCode" id="cb46"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb46-1"><a href="#cb46-1"></a>In [<span class="dv">100</span>]: <span class="bu">list</span>(<span class="bu">reversed</span>(<span class="bu">range</span>(<span class="dv">10</span>)))</span>
+<span id="cb46-2"><a href="#cb46-2"></a>Out[<span class="dv">100</span>]: [<span class="dv">9</span>, <span class="dv">8</span>, <span class="dv">7</span>, <span class="dv">6</span>, <span class="dv">5</span>, <span class="dv">4</span>, <span class="dv">3</span>, <span class="dv">2</span>, <span class="dv">1</span>, <span class="dv">0</span>]</span></code></pre></div>
+<p>要记住<code>reversed</code>是一个生成器（后面详细介绍），只有实体化（即列表或for循环）之后才能创建翻转的序列。</p>
+<h2 id="字典">字典</h2>
+<p>字典可能是Python最为重要的数据结构。它更为常见的名字是哈希映射或关联数组。它是键值对的大小可变集合，键和值都是Python对象。创建字典的方法之一是使用尖括号，用冒号分隔键和值：</p>
+<div class="sourceCode" id="cb47"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb47-1"><a href="#cb47-1"></a>In [<span class="dv">101</span>]: empty_dict <span class="op">=</span> {}</span>
+<span id="cb47-2"><a href="#cb47-2"></a></span>
+<span id="cb47-3"><a href="#cb47-3"></a>In [<span class="dv">102</span>]: d1 <span class="op">=</span> {<span class="st">&#39;a&#39;</span> : <span class="st">&#39;some value&#39;</span>, <span class="st">&#39;b&#39;</span> : [<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>]}</span>
+<span id="cb47-4"><a href="#cb47-4"></a></span>
+<span id="cb47-5"><a href="#cb47-5"></a>In [<span class="dv">103</span>]: d1</span>
+<span id="cb47-6"><a href="#cb47-6"></a>Out[<span class="dv">103</span>]: {<span class="st">&#39;a&#39;</span>: <span class="st">&#39;some value&#39;</span>, <span class="st">&#39;b&#39;</span>: [<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>]}</span></code></pre></div>
+<p>你可以像访问列表或元组中的元素一样，访问、插入或设定字典中的元素：</p>
+<div class="sourceCode" id="cb48"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb48-1"><a href="#cb48-1"></a>In [<span class="dv">104</span>]: d1[<span class="dv">7</span>] <span class="op">=</span> <span class="st">&#39;an integer&#39;</span></span>
+<span id="cb48-2"><a href="#cb48-2"></a></span>
+<span id="cb48-3"><a href="#cb48-3"></a>In [<span class="dv">105</span>]: d1</span>
+<span id="cb48-4"><a href="#cb48-4"></a>Out[<span class="dv">105</span>]: {<span class="st">&#39;a&#39;</span>: <span class="st">&#39;some value&#39;</span>, <span class="st">&#39;b&#39;</span>: [<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>], <span class="dv">7</span>: <span class="st">&#39;an integer&#39;</span>}</span>
+<span id="cb48-5"><a href="#cb48-5"></a></span>
+<span id="cb48-6"><a href="#cb48-6"></a>In [<span class="dv">106</span>]: d1[<span class="st">&#39;b&#39;</span>]</span>
+<span id="cb48-7"><a href="#cb48-7"></a>Out[<span class="dv">106</span>]: [<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>]</span></code></pre></div>
+<p>你可以用检查列表和元组是否包含某个值的方法，检查字典中是否包含某个键：</p>
+<div class="sourceCode" id="cb49"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb49-1"><a href="#cb49-1"></a>In [<span class="dv">107</span>]: <span class="st">&#39;b&#39;</span> <span class="kw">in</span> d1</span>
+<span id="cb49-2"><a href="#cb49-2"></a>Out[<span class="dv">107</span>]: <span class="va">True</span></span></code></pre></div>
+<p>可以用<code>del</code>关键字或<code>pop</code>方法（返回值的同时删除键）删除值：</p>
+<div class="sourceCode" id="cb50"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb50-1"><a href="#cb50-1"></a>In [<span class="dv">108</span>]: d1[<span class="dv">5</span>] <span class="op">=</span> <span class="st">&#39;some value&#39;</span></span>
+<span id="cb50-2"><a href="#cb50-2"></a></span>
+<span id="cb50-3"><a href="#cb50-3"></a>In [<span class="dv">109</span>]: d1</span>
+<span id="cb50-4"><a href="#cb50-4"></a>Out[<span class="dv">109</span>]: </span>
+<span id="cb50-5"><a href="#cb50-5"></a>{<span class="st">&#39;a&#39;</span>: <span class="st">&#39;some value&#39;</span>,</span>
+<span id="cb50-6"><a href="#cb50-6"></a> <span class="st">&#39;b&#39;</span>: [<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>],</span>
+<span id="cb50-7"><a href="#cb50-7"></a> <span class="dv">7</span>: <span class="st">&#39;an integer&#39;</span>,</span>
+<span id="cb50-8"><a href="#cb50-8"></a> <span class="dv">5</span>: <span class="st">&#39;some value&#39;</span>}</span>
+<span id="cb50-9"><a href="#cb50-9"></a></span>
+<span id="cb50-10"><a href="#cb50-10"></a>In [<span class="dv">110</span>]: d1[<span class="st">&#39;dummy&#39;</span>] <span class="op">=</span> <span class="st">&#39;another value&#39;</span></span>
+<span id="cb50-11"><a href="#cb50-11"></a></span>
+<span id="cb50-12"><a href="#cb50-12"></a>In [<span class="dv">111</span>]: d1</span>
+<span id="cb50-13"><a href="#cb50-13"></a>Out[<span class="dv">111</span>]: </span>
+<span id="cb50-14"><a href="#cb50-14"></a>{<span class="st">&#39;a&#39;</span>: <span class="st">&#39;some value&#39;</span>,</span>
+<span id="cb50-15"><a href="#cb50-15"></a> <span class="st">&#39;b&#39;</span>: [<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>],</span>
+<span id="cb50-16"><a href="#cb50-16"></a> <span class="dv">7</span>: <span class="st">&#39;an integer&#39;</span>,</span>
+<span id="cb50-17"><a href="#cb50-17"></a> <span class="dv">5</span>: <span class="st">&#39;some value&#39;</span>,</span>
+<span id="cb50-18"><a href="#cb50-18"></a> <span class="st">&#39;dummy&#39;</span>: <span class="st">&#39;another value&#39;</span>}</span>
+<span id="cb50-19"><a href="#cb50-19"></a></span>
+<span id="cb50-20"><a href="#cb50-20"></a>In [<span class="dv">112</span>]: <span class="kw">del</span> d1[<span class="dv">5</span>]</span>
+<span id="cb50-21"><a href="#cb50-21"></a></span>
+<span id="cb50-22"><a href="#cb50-22"></a>In [<span class="dv">113</span>]: d1</span>
+<span id="cb50-23"><a href="#cb50-23"></a>Out[<span class="dv">113</span>]: </span>
+<span id="cb50-24"><a href="#cb50-24"></a>{<span class="st">&#39;a&#39;</span>: <span class="st">&#39;some value&#39;</span>,</span>
+<span id="cb50-25"><a href="#cb50-25"></a> <span class="st">&#39;b&#39;</span>: [<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>],</span>
+<span id="cb50-26"><a href="#cb50-26"></a> <span class="dv">7</span>: <span class="st">&#39;an integer&#39;</span>,</span>
+<span id="cb50-27"><a href="#cb50-27"></a> <span class="st">&#39;dummy&#39;</span>: <span class="st">&#39;another value&#39;</span>}</span>
+<span id="cb50-28"><a href="#cb50-28"></a></span>
+<span id="cb50-29"><a href="#cb50-29"></a>In [<span class="dv">114</span>]: ret <span class="op">=</span> d1.pop(<span class="st">&#39;dummy&#39;</span>)</span>
+<span id="cb50-30"><a href="#cb50-30"></a></span>
+<span id="cb50-31"><a href="#cb50-31"></a>In [<span class="dv">115</span>]: ret</span>
+<span id="cb50-32"><a href="#cb50-32"></a>Out[<span class="dv">115</span>]: <span class="st">&#39;another value&#39;</span></span>
+<span id="cb50-33"><a href="#cb50-33"></a></span>
+<span id="cb50-34"><a href="#cb50-34"></a>In [<span class="dv">116</span>]: d1</span>
+<span id="cb50-35"><a href="#cb50-35"></a>Out[<span class="dv">116</span>]: {<span class="st">&#39;a&#39;</span>: <span class="st">&#39;some value&#39;</span>, <span class="st">&#39;b&#39;</span>: [<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>], <span class="dv">7</span>: <span class="st">&#39;an integer&#39;</span>}</span></code></pre></div>
+<p><code>keys</code>和<code>values</code>是字典的键和值的迭代器方法。虽然键值对没有顺序，这两个方法可以用相同的顺序输出键和值：</p>
+<div class="sourceCode" id="cb51"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb51-1"><a href="#cb51-1"></a>In [<span class="dv">117</span>]: <span class="bu">list</span>(d1.keys())</span>
+<span id="cb51-2"><a href="#cb51-2"></a>Out[<span class="dv">117</span>]: [<span class="st">&#39;a&#39;</span>, <span class="st">&#39;b&#39;</span>, <span class="dv">7</span>]</span>
+<span id="cb51-3"><a href="#cb51-3"></a></span>
+<span id="cb51-4"><a href="#cb51-4"></a>In [<span class="dv">118</span>]: <span class="bu">list</span>(d1.values())</span>
+<span id="cb51-5"><a href="#cb51-5"></a>Out[<span class="dv">118</span>]: [<span class="st">&#39;some value&#39;</span>, [<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>], <span class="st">&#39;an integer&#39;</span>]</span></code></pre></div>
+<p>用<code>update</code>方法可以将一个字典与另一个融合：</p>
+<div class="sourceCode" id="cb52"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb52-1"><a href="#cb52-1"></a>In [<span class="dv">119</span>]: d1.update({<span class="st">&#39;b&#39;</span> : <span class="st">&#39;foo&#39;</span>, <span class="st">&#39;c&#39;</span> : <span class="dv">12</span>})</span>
+<span id="cb52-2"><a href="#cb52-2"></a></span>
+<span id="cb52-3"><a href="#cb52-3"></a>In [<span class="dv">120</span>]: d1</span>
+<span id="cb52-4"><a href="#cb52-4"></a>Out[<span class="dv">120</span>]: {<span class="st">&#39;a&#39;</span>: <span class="st">&#39;some value&#39;</span>, <span class="st">&#39;b&#39;</span>: <span class="st">&#39;foo&#39;</span>, <span class="dv">7</span>: <span class="st">&#39;an integer&#39;</span>, <span class="st">&#39;c&#39;</span>: <span class="dv">12</span>}</span></code></pre></div>
+<p><code>update</code>方法是原地改变字典，因此任何传递给<code>update</code>的键的旧的值都会被舍弃。</p>
+<h2 id="用序列创建字典">用序列创建字典</h2>
+<p>常常，你可能想将两个序列配对组合成字典。下面是一种写法：</p>
+<div class="sourceCode" id="cb53"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb53-1"><a href="#cb53-1"></a>mapping <span class="op">=</span> {}</span>
+<span id="cb53-2"><a href="#cb53-2"></a><span class="cf">for</span> key, value <span class="kw">in</span> <span class="bu">zip</span>(key_list, value_list):</span>
+<span id="cb53-3"><a href="#cb53-3"></a>    mapping[key] <span class="op">=</span> value</span></code></pre></div>
+<p>因为字典本质上是2元元组的集合，dict可以接受2元元组的列表：</p>
+<div class="sourceCode" id="cb54"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb54-1"><a href="#cb54-1"></a>In [<span class="dv">121</span>]: mapping <span class="op">=</span> <span class="bu">dict</span>(<span class="bu">zip</span>(<span class="bu">range</span>(<span class="dv">5</span>), <span class="bu">reversed</span>(<span class="bu">range</span>(<span class="dv">5</span>))))</span>
+<span id="cb54-2"><a href="#cb54-2"></a></span>
+<span id="cb54-3"><a href="#cb54-3"></a>In [<span class="dv">122</span>]: mapping</span>
+<span id="cb54-4"><a href="#cb54-4"></a>Out[<span class="dv">122</span>]: {<span class="dv">0</span>: <span class="dv">4</span>, <span class="dv">1</span>: <span class="dv">3</span>, <span class="dv">2</span>: <span class="dv">2</span>, <span class="dv">3</span>: <span class="dv">1</span>, <span class="dv">4</span>: <span class="dv">0</span>}</span></code></pre></div>
+<p>后面会谈到<code>dict comprehensions</code>，另一种构建字典的优雅方式。</p>
+<h2 id="默认值">默认值</h2>
+<p>下面的逻辑很常见：</p>
+<div class="sourceCode" id="cb55"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb55-1"><a href="#cb55-1"></a><span class="cf">if</span> key <span class="kw">in</span> some_dict:</span>
+<span id="cb55-2"><a href="#cb55-2"></a>    value <span class="op">=</span> some_dict[key]</span>
+<span id="cb55-3"><a href="#cb55-3"></a><span class="cf">else</span>:</span>
+<span id="cb55-4"><a href="#cb55-4"></a>    value <span class="op">=</span> default_value</span></code></pre></div>
+<p>因此，dict的方法get和pop可以取默认值进行返回，上面的if-else语句可以简写成下面：</p>
+<div class="sourceCode" id="cb56"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb56-1"><a href="#cb56-1"></a>value <span class="op">=</span> some_dict.get(key, default_value)</span></code></pre></div>
+<p>get默认会返回None，如果不存在键，pop会抛出一个例外。关于设定值，常见的情况是在字典的值是属于其它集合，如列表。例如，你可以通过首字母，将一个列表中的单词分类：</p>
+<div class="sourceCode" id="cb57"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb57-1"><a href="#cb57-1"></a>In [<span class="dv">123</span>]: words <span class="op">=</span> [<span class="st">&#39;apple&#39;</span>, <span class="st">&#39;bat&#39;</span>, <span class="st">&#39;bar&#39;</span>, <span class="st">&#39;atom&#39;</span>, <span class="st">&#39;book&#39;</span>]</span>
+<span id="cb57-2"><a href="#cb57-2"></a></span>
+<span id="cb57-3"><a href="#cb57-3"></a>In [<span class="dv">124</span>]: by_letter <span class="op">=</span> {}</span>
+<span id="cb57-4"><a href="#cb57-4"></a></span>
+<span id="cb57-5"><a href="#cb57-5"></a>In [<span class="dv">125</span>]: <span class="cf">for</span> word <span class="kw">in</span> words:</span>
+<span id="cb57-6"><a href="#cb57-6"></a>   .....:     letter <span class="op">=</span> word[<span class="dv">0</span>]</span>
+<span id="cb57-7"><a href="#cb57-7"></a>   .....:     <span class="cf">if</span> letter <span class="kw">not</span> <span class="kw">in</span> by_letter:</span>
+<span id="cb57-8"><a href="#cb57-8"></a>   .....:         by_letter[letter] <span class="op">=</span> [word]</span>
+<span id="cb57-9"><a href="#cb57-9"></a>   .....:     <span class="cf">else</span>:</span>
+<span id="cb57-10"><a href="#cb57-10"></a>   .....:         by_letter[letter].append(word)</span>
+<span id="cb57-11"><a href="#cb57-11"></a>   .....:</span>
+<span id="cb57-12"><a href="#cb57-12"></a></span>
+<span id="cb57-13"><a href="#cb57-13"></a>In [<span class="dv">126</span>]: by_letter</span>
+<span id="cb57-14"><a href="#cb57-14"></a>Out[<span class="dv">126</span>]: {<span class="st">&#39;a&#39;</span>: [<span class="st">&#39;apple&#39;</span>, <span class="st">&#39;atom&#39;</span>], <span class="st">&#39;b&#39;</span>: [<span class="st">&#39;bat&#39;</span>, <span class="st">&#39;bar&#39;</span>, <span class="st">&#39;book&#39;</span>]}</span></code></pre></div>
+<p><code>setdefault</code>方法就正是干这个的。前面的for循环可以改写为：</p>
+<div class="sourceCode" id="cb58"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb58-1"><a href="#cb58-1"></a><span class="cf">for</span> word <span class="kw">in</span> words:</span>
+<span id="cb58-2"><a href="#cb58-2"></a>    letter <span class="op">=</span> word[<span class="dv">0</span>]</span>
+<span id="cb58-3"><a href="#cb58-3"></a>    by_letter.setdefault(letter, []).append(word)</span></code></pre></div>
+<p><code>collections</code>模块有一个很有用的类，<code>defaultdict</code>，它可以进一步简化上面。传递类型或函数以生成每个位置的默认值：</p>
+<div class="sourceCode" id="cb59"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb59-1"><a href="#cb59-1"></a><span class="im">from</span> collections <span class="im">import</span> defaultdict</span>
+<span id="cb59-2"><a href="#cb59-2"></a>by_letter <span class="op">=</span> defaultdict(<span class="bu">list</span>)</span>
+<span id="cb59-3"><a href="#cb59-3"></a><span class="cf">for</span> word <span class="kw">in</span> words:</span>
+<span id="cb59-4"><a href="#cb59-4"></a>    by_letter[word[<span class="dv">0</span>]].append(word)</span></code></pre></div>
+<h2 id="有效的键类型">有效的键类型</h2>
+<p>字典的值可以是任意Python对象，而键通常是不可变的标量类型（整数、浮点型、字符串）或元组（元组中的对象必须是不可变的）。这被称为“可哈希性”。可以用<code>hash</code>函数检测一个对象是否是可哈希的（可被用作字典的键）：</p>
+<div class="sourceCode" id="cb60"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb60-1"><a href="#cb60-1"></a>In [<span class="dv">127</span>]: <span class="bu">hash</span>(<span class="st">&#39;string&#39;</span>)</span>
+<span id="cb60-2"><a href="#cb60-2"></a>Out[<span class="dv">127</span>]: <span class="dv">5023931463650008331</span></span>
+<span id="cb60-3"><a href="#cb60-3"></a></span>
+<span id="cb60-4"><a href="#cb60-4"></a>In [<span class="dv">128</span>]: <span class="bu">hash</span>((<span class="dv">1</span>, <span class="dv">2</span>, (<span class="dv">2</span>, <span class="dv">3</span>)))</span>
+<span id="cb60-5"><a href="#cb60-5"></a>Out[<span class="dv">128</span>]: <span class="dv">1097636502276347782</span></span>
+<span id="cb60-6"><a href="#cb60-6"></a></span>
+<span id="cb60-7"><a href="#cb60-7"></a>In [<span class="dv">129</span>]: <span class="bu">hash</span>((<span class="dv">1</span>, <span class="dv">2</span>, [<span class="dv">2</span>, <span class="dv">3</span>])) <span class="co"># fails because lists are mutable</span></span>
+<span id="cb60-8"><a href="#cb60-8"></a><span class="op">---------------------------------------------------------------------------</span></span>
+<span id="cb60-9"><a href="#cb60-9"></a><span class="pp">TypeError</span>                                 Traceback (most recent call last)</span>
+<span id="cb60-10"><a href="#cb60-10"></a><span class="op">&lt;</span>ipython<span class="op">-</span><span class="bu">input</span><span class="op">-</span><span class="dv">129</span><span class="op">-</span>800cd14ba8be<span class="op">&gt;</span> <span class="kw">in</span> <span class="op">&lt;</span>module<span class="op">&gt;</span>()</span>
+<span id="cb60-11"><a href="#cb60-11"></a><span class="op">----&gt;</span> <span class="dv">1</span> <span class="bu">hash</span>((<span class="dv">1</span>, <span class="dv">2</span>, [<span class="dv">2</span>, <span class="dv">3</span>])) <span class="co"># fails because lists are mutable</span></span>
+<span id="cb60-12"><a href="#cb60-12"></a><span class="pp">TypeError</span>: unhashable <span class="bu">type</span>: <span class="st">&#39;list&#39;</span></span></code></pre></div>
+<p>要用列表当做键，一种方法是将列表转化为元组，只要内部元素可以被哈希，它也就可以被哈希：</p>
+<div class="sourceCode" id="cb61"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb61-1"><a href="#cb61-1"></a>In [<span class="dv">130</span>]: d <span class="op">=</span> {}</span>
+<span id="cb61-2"><a href="#cb61-2"></a></span>
+<span id="cb61-3"><a href="#cb61-3"></a>In [<span class="dv">131</span>]: d[<span class="bu">tuple</span>([<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>])] <span class="op">=</span> <span class="dv">5</span></span>
+<span id="cb61-4"><a href="#cb61-4"></a></span>
+<span id="cb61-5"><a href="#cb61-5"></a>In [<span class="dv">132</span>]: d</span>
+<span id="cb61-6"><a href="#cb61-6"></a>Out[<span class="dv">132</span>]: {(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>): <span class="dv">5</span>}</span></code></pre></div>
+<h2 id="集合">集合</h2>
+<p>集合是无序的不可重复的元素的集合。你可以把它当做字典，但是只有键没有值。可以用两种方式创建集合：通过set函数或使用尖括号set语句：</p>
+<div class="sourceCode" id="cb62"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb62-1"><a href="#cb62-1"></a>In [<span class="dv">133</span>]: <span class="bu">set</span>([<span class="dv">2</span>, <span class="dv">2</span>, <span class="dv">2</span>, <span class="dv">1</span>, <span class="dv">3</span>, <span class="dv">3</span>])</span>
+<span id="cb62-2"><a href="#cb62-2"></a>Out[<span class="dv">133</span>]: {<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>}</span>
+<span id="cb62-3"><a href="#cb62-3"></a></span>
+<span id="cb62-4"><a href="#cb62-4"></a>In [<span class="dv">134</span>]: {<span class="dv">2</span>, <span class="dv">2</span>, <span class="dv">2</span>, <span class="dv">1</span>, <span class="dv">3</span>, <span class="dv">3</span>}</span>
+<span id="cb62-5"><a href="#cb62-5"></a>Out[<span class="dv">134</span>]: {<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>}</span></code></pre></div>
+<p>集合支持合并、交集、差分和对称差等数学集合运算。考虑两个示例集合：</p>
+<div class="sourceCode" id="cb63"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb63-1"><a href="#cb63-1"></a>In [<span class="dv">135</span>]: a <span class="op">=</span> {<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">5</span>}</span>
+<span id="cb63-2"><a href="#cb63-2"></a></span>
+<span id="cb63-3"><a href="#cb63-3"></a>In [<span class="dv">136</span>]: b <span class="op">=</span> {<span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">5</span>, <span class="dv">6</span>, <span class="dv">7</span>, <span class="dv">8</span>}</span></code></pre></div>
+<p>合并是取两个集合中不重复的元素。可以用<code>union</code>方法，或者<code>|</code>运算符：</p>
+<div class="sourceCode" id="cb64"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb64-1"><a href="#cb64-1"></a>In [<span class="dv">137</span>]: a.union(b)</span>
+<span id="cb64-2"><a href="#cb64-2"></a>Out[<span class="dv">137</span>]: {<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">5</span>, <span class="dv">6</span>, <span class="dv">7</span>, <span class="dv">8</span>}</span>
+<span id="cb64-3"><a href="#cb64-3"></a></span>
+<span id="cb64-4"><a href="#cb64-4"></a>In [<span class="dv">138</span>]: a <span class="op">|</span> b</span>
+<span id="cb64-5"><a href="#cb64-5"></a>Out[<span class="dv">138</span>]: {<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">5</span>, <span class="dv">6</span>, <span class="dv">7</span>, <span class="dv">8</span>}</span></code></pre></div>
+<p>交集的元素包含在两个集合中。可以用<code>intersection</code>或<code>&amp;</code>运算符：</p>
+<div class="sourceCode" id="cb65"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb65-1"><a href="#cb65-1"></a>In [<span class="dv">139</span>]: a.intersection(b)</span>
+<span id="cb65-2"><a href="#cb65-2"></a>Out[<span class="dv">139</span>]: {<span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">5</span>}</span>
+<span id="cb65-3"><a href="#cb65-3"></a></span>
+<span id="cb65-4"><a href="#cb65-4"></a>In [<span class="dv">140</span>]: a <span class="op">&amp;</span> b</span>
+<span id="cb65-5"><a href="#cb65-5"></a>Out[<span class="dv">140</span>]: {<span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">5</span>}</span></code></pre></div>
+<p>表3-1列出了常用的集合方法。</p>
+<figure>
+<img src="http://upload-images.jianshu.io/upload_images/7178691-980efe5d98ecc4d6.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="" /><figcaption>表3-1 Python的集合操作</figcaption>
+</figure>
+<p>所有逻辑集合操作都有另外的原地实现方法，可以直接用结果替代集合的内容。对于大的集合，这么做效率更高：</p>
+<div class="sourceCode" id="cb66"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb66-1"><a href="#cb66-1"></a>In [<span class="dv">141</span>]: c <span class="op">=</span> a.copy()</span>
+<span id="cb66-2"><a href="#cb66-2"></a></span>
+<span id="cb66-3"><a href="#cb66-3"></a>In [<span class="dv">142</span>]: c <span class="op">|=</span> b</span>
+<span id="cb66-4"><a href="#cb66-4"></a></span>
+<span id="cb66-5"><a href="#cb66-5"></a>In [<span class="dv">143</span>]: c</span>
+<span id="cb66-6"><a href="#cb66-6"></a>Out[<span class="dv">143</span>]: {<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">5</span>, <span class="dv">6</span>, <span class="dv">7</span>, <span class="dv">8</span>}</span>
+<span id="cb66-7"><a href="#cb66-7"></a></span>
+<span id="cb66-8"><a href="#cb66-8"></a>In [<span class="dv">144</span>]: d <span class="op">=</span> a.copy()</span>
+<span id="cb66-9"><a href="#cb66-9"></a></span>
+<span id="cb66-10"><a href="#cb66-10"></a>In [<span class="dv">145</span>]: d <span class="op">&amp;=</span> b</span>
+<span id="cb66-11"><a href="#cb66-11"></a></span>
+<span id="cb66-12"><a href="#cb66-12"></a>In [<span class="dv">146</span>]: d</span>
+<span id="cb66-13"><a href="#cb66-13"></a>Out[<span class="dv">146</span>]: {<span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">5</span>}</span></code></pre></div>
+<p>与字典类似，集合元素通常都是不可变的。要获得类似列表的元素，必须转换成元组：</p>
+<div class="sourceCode" id="cb67"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb67-1"><a href="#cb67-1"></a>In [<span class="dv">147</span>]: my_data <span class="op">=</span> [<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>]</span>
+<span id="cb67-2"><a href="#cb67-2"></a></span>
+<span id="cb67-3"><a href="#cb67-3"></a>In [<span class="dv">148</span>]: my_set <span class="op">=</span> {<span class="bu">tuple</span>(my_data)}</span>
+<span id="cb67-4"><a href="#cb67-4"></a></span>
+<span id="cb67-5"><a href="#cb67-5"></a>In [<span class="dv">149</span>]: my_set</span>
+<span id="cb67-6"><a href="#cb67-6"></a>Out[<span class="dv">149</span>]: {(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>)}</span></code></pre></div>
+<p>你还可以检测一个集合是否是另一个集合的子集或父集：</p>
+<div class="sourceCode" id="cb68"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb68-1"><a href="#cb68-1"></a>In [<span class="dv">150</span>]: a_set <span class="op">=</span> {<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">5</span>}</span>
+<span id="cb68-2"><a href="#cb68-2"></a></span>
+<span id="cb68-3"><a href="#cb68-3"></a>In [<span class="dv">151</span>]: {<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>}.issubset(a_set)</span>
+<span id="cb68-4"><a href="#cb68-4"></a>Out[<span class="dv">151</span>]: <span class="va">True</span></span>
+<span id="cb68-5"><a href="#cb68-5"></a></span>
+<span id="cb68-6"><a href="#cb68-6"></a>In [<span class="dv">152</span>]: a_set.issuperset({<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>})</span>
+<span id="cb68-7"><a href="#cb68-7"></a>Out[<span class="dv">152</span>]: <span class="va">True</span></span></code></pre></div>
+<p>集合的内容相同时，集合才对等：</p>
+<div class="sourceCode" id="cb69"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb69-1"><a href="#cb69-1"></a>In [<span class="dv">153</span>]: {<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>} <span class="op">==</span> {<span class="dv">3</span>, <span class="dv">2</span>, <span class="dv">1</span>}</span>
+<span id="cb69-2"><a href="#cb69-2"></a>Out[<span class="dv">153</span>]: <span class="va">True</span></span></code></pre></div>
+<h2 id="列表集合和字典推导式">列表、集合和字典推导式</h2>
+<p>列表推导式是Python最受喜爱的特性之一。它允许用户方便的从一个集合过滤元素，形成列表，在传递参数的过程中还可以修改元素。形式如下：</p>
+<div class="sourceCode" id="cb70"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb70-1"><a href="#cb70-1"></a>[expr <span class="cf">for</span> val <span class="kw">in</span> collection <span class="cf">if</span> condition]</span></code></pre></div>
+<p>它等同于下面的for循环;</p>
+<div class="sourceCode" id="cb71"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb71-1"><a href="#cb71-1"></a>result <span class="op">=</span> []</span>
+<span id="cb71-2"><a href="#cb71-2"></a><span class="cf">for</span> val <span class="kw">in</span> collection:</span>
+<span id="cb71-3"><a href="#cb71-3"></a>    <span class="cf">if</span> condition:</span>
+<span id="cb71-4"><a href="#cb71-4"></a>        result.append(expr)</span></code></pre></div>
+<p>filter条件可以被忽略，只留下表达式就行。例如，给定一个字符串列表，我们可以过滤出长度在2及以下的字符串，并将其转换成大写：</p>
+<div class="sourceCode" id="cb72"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb72-1"><a href="#cb72-1"></a>In [<span class="dv">154</span>]: strings <span class="op">=</span> [<span class="st">&#39;a&#39;</span>, <span class="st">&#39;as&#39;</span>, <span class="st">&#39;bat&#39;</span>, <span class="st">&#39;car&#39;</span>, <span class="st">&#39;dove&#39;</span>, <span class="st">&#39;python&#39;</span>]</span>
+<span id="cb72-2"><a href="#cb72-2"></a></span>
+<span id="cb72-3"><a href="#cb72-3"></a>In [<span class="dv">155</span>]: [x.upper() <span class="cf">for</span> x <span class="kw">in</span> strings <span class="cf">if</span> <span class="bu">len</span>(x) <span class="op">&gt;</span> <span class="dv">2</span>]</span>
+<span id="cb72-4"><a href="#cb72-4"></a>Out[<span class="dv">155</span>]: [<span class="st">&#39;BAT&#39;</span>, <span class="st">&#39;CAR&#39;</span>, <span class="st">&#39;DOVE&#39;</span>, <span class="st">&#39;PYTHON&#39;</span>]</span></code></pre></div>
+<p>用相似的方法，还可以推导集合和字典。字典的推导式如下所示：</p>
+<div class="sourceCode" id="cb73"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb73-1"><a href="#cb73-1"></a>dict_comp <span class="op">=</span> {key<span class="op">-</span>expr : value<span class="op">-</span>expr <span class="cf">for</span> value <span class="kw">in</span> collection <span class="cf">if</span> condition}</span></code></pre></div>
+<p>集合的推导式与列表很像，只不过用的是尖括号：</p>
+<div class="sourceCode" id="cb74"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb74-1"><a href="#cb74-1"></a>set_comp <span class="op">=</span> {expr <span class="cf">for</span> value <span class="kw">in</span> collection <span class="cf">if</span> condition}</span></code></pre></div>
+<p>与列表推导式类似，集合与字典的推导也很方便，而且使代码的读写都很容易。来看前面的字符串列表。假如我们只想要字符串的长度，用集合推导式的方法非常方便：</p>
+<div class="sourceCode" id="cb75"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb75-1"><a href="#cb75-1"></a>In [<span class="dv">156</span>]: unique_lengths <span class="op">=</span> {<span class="bu">len</span>(x) <span class="cf">for</span> x <span class="kw">in</span> strings}</span>
+<span id="cb75-2"><a href="#cb75-2"></a></span>
+<span id="cb75-3"><a href="#cb75-3"></a>In [<span class="dv">157</span>]: unique_lengths</span>
+<span id="cb75-4"><a href="#cb75-4"></a>Out[<span class="dv">157</span>]: {<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">6</span>}</span></code></pre></div>
+<p><code>map</code>函数可以进一步简化：</p>
+<div class="sourceCode" id="cb76"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb76-1"><a href="#cb76-1"></a>In [<span class="dv">158</span>]: <span class="bu">set</span>(<span class="bu">map</span>(<span class="bu">len</span>, strings))</span>
+<span id="cb76-2"><a href="#cb76-2"></a>Out[<span class="dv">158</span>]: {<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">6</span>}</span></code></pre></div>
+<p>作为一个字典推导式的例子，我们可以创建一个字符串的查找映射表以确定它在列表中的位置：</p>
+<div class="sourceCode" id="cb77"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb77-1"><a href="#cb77-1"></a>In [<span class="dv">159</span>]: loc_mapping <span class="op">=</span> {val : index <span class="cf">for</span> index, val <span class="kw">in</span> <span class="bu">enumerate</span>(strings)}</span>
+<span id="cb77-2"><a href="#cb77-2"></a></span>
+<span id="cb77-3"><a href="#cb77-3"></a>In [<span class="dv">160</span>]: loc_mapping</span>
+<span id="cb77-4"><a href="#cb77-4"></a>Out[<span class="dv">160</span>]: {<span class="st">&#39;a&#39;</span>: <span class="dv">0</span>, <span class="st">&#39;as&#39;</span>: <span class="dv">1</span>, <span class="st">&#39;bat&#39;</span>: <span class="dv">2</span>, <span class="st">&#39;car&#39;</span>: <span class="dv">3</span>, <span class="st">&#39;dove&#39;</span>: <span class="dv">4</span>, <span class="st">&#39;python&#39;</span>: <span class="dv">5</span>}</span></code></pre></div>
+<h2 id="嵌套列表推导式">嵌套列表推导式</h2>
+<p>假设我们有一个包含列表的列表，包含了一些英文名和西班牙名：</p>
+<div class="sourceCode" id="cb78"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb78-1"><a href="#cb78-1"></a>In [<span class="dv">161</span>]: all_data <span class="op">=</span> [[<span class="st">&#39;John&#39;</span>, <span class="st">&#39;Emily&#39;</span>, <span class="st">&#39;Michael&#39;</span>, <span class="st">&#39;Mary&#39;</span>, <span class="st">&#39;Steven&#39;</span>],</span>
+<span id="cb78-2"><a href="#cb78-2"></a>   .....:             [<span class="st">&#39;Maria&#39;</span>, <span class="st">&#39;Juan&#39;</span>, <span class="st">&#39;Javier&#39;</span>, <span class="st">&#39;Natalia&#39;</span>, <span class="st">&#39;Pilar&#39;</span>]]</span></code></pre></div>
+<p>你可能是从一些文件得到的这些名字，然后想按照语言进行分类。现在假设我们想用一个列表包含所有的名字，这些名字中包含两个或更多的e。可以用for循环来做：</p>
+<div class="sourceCode" id="cb79"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb79-1"><a href="#cb79-1"></a>names_of_interest <span class="op">=</span> []</span>
+<span id="cb79-2"><a href="#cb79-2"></a><span class="cf">for</span> names <span class="kw">in</span> all_data:</span>
+<span id="cb79-3"><a href="#cb79-3"></a>    enough_es <span class="op">=</span> [name <span class="cf">for</span> name <span class="kw">in</span> names <span class="cf">if</span> name.count(<span class="st">&#39;e&#39;</span>) <span class="op">&gt;=</span> <span class="dv">2</span>]</span>
+<span id="cb79-4"><a href="#cb79-4"></a>    names_of_interest.extend(enough_es)</span></code></pre></div>
+<p>可以用嵌套列表推导式的方法，将这些写在一起，如下所示：</p>
+<div class="sourceCode" id="cb80"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb80-1"><a href="#cb80-1"></a>In [<span class="dv">162</span>]: result <span class="op">=</span> [name <span class="cf">for</span> names <span class="kw">in</span> all_data <span class="cf">for</span> name <span class="kw">in</span> names</span>
+<span id="cb80-2"><a href="#cb80-2"></a>   .....:           <span class="cf">if</span> name.count(<span class="st">&#39;e&#39;</span>) <span class="op">&gt;=</span> <span class="dv">2</span>]</span>
+<span id="cb80-3"><a href="#cb80-3"></a></span>
+<span id="cb80-4"><a href="#cb80-4"></a>In [<span class="dv">163</span>]: result</span>
+<span id="cb80-5"><a href="#cb80-5"></a>Out[<span class="dv">163</span>]: [<span class="st">&#39;Steven&#39;</span>]</span></code></pre></div>
+<p>嵌套列表推导式看起来有些复杂。列表推导式的for部分是根据嵌套的顺序，过滤条件还是放在最后。下面是另一个例子，我们将一个整数元组的列表扁平化成了一个整数列表：</p>
+<div class="sourceCode" id="cb81"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb81-1"><a href="#cb81-1"></a>In [<span class="dv">164</span>]: some_tuples <span class="op">=</span> [(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>), (<span class="dv">4</span>, <span class="dv">5</span>, <span class="dv">6</span>), (<span class="dv">7</span>, <span class="dv">8</span>, <span class="dv">9</span>)]</span>
+<span id="cb81-2"><a href="#cb81-2"></a></span>
+<span id="cb81-3"><a href="#cb81-3"></a>In [<span class="dv">165</span>]: flattened <span class="op">=</span> [x <span class="cf">for</span> tup <span class="kw">in</span> some_tuples <span class="cf">for</span> x <span class="kw">in</span> tup]</span>
+<span id="cb81-4"><a href="#cb81-4"></a></span>
+<span id="cb81-5"><a href="#cb81-5"></a>In [<span class="dv">166</span>]: flattened</span>
+<span id="cb81-6"><a href="#cb81-6"></a>Out[<span class="dv">166</span>]: [<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">5</span>, <span class="dv">6</span>, <span class="dv">7</span>, <span class="dv">8</span>, <span class="dv">9</span>]</span></code></pre></div>
+<p>记住，for表达式的顺序是与嵌套for循环的顺序一样（而不是列表推导式的顺序）：</p>
+<div class="sourceCode" id="cb82"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb82-1"><a href="#cb82-1"></a>flattened <span class="op">=</span> []</span>
+<span id="cb82-2"><a href="#cb82-2"></a></span>
+<span id="cb82-3"><a href="#cb82-3"></a><span class="cf">for</span> tup <span class="kw">in</span> some_tuples:</span>
+<span id="cb82-4"><a href="#cb82-4"></a>    <span class="cf">for</span> x <span class="kw">in</span> tup:</span>
+<span id="cb82-5"><a href="#cb82-5"></a>        flattened.append(x)</span></code></pre></div>
+<p>你可以有任意多级别的嵌套，但是如果你有两三个以上的嵌套，你就应该考虑下代码可读性的问题了。分辨列表推导式的列表推导式中的语法也是很重要的：</p>
+<div class="sourceCode" id="cb83"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb83-1"><a href="#cb83-1"></a>In [<span class="dv">167</span>]: [[x <span class="cf">for</span> x <span class="kw">in</span> tup] <span class="cf">for</span> tup <span class="kw">in</span> some_tuples]</span>
+<span id="cb83-2"><a href="#cb83-2"></a>Out[<span class="dv">167</span>]: [[<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>], [<span class="dv">4</span>, <span class="dv">5</span>, <span class="dv">6</span>], [<span class="dv">7</span>, <span class="dv">8</span>, <span class="dv">9</span>]]</span></code></pre></div>
+<p>这段代码产生了一个列表的列表，而不是扁平化的只包含元素的列表。</p>
+<h1 id="函数">3.2 函数</h1>
+<p>函数是Python中最主要也是最重要的代码组织和复用手段。作为最重要的原则，如果你要重复使用相同或非常类似的代码，就需要写一个函数。通过给函数起一个名字，还可以提高代码的可读性。</p>
+<p>函数使用<code>def</code>关键字声明，用<code>return</code>关键字返回值：</p>
+<div class="sourceCode" id="cb84"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb84-1"><a href="#cb84-1"></a><span class="kw">def</span> my_function(x, y, z<span class="op">=</span><span class="fl">1.5</span>):</span>
+<span id="cb84-2"><a href="#cb84-2"></a>    <span class="cf">if</span> z <span class="op">&gt;</span> <span class="dv">1</span>:</span>
+<span id="cb84-3"><a href="#cb84-3"></a>        <span class="cf">return</span> z <span class="op">*</span> (x <span class="op">+</span> y)</span>
+<span id="cb84-4"><a href="#cb84-4"></a>    <span class="cf">else</span>:</span>
+<span id="cb84-5"><a href="#cb84-5"></a>        <span class="cf">return</span> z <span class="op">/</span> (x <span class="op">+</span> y)</span></code></pre></div>
+<p>同时拥有多条return语句也是可以的。如果到达函数末尾时没有遇到任何一条return语句，则返回None。</p>
+<p>函数可以有一些位置参数（positional）和一些关键字参数（keyword）。关键字参数通常用于指定默认值或可选参数。在上面的函数中，x和y是位置参数，而z则是关键字参数。也就是说，该函数可以下面这两种方式进行调用：</p>
+<div class="sourceCode" id="cb85"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb85-1"><a href="#cb85-1"></a>my_function(<span class="dv">5</span>, <span class="dv">6</span>, z<span class="op">=</span><span class="fl">0.7</span>)</span>
+<span id="cb85-2"><a href="#cb85-2"></a>my_function(<span class="fl">3.14</span>, <span class="dv">7</span>, <span class="fl">3.5</span>)</span>
+<span id="cb85-3"><a href="#cb85-3"></a>my_function(<span class="dv">10</span>, <span class="dv">20</span>)</span></code></pre></div>
+<p>函数参数的主要限制在于：关键字参数必须位于位置参数（如果有的话）之后。你可以任何顺序指定关键字参数。也就是说，你不用死记硬背函数参数的顺序，只要记得它们的名字就可以了。</p>
+<blockquote>
+<p>笔记：也可以用关键字传递位置参数。前面的例子，也可以写为：</p>
+<div class="sourceCode" id="cb86"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb86-1"><a href="#cb86-1"></a>my_function(x<span class="op">=</span><span class="dv">5</span>, y<span class="op">=</span><span class="dv">6</span>, z<span class="op">=</span><span class="dv">7</span>)</span>
+<span id="cb86-2"><a href="#cb86-2"></a>my_function(y<span class="op">=</span><span class="dv">6</span>, x<span class="op">=</span><span class="dv">5</span>, z<span class="op">=</span><span class="dv">7</span>)</span></code></pre></div>
+<p>这种写法可以提高可读性。</p>
+</blockquote>
+<h2 id="命名空间作用域和局部函数">命名空间、作用域，和局部函数</h2>
+<p>函数可以访问两种不同作用域中的变量：全局（global）和局部（local）。Python有一种更科学的用于描述变量作用域的名称，即命名空间（namespace）。任何在函数中赋值的变量默认都是被分配到局部命名空间（local namespace）中的。局部命名空间是在函数被调用时创建的，函数参数会立即填入该命名空间。在函数执行完毕之后，局部命名空间就会被销毁（会有一些例外的情况，具体请参见后面介绍闭包的那一节）。看看下面这个函数：</p>
+<div class="sourceCode" id="cb87"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb87-1"><a href="#cb87-1"></a><span class="kw">def</span> func():</span>
+<span id="cb87-2"><a href="#cb87-2"></a>    a <span class="op">=</span> []</span>
+<span id="cb87-3"><a href="#cb87-3"></a>    <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">5</span>):</span>
+<span id="cb87-4"><a href="#cb87-4"></a>        a.append(i)</span></code></pre></div>
+<p>调用func()之后，首先会创建出空列表a，然后添加5个元素，最后a会在该函数退出的时候被销毁。假如我们像下面这样定义a：</p>
+<div class="sourceCode" id="cb88"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb88-1"><a href="#cb88-1"></a>a <span class="op">=</span> []</span>
+<span id="cb88-2"><a href="#cb88-2"></a><span class="kw">def</span> func():</span>
+<span id="cb88-3"><a href="#cb88-3"></a>    <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">5</span>):</span>
+<span id="cb88-4"><a href="#cb88-4"></a>        a.append(i)</span></code></pre></div>
+<p>虽然可以在函数中对全局变量进行赋值操作，但是那些变量必须用global关键字声明成全局的才行：</p>
+<div class="sourceCode" id="cb89"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb89-1"><a href="#cb89-1"></a>In [<span class="dv">168</span>]: a <span class="op">=</span> <span class="va">None</span></span>
+<span id="cb89-2"><a href="#cb89-2"></a></span>
+<span id="cb89-3"><a href="#cb89-3"></a>In [<span class="dv">169</span>]: <span class="kw">def</span> bind_a_variable():</span>
+<span id="cb89-4"><a href="#cb89-4"></a>   .....:     <span class="kw">global</span> a</span>
+<span id="cb89-5"><a href="#cb89-5"></a>   .....:     a <span class="op">=</span> []</span>
+<span id="cb89-6"><a href="#cb89-6"></a>   .....: bind_a_variable()</span>
+<span id="cb89-7"><a href="#cb89-7"></a>   .....:</span>
+<span id="cb89-8"><a href="#cb89-8"></a></span>
+<span id="cb89-9"><a href="#cb89-9"></a>In [<span class="dv">170</span>]: <span class="bu">print</span>(a)</span>
+<span id="cb89-10"><a href="#cb89-10"></a>[]</span></code></pre></div>
+<blockquote>
+<p>注意：我常常建议人们不要频繁使用global关键字。因为全局变量一般是用于存放系统的某些状态的。如果你发现自己用了很多，那可能就说明得要来点儿面向对象编程了（即使用类）。</p>
+</blockquote>
+<h2 id="返回多个值">返回多个值</h2>
+<p>在我第一次用Python编程时（之前已经习惯了Java和C++），最喜欢的一个功能是：函数可以返回多个值。下面是一个简单的例子：</p>
+<div class="sourceCode" id="cb90"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb90-1"><a href="#cb90-1"></a><span class="kw">def</span> f():</span>
+<span id="cb90-2"><a href="#cb90-2"></a>    a <span class="op">=</span> <span class="dv">5</span></span>
+<span id="cb90-3"><a href="#cb90-3"></a>    b <span class="op">=</span> <span class="dv">6</span></span>
+<span id="cb90-4"><a href="#cb90-4"></a>    c <span class="op">=</span> <span class="dv">7</span></span>
+<span id="cb90-5"><a href="#cb90-5"></a>    <span class="cf">return</span> a, b, c</span>
+<span id="cb90-6"><a href="#cb90-6"></a></span>
+<span id="cb90-7"><a href="#cb90-7"></a>a, b, c <span class="op">=</span> f()</span></code></pre></div>
+<p>在数据分析和其他科学计算应用中，你会发现自己常常这么干。该函数其实只返回了一个对象，也就是一个元组，最后该元组会被拆包到各个结果变量中。在上面的例子中，我们还可以这样写：</p>
+<div class="sourceCode" id="cb91"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb91-1"><a href="#cb91-1"></a>return_value <span class="op">=</span> f()</span></code></pre></div>
+<p>这里的return_value将会是一个含有3个返回值的三元元组。此外，还有一种非常具有吸引力的多值返回方式——返回字典：</p>
+<div class="sourceCode" id="cb92"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb92-1"><a href="#cb92-1"></a><span class="kw">def</span> f():</span>
+<span id="cb92-2"><a href="#cb92-2"></a>    a <span class="op">=</span> <span class="dv">5</span></span>
+<span id="cb92-3"><a href="#cb92-3"></a>    b <span class="op">=</span> <span class="dv">6</span></span>
+<span id="cb92-4"><a href="#cb92-4"></a>    c <span class="op">=</span> <span class="dv">7</span></span>
+<span id="cb92-5"><a href="#cb92-5"></a>    <span class="cf">return</span> {<span class="st">&#39;a&#39;</span> : a, <span class="st">&#39;b&#39;</span> : b, <span class="st">&#39;c&#39;</span> : c}</span></code></pre></div>
+<p>取决于工作内容，第二种方法可能很有用。</p>
+<h2 id="函数也是对象">函数也是对象</h2>
+<p>由于Python函数都是对象，因此，在其他语言中较难表达的一些设计思想在Python中就要简单很多了。假设我们有下面这样一个字符串数组，希望对其进行一些数据清理工作并执行一堆转换：</p>
+<div class="sourceCode" id="cb93"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb93-1"><a href="#cb93-1"></a>In [<span class="dv">171</span>]: states <span class="op">=</span> [<span class="st">&#39;   Alabama &#39;</span>, <span class="st">&#39;Georgia!&#39;</span>, <span class="st">&#39;Georgia&#39;</span>, <span class="st">&#39;georgia&#39;</span>, <span class="st">&#39;FlOrIda&#39;</span>,</span>
+<span id="cb93-2"><a href="#cb93-2"></a>   .....:           <span class="st">&#39;south   carolina##&#39;</span>, <span class="st">&#39;West virginia?&#39;</span>]</span></code></pre></div>
+<p>不管是谁，只要处理过由用户提交的调查数据，就能明白这种乱七八糟的数据是怎么一回事。为了得到一组能用于分析工作的格式统一的字符串，需要做很多事情：去除空白符、删除各种标点符号、正确的大写格式等。做法之一是使用内建的字符串方法和正则表达式<code>re</code>模块：</p>
+<div class="sourceCode" id="cb94"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb94-1"><a href="#cb94-1"></a><span class="im">import</span> re</span>
+<span id="cb94-2"><a href="#cb94-2"></a></span>
+<span id="cb94-3"><a href="#cb94-3"></a><span class="kw">def</span> clean_strings(strings):</span>
+<span id="cb94-4"><a href="#cb94-4"></a>    result <span class="op">=</span> []</span>
+<span id="cb94-5"><a href="#cb94-5"></a>    <span class="cf">for</span> value <span class="kw">in</span> strings:</span>
+<span id="cb94-6"><a href="#cb94-6"></a>        value <span class="op">=</span> value.strip()</span>
+<span id="cb94-7"><a href="#cb94-7"></a>        value <span class="op">=</span> re.sub(<span class="st">&#39;[!#?]&#39;</span>, <span class="st">&#39;&#39;</span>, value)</span>
+<span id="cb94-8"><a href="#cb94-8"></a>        value <span class="op">=</span> value.title()</span>
+<span id="cb94-9"><a href="#cb94-9"></a>        result.append(value)</span>
+<span id="cb94-10"><a href="#cb94-10"></a>    <span class="cf">return</span> result</span></code></pre></div>
+<p>结果如下所示：</p>
+<div class="sourceCode" id="cb95"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb95-1"><a href="#cb95-1"></a>In [<span class="dv">173</span>]: clean_strings(states)</span>
+<span id="cb95-2"><a href="#cb95-2"></a>Out[<span class="dv">173</span>]: </span>
+<span id="cb95-3"><a href="#cb95-3"></a>[<span class="st">&#39;Alabama&#39;</span>,</span>
+<span id="cb95-4"><a href="#cb95-4"></a> <span class="st">&#39;Georgia&#39;</span>,</span>
+<span id="cb95-5"><a href="#cb95-5"></a> <span class="st">&#39;Georgia&#39;</span>,</span>
+<span id="cb95-6"><a href="#cb95-6"></a> <span class="st">&#39;Georgia&#39;</span>,</span>
+<span id="cb95-7"><a href="#cb95-7"></a> <span class="st">&#39;Florida&#39;</span>,</span>
+<span id="cb95-8"><a href="#cb95-8"></a> <span class="st">&#39;South   Carolina&#39;</span>,</span>
+<span id="cb95-9"><a href="#cb95-9"></a> <span class="st">&#39;West Virginia&#39;</span>]</span></code></pre></div>
+<p>其实还有另外一种不错的办法：将需要在一组给定字符串上执行的所有运算做成一个列表：</p>
+<div class="sourceCode" id="cb96"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb96-1"><a href="#cb96-1"></a><span class="kw">def</span> remove_punctuation(value):</span>
+<span id="cb96-2"><a href="#cb96-2"></a>    <span class="cf">return</span> re.sub(<span class="st">&#39;[!#?]&#39;</span>, <span class="st">&#39;&#39;</span>, value)</span>
+<span id="cb96-3"><a href="#cb96-3"></a></span>
+<span id="cb96-4"><a href="#cb96-4"></a>clean_ops <span class="op">=</span> [<span class="bu">str</span>.strip, remove_punctuation, <span class="bu">str</span>.title]</span>
+<span id="cb96-5"><a href="#cb96-5"></a></span>
+<span id="cb96-6"><a href="#cb96-6"></a><span class="kw">def</span> clean_strings(strings, ops):</span>
+<span id="cb96-7"><a href="#cb96-7"></a>    result <span class="op">=</span> []</span>
+<span id="cb96-8"><a href="#cb96-8"></a>    <span class="cf">for</span> value <span class="kw">in</span> strings:</span>
+<span id="cb96-9"><a href="#cb96-9"></a>        <span class="cf">for</span> function <span class="kw">in</span> ops:</span>
+<span id="cb96-10"><a href="#cb96-10"></a>            value <span class="op">=</span> function(value)</span>
+<span id="cb96-11"><a href="#cb96-11"></a>        result.append(value)</span>
+<span id="cb96-12"><a href="#cb96-12"></a>    <span class="cf">return</span> result</span></code></pre></div>
+<p>然后我们就有了：</p>
+<div class="sourceCode" id="cb97"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb97-1"><a href="#cb97-1"></a>In [<span class="dv">175</span>]: clean_strings(states, clean_ops)</span>
+<span id="cb97-2"><a href="#cb97-2"></a>Out[<span class="dv">175</span>]: </span>
+<span id="cb97-3"><a href="#cb97-3"></a>[<span class="st">&#39;Alabama&#39;</span>,</span>
+<span id="cb97-4"><a href="#cb97-4"></a> <span class="st">&#39;Georgia&#39;</span>,</span>
+<span id="cb97-5"><a href="#cb97-5"></a> <span class="st">&#39;Georgia&#39;</span>,</span>
+<span id="cb97-6"><a href="#cb97-6"></a> <span class="st">&#39;Georgia&#39;</span>,</span>
+<span id="cb97-7"><a href="#cb97-7"></a> <span class="st">&#39;Florida&#39;</span>,</span>
+<span id="cb97-8"><a href="#cb97-8"></a> <span class="st">&#39;South   Carolina&#39;</span>,</span>
+<span id="cb97-9"><a href="#cb97-9"></a> <span class="st">&#39;West Virginia&#39;</span>]</span></code></pre></div>
+<p>这种多函数模式使你能在很高的层次上轻松修改字符串的转换方式。此时的clean_strings也更具可复用性！</p>
+<p>还可以将函数用作其他函数的参数，比如内置的map函数，它用于在一组数据上应用一个函数：</p>
+<div class="sourceCode" id="cb98"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb98-1"><a href="#cb98-1"></a>In [<span class="dv">176</span>]: <span class="cf">for</span> x <span class="kw">in</span> <span class="bu">map</span>(remove_punctuation, states):</span>
+<span id="cb98-2"><a href="#cb98-2"></a>   .....:     <span class="bu">print</span>(x)</span>
+<span id="cb98-3"><a href="#cb98-3"></a>Alabama </span>
+<span id="cb98-4"><a href="#cb98-4"></a>Georgia</span>
+<span id="cb98-5"><a href="#cb98-5"></a>Georgia</span>
+<span id="cb98-6"><a href="#cb98-6"></a>georgia</span>
+<span id="cb98-7"><a href="#cb98-7"></a>FlOrIda</span>
+<span id="cb98-8"><a href="#cb98-8"></a>south   carolina</span>
+<span id="cb98-9"><a href="#cb98-9"></a>West virginia</span></code></pre></div>
+<h2 id="匿名lambda函数">匿名（lambda）函数</h2>
+<p>Python支持一种被称为匿名的、或lambda函数。它仅由单条语句组成，该语句的结果就是返回值。它是通过lambda关键字定义的，这个关键字没有别的含义，仅仅是说“我们正在声明的是一个匿名函数”。</p>
+<div class="sourceCode" id="cb99"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb99-1"><a href="#cb99-1"></a><span class="kw">def</span> short_function(x):</span>
+<span id="cb99-2"><a href="#cb99-2"></a>    <span class="cf">return</span> x <span class="op">*</span> <span class="dv">2</span></span>
+<span id="cb99-3"><a href="#cb99-3"></a></span>
+<span id="cb99-4"><a href="#cb99-4"></a>equiv_anon <span class="op">=</span> <span class="kw">lambda</span> x: x <span class="op">*</span> <span class="dv">2</span></span></code></pre></div>
+<p>本书其余部分一般将其称为lambda函数。它们在数据分析工作中非常方便，因为你会发现很多数据转换函数都以函数作为参数的。直接传入lambda函数比编写完整函数声明要少输入很多字（也更清晰），甚至比将lambda函数赋值给一个变量还要少输入很多字。看看下面这个简单得有些傻的例子：</p>
+<div class="sourceCode" id="cb100"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb100-1"><a href="#cb100-1"></a><span class="kw">def</span> apply_to_list(some_list, f):</span>
+<span id="cb100-2"><a href="#cb100-2"></a>    <span class="cf">return</span> [f(x) <span class="cf">for</span> x <span class="kw">in</span> some_list]</span>
+<span id="cb100-3"><a href="#cb100-3"></a></span>
+<span id="cb100-4"><a href="#cb100-4"></a>ints <span class="op">=</span> [<span class="dv">4</span>, <span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">5</span>, <span class="dv">6</span>]</span>
+<span id="cb100-5"><a href="#cb100-5"></a>apply_to_list(ints, <span class="kw">lambda</span> x: x <span class="op">*</span> <span class="dv">2</span>)</span></code></pre></div>
+<p>虽然你可以直接编写[x *2for x in ints]，但是这里我们可以非常轻松地传入一个自定义运算给apply_to_list函数。</p>
+<p>再来看另外一个例子。假设有一组字符串，你想要根据各字符串不同字母的数量对其进行排序：</p>
+<div class="sourceCode" id="cb101"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb101-1"><a href="#cb101-1"></a>In [<span class="dv">177</span>]: strings <span class="op">=</span> [<span class="st">&#39;foo&#39;</span>, <span class="st">&#39;card&#39;</span>, <span class="st">&#39;bar&#39;</span>, <span class="st">&#39;aaaa&#39;</span>, <span class="st">&#39;abab&#39;</span>]</span></code></pre></div>
+<p>这里，我们可以传入一个lambda函数到列表的sort方法：</p>
+<div class="sourceCode" id="cb102"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb102-1"><a href="#cb102-1"></a>In [<span class="dv">178</span>]: strings.sort(key<span class="op">=</span><span class="kw">lambda</span> x: <span class="bu">len</span>(<span class="bu">set</span>(<span class="bu">list</span>(x))))</span>
+<span id="cb102-2"><a href="#cb102-2"></a></span>
+<span id="cb102-3"><a href="#cb102-3"></a>In [<span class="dv">179</span>]: strings</span>
+<span id="cb102-4"><a href="#cb102-4"></a>Out[<span class="dv">179</span>]: [<span class="st">&#39;aaaa&#39;</span>, <span class="st">&#39;foo&#39;</span>, <span class="st">&#39;abab&#39;</span>, <span class="st">&#39;bar&#39;</span>, <span class="st">&#39;card&#39;</span>]</span></code></pre></div>
+<blockquote>
+<p>笔记：lambda函数之所以会被称为匿名函数，与def声明的函数不同，原因之一就是这种函数对象本身是没有提供名称__name__属性。</p>
+</blockquote>
+<h2 id="柯里化部分参数应用">柯里化：部分参数应用</h2>
+<p>柯里化（currying）是一个有趣的计算机科学术语，它指的是通过“部分参数应用”（partial argument application）从现有函数派生出新函数的技术。例如，假设我们有一个执行两数相加的简单函数：</p>
+<div class="sourceCode" id="cb103"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb103-1"><a href="#cb103-1"></a><span class="kw">def</span> add_numbers(x, y):</span>
+<span id="cb103-2"><a href="#cb103-2"></a>    <span class="cf">return</span> x <span class="op">+</span> y</span></code></pre></div>
+<p>通过这个函数，我们可以派生出一个新的只有一个参数的函数——add_five，它用于对其参数加5：</p>
+<div class="sourceCode" id="cb104"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb104-1"><a href="#cb104-1"></a>add_five <span class="op">=</span> <span class="kw">lambda</span> y: add_numbers(<span class="dv">5</span>, y)</span></code></pre></div>
+<p>add_numbers的第二个参数称为“柯里化的”（curried）。这里没什么特别花哨的东西，因为我们其实就只是定义了一个可以调用现有函数的新函数而已。内置的functools模块可以用partial函数将此过程简化：</p>
+<div class="sourceCode" id="cb105"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb105-1"><a href="#cb105-1"></a><span class="im">from</span> functools <span class="im">import</span> partial</span>
+<span id="cb105-2"><a href="#cb105-2"></a>add_five <span class="op">=</span> partial(add_numbers, <span class="dv">5</span>)</span></code></pre></div>
+<h2 id="生成器">生成器</h2>
+<p>能以一种一致的方式对序列进行迭代（比如列表中的对象或文件中的行）是Python的一个重要特点。这是通过一种叫做迭代器协议（iterator protocol，它是一种使对象可迭代的通用方式）的方式实现的，一个原生的使对象可迭代的方法。比如说，对字典进行迭代可以得到其所有的键：</p>
+<div class="sourceCode" id="cb106"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb106-1"><a href="#cb106-1"></a>In [<span class="dv">180</span>]: some_dict <span class="op">=</span> {<span class="st">&#39;a&#39;</span>: <span class="dv">1</span>, <span class="st">&#39;b&#39;</span>: <span class="dv">2</span>, <span class="st">&#39;c&#39;</span>: <span class="dv">3</span>}</span>
+<span id="cb106-2"><a href="#cb106-2"></a></span>
+<span id="cb106-3"><a href="#cb106-3"></a>In [<span class="dv">181</span>]: <span class="cf">for</span> key <span class="kw">in</span> some_dict:</span>
+<span id="cb106-4"><a href="#cb106-4"></a>   .....:     <span class="bu">print</span>(key)</span>
+<span id="cb106-5"><a href="#cb106-5"></a>a</span>
+<span id="cb106-6"><a href="#cb106-6"></a>b</span>
+<span id="cb106-7"><a href="#cb106-7"></a>c</span></code></pre></div>
+<p>当你编写for key in some_dict时，Python解释器首先会尝试从some_dict创建一个迭代器：</p>
+<div class="sourceCode" id="cb107"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb107-1"><a href="#cb107-1"></a>In [<span class="dv">182</span>]: dict_iterator <span class="op">=</span> <span class="bu">iter</span>(some_dict)</span>
+<span id="cb107-2"><a href="#cb107-2"></a></span>
+<span id="cb107-3"><a href="#cb107-3"></a>In [<span class="dv">183</span>]: dict_iterator</span>
+<span id="cb107-4"><a href="#cb107-4"></a>Out[<span class="dv">183</span>]: <span class="op">&lt;</span>dict_keyiterator at <span class="bn">0x7fbbd5a9f908</span><span class="op">&gt;</span></span></code></pre></div>
+<p>迭代器是一种特殊对象，它可以在诸如for循环之类的上下文中向Python解释器输送对象。大部分能接受列表之类的对象的方法也都可以接受任何可迭代对象。比如min、max、sum等内置方法以及list、tuple等类型构造器：</p>
+<div class="sourceCode" id="cb108"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb108-1"><a href="#cb108-1"></a>In [<span class="dv">184</span>]: <span class="bu">list</span>(dict_iterator)</span>
+<span id="cb108-2"><a href="#cb108-2"></a>Out[<span class="dv">184</span>]: [<span class="st">&#39;a&#39;</span>, <span class="st">&#39;b&#39;</span>, <span class="st">&#39;c&#39;</span>]</span></code></pre></div>
+<p>生成器（generator）是构造新的可迭代对象的一种简单方式。一般的函数执行之后只会返回单个值，而生成器则是以延迟的方式返回一个值序列，即每返回一个值之后暂停，直到下一个值被请求时再继续。要创建一个生成器，只需将函数中的return替换为yeild即可：</p>
+<div class="sourceCode" id="cb109"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb109-1"><a href="#cb109-1"></a><span class="kw">def</span> squares(n<span class="op">=</span><span class="dv">10</span>):</span>
+<span id="cb109-2"><a href="#cb109-2"></a>    <span class="bu">print</span>(<span class="st">&#39;Generating squares from 1 to </span><span class="sc">{0}</span><span class="st">&#39;</span>.<span class="bu">format</span>(n <span class="op">**</span> <span class="dv">2</span>))</span>
+<span id="cb109-3"><a href="#cb109-3"></a>    <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">1</span>, n <span class="op">+</span> <span class="dv">1</span>):</span>
+<span id="cb109-4"><a href="#cb109-4"></a>        <span class="cf">yield</span> i <span class="op">**</span> <span class="dv">2</span></span></code></pre></div>
+<p>调用该生成器时，没有任何代码会被立即执行：</p>
+<div class="sourceCode" id="cb110"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb110-1"><a href="#cb110-1"></a>In [<span class="dv">186</span>]: gen <span class="op">=</span> squares()</span>
+<span id="cb110-2"><a href="#cb110-2"></a></span>
+<span id="cb110-3"><a href="#cb110-3"></a>In [<span class="dv">187</span>]: gen</span>
+<span id="cb110-4"><a href="#cb110-4"></a>Out[<span class="dv">187</span>]: <span class="op">&lt;</span>generator <span class="bu">object</span> squares at <span class="bn">0x7fbbd5ab4570</span><span class="op">&gt;</span></span></code></pre></div>
+<p>直到你从该生成器中请求元素时，它才会开始执行其代码：</p>
+<div class="sourceCode" id="cb111"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb111-1"><a href="#cb111-1"></a>In [<span class="dv">188</span>]: <span class="cf">for</span> x <span class="kw">in</span> gen:</span>
+<span id="cb111-2"><a href="#cb111-2"></a>   .....:     <span class="bu">print</span>(x, end<span class="op">=</span><span class="st">&#39; &#39;</span>)</span>
+<span id="cb111-3"><a href="#cb111-3"></a>Generating squares <span class="im">from</span> <span class="dv">1</span> to <span class="dv">100</span></span>
+<span id="cb111-4"><a href="#cb111-4"></a><span class="dv">1</span> <span class="dv">4</span> <span class="dv">9</span> <span class="dv">16</span> <span class="dv">25</span> <span class="dv">36</span> <span class="dv">49</span> <span class="dv">64</span> <span class="dv">81</span> <span class="dv">100</span></span></code></pre></div>
+<h2 id="生成器表达式">生成器表达式</h2>
+<p>另一种更简洁的构造生成器的方法是使用生成器表达式（generator expression）。这是一种类似于列表、字典、集合推导式的生成器。其创建方式为，把列表推导式两端的方括号改成圆括号：</p>
+<div class="sourceCode" id="cb112"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb112-1"><a href="#cb112-1"></a>In [<span class="dv">189</span>]: gen <span class="op">=</span> (x <span class="op">**</span> <span class="dv">2</span> <span class="cf">for</span> x <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">100</span>))</span>
+<span id="cb112-2"><a href="#cb112-2"></a></span>
+<span id="cb112-3"><a href="#cb112-3"></a>In [<span class="dv">190</span>]: gen</span>
+<span id="cb112-4"><a href="#cb112-4"></a>Out[<span class="dv">190</span>]: <span class="op">&lt;</span>generator <span class="bu">object</span> <span class="op">&lt;</span>genexpr<span class="op">&gt;</span> at <span class="bn">0x7fbbd5ab29e8</span><span class="op">&gt;</span></span></code></pre></div>
+<p>它跟下面这个冗长得多的生成器是完全等价的：</p>
+<div class="sourceCode" id="cb113"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb113-1"><a href="#cb113-1"></a><span class="kw">def</span> _make_gen():</span>
+<span id="cb113-2"><a href="#cb113-2"></a>    <span class="cf">for</span> x <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">100</span>):</span>
+<span id="cb113-3"><a href="#cb113-3"></a>        <span class="cf">yield</span> x <span class="op">**</span> <span class="dv">2</span></span>
+<span id="cb113-4"><a href="#cb113-4"></a>gen <span class="op">=</span> _make_gen()</span></code></pre></div>
+<p>生成器表达式也可以取代列表推导式，作为函数参数：</p>
+<div class="sourceCode" id="cb114"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb114-1"><a href="#cb114-1"></a>In [<span class="dv">191</span>]: <span class="bu">sum</span>(x <span class="op">**</span> <span class="dv">2</span> <span class="cf">for</span> x <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">100</span>))</span>
+<span id="cb114-2"><a href="#cb114-2"></a>Out[<span class="dv">191</span>]: <span class="dv">328350</span></span>
+<span id="cb114-3"><a href="#cb114-3"></a></span>
+<span id="cb114-4"><a href="#cb114-4"></a>In [<span class="dv">192</span>]: <span class="bu">dict</span>((i, i <span class="op">**</span><span class="dv">2</span>) <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">5</span>))</span>
+<span id="cb114-5"><a href="#cb114-5"></a>Out[<span class="dv">192</span>]: {<span class="dv">0</span>: <span class="dv">0</span>, <span class="dv">1</span>: <span class="dv">1</span>, <span class="dv">2</span>: <span class="dv">4</span>, <span class="dv">3</span>: <span class="dv">9</span>, <span class="dv">4</span>: <span class="dv">16</span>}</span></code></pre></div>
+<h2 id="itertools模块">itertools模块</h2>
+<p>标准库itertools模块中有一组用于许多常见数据算法的生成器。例如，groupby可以接受任何序列和一个函数。它根据函数的返回值对序列中的连续元素进行分组。下面是一个例子：</p>
+<div class="sourceCode" id="cb115"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb115-1"><a href="#cb115-1"></a>In [<span class="dv">193</span>]: <span class="im">import</span> itertools</span>
+<span id="cb115-2"><a href="#cb115-2"></a></span>
+<span id="cb115-3"><a href="#cb115-3"></a>In [<span class="dv">194</span>]: first_letter <span class="op">=</span> <span class="kw">lambda</span> x: x[<span class="dv">0</span>]</span>
+<span id="cb115-4"><a href="#cb115-4"></a></span>
+<span id="cb115-5"><a href="#cb115-5"></a>In [<span class="dv">195</span>]: names <span class="op">=</span> [<span class="st">&#39;Alan&#39;</span>, <span class="st">&#39;Adam&#39;</span>, <span class="st">&#39;Wes&#39;</span>, <span class="st">&#39;Will&#39;</span>, <span class="st">&#39;Albert&#39;</span>, <span class="st">&#39;Steven&#39;</span>]</span>
+<span id="cb115-6"><a href="#cb115-6"></a></span>
+<span id="cb115-7"><a href="#cb115-7"></a>In [<span class="dv">196</span>]: <span class="cf">for</span> letter, names <span class="kw">in</span> itertools.groupby(names, first_letter):</span>
+<span id="cb115-8"><a href="#cb115-8"></a>   .....:     <span class="bu">print</span>(letter, <span class="bu">list</span>(names)) <span class="co"># names is a generator</span></span>
+<span id="cb115-9"><a href="#cb115-9"></a>A [<span class="st">&#39;Alan&#39;</span>, <span class="st">&#39;Adam&#39;</span>]</span>
+<span id="cb115-10"><a href="#cb115-10"></a>W [<span class="st">&#39;Wes&#39;</span>, <span class="st">&#39;Will&#39;</span>]</span>
+<span id="cb115-11"><a href="#cb115-11"></a>A [<span class="st">&#39;Albert&#39;</span>]</span>
+<span id="cb115-12"><a href="#cb115-12"></a>S [<span class="st">&#39;Steven&#39;</span>]</span></code></pre></div>
+<p>表3-2中列出了一些我经常用到的itertools函数。建议参阅Python官方文档，进一步学习。</p>
+<figure>
+<img src="http://upload-images.jianshu.io/upload_images/7178691-111823d8767a104d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="" /><figcaption>表3-2 一些有用的itertools函数</figcaption>
+</figure>
+<h2 id="错误和异常处理">错误和异常处理</h2>
+<p>优雅地处理Python的错误和异常是构建健壮程序的重要部分。在数据分析中，许多函数函数只用于部分输入。例如，Python的float函数可以将字符串转换成浮点数，但输入有误时，有<code>ValueError</code>错误：</p>
+<div class="sourceCode" id="cb116"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb116-1"><a href="#cb116-1"></a>In [<span class="dv">197</span>]: <span class="bu">float</span>(<span class="st">&#39;1.2345&#39;</span>)</span>
+<span id="cb116-2"><a href="#cb116-2"></a>Out[<span class="dv">197</span>]: <span class="fl">1.2345</span></span>
+<span id="cb116-3"><a href="#cb116-3"></a></span>
+<span id="cb116-4"><a href="#cb116-4"></a>In [<span class="dv">198</span>]: <span class="bu">float</span>(<span class="st">&#39;something&#39;</span>)</span>
+<span id="cb116-5"><a href="#cb116-5"></a><span class="op">---------------------------------------------------------------------------</span></span>
+<span id="cb116-6"><a href="#cb116-6"></a><span class="pp">ValueError</span>                                Traceback (most recent call last)</span>
+<span id="cb116-7"><a href="#cb116-7"></a><span class="op">&lt;</span>ipython<span class="op">-</span><span class="bu">input</span><span class="op">-</span><span class="dv">198</span><span class="op">-</span><span class="dv">439904410854</span><span class="op">&gt;</span> <span class="kw">in</span> <span class="op">&lt;</span>module<span class="op">&gt;</span>()</span>
+<span id="cb116-8"><a href="#cb116-8"></a><span class="op">----&gt;</span> <span class="dv">1</span> <span class="bu">float</span>(<span class="st">&#39;something&#39;</span>)</span>
+<span id="cb116-9"><a href="#cb116-9"></a><span class="pp">ValueError</span>: could <span class="kw">not</span> convert string to <span class="bu">float</span>: <span class="st">&#39;something&#39;</span></span></code></pre></div>
+<p>假如想优雅地处理float的错误，让它返回输入值。我们可以写一个函数，在try/except中调用float：</p>
+<div class="sourceCode" id="cb117"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb117-1"><a href="#cb117-1"></a><span class="kw">def</span> attempt_float(x):</span>
+<span id="cb117-2"><a href="#cb117-2"></a>    <span class="cf">try</span>:</span>
+<span id="cb117-3"><a href="#cb117-3"></a>        <span class="cf">return</span> <span class="bu">float</span>(x)</span>
+<span id="cb117-4"><a href="#cb117-4"></a>    <span class="cf">except</span>:</span>
+<span id="cb117-5"><a href="#cb117-5"></a>        <span class="cf">return</span> x</span></code></pre></div>
+<p>当float(x)抛出异常时，才会执行except的部分：</p>
+<div class="sourceCode" id="cb118"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb118-1"><a href="#cb118-1"></a>In [<span class="dv">200</span>]: attempt_float(<span class="st">&#39;1.2345&#39;</span>)</span>
+<span id="cb118-2"><a href="#cb118-2"></a>Out[<span class="dv">200</span>]: <span class="fl">1.2345</span></span>
+<span id="cb118-3"><a href="#cb118-3"></a></span>
+<span id="cb118-4"><a href="#cb118-4"></a>In [<span class="dv">201</span>]: attempt_float(<span class="st">&#39;something&#39;</span>)</span>
+<span id="cb118-5"><a href="#cb118-5"></a>Out[<span class="dv">201</span>]: <span class="st">&#39;something&#39;</span></span></code></pre></div>
+<p>你可能注意到float抛出的异常不仅是ValueError：</p>
+<div class="sourceCode" id="cb119"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb119-1"><a href="#cb119-1"></a>In [<span class="dv">202</span>]: <span class="bu">float</span>((<span class="dv">1</span>, <span class="dv">2</span>))</span>
+<span id="cb119-2"><a href="#cb119-2"></a><span class="op">---------------------------------------------------------------------------</span></span>
+<span id="cb119-3"><a href="#cb119-3"></a><span class="pp">TypeError</span>                                 Traceback (most recent call last)</span>
+<span id="cb119-4"><a href="#cb119-4"></a><span class="op">&lt;</span>ipython<span class="op">-</span><span class="bu">input</span><span class="op">-</span><span class="dv">202</span><span class="op">-</span>842079ebb635<span class="op">&gt;</span> <span class="kw">in</span> <span class="op">&lt;</span>module<span class="op">&gt;</span>()</span>
+<span id="cb119-5"><a href="#cb119-5"></a><span class="op">----&gt;</span> <span class="dv">1</span> <span class="bu">float</span>((<span class="dv">1</span>, <span class="dv">2</span>))</span>
+<span id="cb119-6"><a href="#cb119-6"></a><span class="pp">TypeError</span>: <span class="bu">float</span>() argument must be a string <span class="kw">or</span> a number, <span class="kw">not</span> <span class="st">&#39;tuple&#39;</span></span></code></pre></div>
+<p>你可能只想处理ValueError，TypeError错误（输入不是字符串或数值）可能是合理的bug。可以写一个异常类型：</p>
+<div class="sourceCode" id="cb120"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb120-1"><a href="#cb120-1"></a><span class="kw">def</span> attempt_float(x):</span>
+<span id="cb120-2"><a href="#cb120-2"></a>    <span class="cf">try</span>:</span>
+<span id="cb120-3"><a href="#cb120-3"></a>        <span class="cf">return</span> <span class="bu">float</span>(x)</span>
+<span id="cb120-4"><a href="#cb120-4"></a>    <span class="cf">except</span> <span class="pp">ValueError</span>:</span>
+<span id="cb120-5"><a href="#cb120-5"></a>        <span class="cf">return</span> x</span></code></pre></div>
+<p>然后有：</p>
+<div class="sourceCode" id="cb121"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb121-1"><a href="#cb121-1"></a>In [<span class="dv">204</span>]: attempt_float((<span class="dv">1</span>, <span class="dv">2</span>))</span>
+<span id="cb121-2"><a href="#cb121-2"></a><span class="op">---------------------------------------------------------------------------</span></span>
+<span id="cb121-3"><a href="#cb121-3"></a><span class="pp">TypeError</span>                                 Traceback (most recent call last)</span>
+<span id="cb121-4"><a href="#cb121-4"></a><span class="op">&lt;</span>ipython<span class="op">-</span><span class="bu">input</span><span class="op">-</span><span class="dv">204</span><span class="op">-</span>9bdfd730cead<span class="op">&gt;</span> <span class="kw">in</span> <span class="op">&lt;</span>module<span class="op">&gt;</span>()</span>
+<span id="cb121-5"><a href="#cb121-5"></a><span class="op">----&gt;</span> <span class="dv">1</span> attempt_float((<span class="dv">1</span>, <span class="dv">2</span>))</span>
+<span id="cb121-6"><a href="#cb121-6"></a><span class="op">&lt;</span>ipython<span class="op">-</span><span class="bu">input</span><span class="op">-</span><span class="dv">203</span><span class="op">-</span>3e06b8379b6b<span class="op">&gt;</span> <span class="kw">in</span> attempt_float(x)</span>
+<span id="cb121-7"><a href="#cb121-7"></a>      <span class="dv">1</span> <span class="kw">def</span> attempt_float(x):</span>
+<span id="cb121-8"><a href="#cb121-8"></a>      <span class="dv">2</span>     <span class="cf">try</span>:</span>
+<span id="cb121-9"><a href="#cb121-9"></a><span class="op">----&gt;</span> <span class="dv">3</span>         <span class="cf">return</span> <span class="bu">float</span>(x)</span>
+<span id="cb121-10"><a href="#cb121-10"></a>      <span class="dv">4</span>     <span class="cf">except</span> <span class="pp">ValueError</span>:</span>
+<span id="cb121-11"><a href="#cb121-11"></a>      <span class="dv">5</span>         <span class="cf">return</span> x</span>
+<span id="cb121-12"><a href="#cb121-12"></a><span class="pp">TypeError</span>: <span class="bu">float</span>() argument must be a string <span class="kw">or</span> a number, <span class="kw">not</span> <span class="st">&#39;tuple&#39;</span></span></code></pre></div>
+<p>可以用元组包含多个异常：</p>
+<div class="sourceCode" id="cb122"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb122-1"><a href="#cb122-1"></a><span class="kw">def</span> attempt_float(x):</span>
+<span id="cb122-2"><a href="#cb122-2"></a>    <span class="cf">try</span>:</span>
+<span id="cb122-3"><a href="#cb122-3"></a>        <span class="cf">return</span> <span class="bu">float</span>(x)</span>
+<span id="cb122-4"><a href="#cb122-4"></a>    <span class="cf">except</span> (<span class="pp">TypeError</span>, <span class="pp">ValueError</span>):</span>
+<span id="cb122-5"><a href="#cb122-5"></a>        <span class="cf">return</span> x</span></code></pre></div>
+<p>某些情况下，你可能不想抑制异常，你想无论try部分的代码是否成功，都执行一段代码。可以使用finally：</p>
+<div class="sourceCode" id="cb123"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb123-1"><a href="#cb123-1"></a>f <span class="op">=</span> <span class="bu">open</span>(path, <span class="st">&#39;w&#39;</span>)</span>
+<span id="cb123-2"><a href="#cb123-2"></a></span>
+<span id="cb123-3"><a href="#cb123-3"></a><span class="cf">try</span>:</span>
+<span id="cb123-4"><a href="#cb123-4"></a>    write_to_file(f)</span>
+<span id="cb123-5"><a href="#cb123-5"></a><span class="cf">finally</span>:</span>
+<span id="cb123-6"><a href="#cb123-6"></a>    f.close()</span></code></pre></div>
+<p>这里，文件处理f总会被关闭。相似的，你可以用else让只在try部分成功的情况下，才执行代码：</p>
+<div class="sourceCode" id="cb124"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb124-1"><a href="#cb124-1"></a>f <span class="op">=</span> <span class="bu">open</span>(path, <span class="st">&#39;w&#39;</span>)</span>
+<span id="cb124-2"><a href="#cb124-2"></a></span>
+<span id="cb124-3"><a href="#cb124-3"></a><span class="cf">try</span>:</span>
+<span id="cb124-4"><a href="#cb124-4"></a>    write_to_file(f)</span>
+<span id="cb124-5"><a href="#cb124-5"></a><span class="cf">except</span>:</span>
+<span id="cb124-6"><a href="#cb124-6"></a>    <span class="bu">print</span>(<span class="st">&#39;Failed&#39;</span>)</span>
+<span id="cb124-7"><a href="#cb124-7"></a><span class="cf">else</span>:</span>
+<span id="cb124-8"><a href="#cb124-8"></a>    <span class="bu">print</span>(<span class="st">&#39;Succeeded&#39;</span>)</span>
+<span id="cb124-9"><a href="#cb124-9"></a><span class="cf">finally</span>:</span>
+<span id="cb124-10"><a href="#cb124-10"></a>    f.close()</span></code></pre></div>
+<h2 id="ipython的异常">IPython的异常</h2>
+<p>如果是在%run一个脚本或一条语句时抛出异常，IPython默认会打印完整的调用栈（traceback），在栈的每个点都会有几行上下文：</p>
+<div class="sourceCode" id="cb125"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb125-1"><a href="#cb125-1"></a>In [<span class="dv">10</span>]: <span class="op">%</span>run examples<span class="op">/</span>ipython_bug.py</span>
+<span id="cb125-2"><a href="#cb125-2"></a><span class="op">---------------------------------------------------------------------------</span></span>
+<span id="cb125-3"><a href="#cb125-3"></a><span class="pp">AssertionError</span>                            Traceback (most recent call last)</span>
+<span id="cb125-4"><a href="#cb125-4"></a><span class="op">/</span>home<span class="op">/</span>wesm<span class="op">/</span>code<span class="op">/</span>pydata<span class="op">-</span>book<span class="op">/</span>examples<span class="op">/</span>ipython_bug.py <span class="kw">in</span> <span class="op">&lt;</span>module<span class="op">&gt;</span>()</span>
+<span id="cb125-5"><a href="#cb125-5"></a>     <span class="dv">13</span>     throws_an_exception()</span>
+<span id="cb125-6"><a href="#cb125-6"></a>     <span class="dv">14</span></span>
+<span id="cb125-7"><a href="#cb125-7"></a><span class="op">---&gt;</span> <span class="dv">15</span> calling_things()</span>
+<span id="cb125-8"><a href="#cb125-8"></a></span>
+<span id="cb125-9"><a href="#cb125-9"></a><span class="op">/</span>home<span class="op">/</span>wesm<span class="op">/</span>code<span class="op">/</span>pydata<span class="op">-</span>book<span class="op">/</span>examples<span class="op">/</span>ipython_bug.py <span class="kw">in</span> calling_things()</span>
+<span id="cb125-10"><a href="#cb125-10"></a>     <span class="dv">11</span> <span class="kw">def</span> calling_things():</span>
+<span id="cb125-11"><a href="#cb125-11"></a>     <span class="dv">12</span>     works_fine()</span>
+<span id="cb125-12"><a href="#cb125-12"></a><span class="op">---&gt;</span> <span class="dv">13</span>     throws_an_exception()</span>
+<span id="cb125-13"><a href="#cb125-13"></a>     <span class="dv">14</span></span>
+<span id="cb125-14"><a href="#cb125-14"></a>     <span class="dv">15</span> calling_things()</span>
+<span id="cb125-15"><a href="#cb125-15"></a></span>
+<span id="cb125-16"><a href="#cb125-16"></a><span class="op">/</span>home<span class="op">/</span>wesm<span class="op">/</span>code<span class="op">/</span>pydata<span class="op">-</span>book<span class="op">/</span>examples<span class="op">/</span>ipython_bug.py <span class="kw">in</span> throws_an_exception()</span>
+<span id="cb125-17"><a href="#cb125-17"></a>      <span class="dv">7</span>     a <span class="op">=</span> <span class="dv">5</span></span>
+<span id="cb125-18"><a href="#cb125-18"></a>      <span class="dv">8</span>     b <span class="op">=</span> <span class="dv">6</span></span>
+<span id="cb125-19"><a href="#cb125-19"></a><span class="op">----&gt;</span> <span class="dv">9</span>     <span class="cf">assert</span>(a <span class="op">+</span> b <span class="op">==</span> <span class="dv">10</span>)</span>
+<span id="cb125-20"><a href="#cb125-20"></a>     <span class="dv">10</span></span>
+<span id="cb125-21"><a href="#cb125-21"></a>     <span class="dv">11</span> <span class="kw">def</span> calling_things():</span>
+<span id="cb125-22"><a href="#cb125-22"></a></span>
+<span id="cb125-23"><a href="#cb125-23"></a><span class="pp">AssertionError</span>:</span></code></pre></div>
+<p>自身就带有文本是相对于Python标准解释器的极大优点。你可以用魔术命令<code>%xmode</code>，从Plain（与Python标准解释器相同）到Verbose（带有函数的参数值）控制文本显示的数量。后面可以看到，发生错误之后，（用%debug或%pdb magics）可以进入stack进行事后调试。</p>
+<h1 id="文件和操作系统">3.3 文件和操作系统</h1>
+<p>本书的代码示例大多使用诸如pandas.read_csv之类的高级工具将磁盘上的数据文件读入Python数据结构。但我们还是需要了解一些有关Python文件处理方面的基础知识。好在它本来就很简单，这也是Python在文本和文件处理方面的如此流行的原因之一。</p>
+<p>为了打开一个文件以便读写，可以使用内置的open函数以及一个相对或绝对的文件路径：</p>
+<div class="sourceCode" id="cb126"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb126-1"><a href="#cb126-1"></a>In [<span class="dv">207</span>]: path <span class="op">=</span> <span class="st">&#39;examples/segismundo.txt&#39;</span></span>
+<span id="cb126-2"><a href="#cb126-2"></a></span>
+<span id="cb126-3"><a href="#cb126-3"></a>In [<span class="dv">208</span>]: f <span class="op">=</span> <span class="bu">open</span>(path)</span></code></pre></div>
+<p>默认情况下，文件是以只读模式（‘r’）打开的。然后，我们就可以像处理列表那样来处理这个文件句柄f了，比如对行进行迭代：</p>
+<div class="sourceCode" id="cb127"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb127-1"><a href="#cb127-1"></a><span class="cf">for</span> line <span class="kw">in</span> f:</span>
+<span id="cb127-2"><a href="#cb127-2"></a>    <span class="cf">pass</span></span></code></pre></div>
+<p>从文件中取出的行都带有完整的行结束符（EOL），因此你常常会看到下面这样的代码（得到一组没有EOL的行）：</p>
+<div class="sourceCode" id="cb128"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb128-1"><a href="#cb128-1"></a>In [<span class="dv">209</span>]: lines <span class="op">=</span> [x.rstrip() <span class="cf">for</span> x <span class="kw">in</span> <span class="bu">open</span>(path)]</span>
+<span id="cb128-2"><a href="#cb128-2"></a></span>
+<span id="cb128-3"><a href="#cb128-3"></a>In [<span class="dv">210</span>]: lines</span>
+<span id="cb128-4"><a href="#cb128-4"></a>Out[<span class="dv">210</span>]: </span>
+<span id="cb128-5"><a href="#cb128-5"></a>[<span class="st">&#39;Sueña el rico en su riqueza,&#39;</span>,</span>
+<span id="cb128-6"><a href="#cb128-6"></a> <span class="st">&#39;que más cuidados le ofrece;&#39;</span>,</span>
+<span id="cb128-7"><a href="#cb128-7"></a> <span class="st">&#39;&#39;</span>,</span>
+<span id="cb128-8"><a href="#cb128-8"></a> <span class="st">&#39;sueña el pobre que padece&#39;</span>,</span>
+<span id="cb128-9"><a href="#cb128-9"></a> <span class="st">&#39;su miseria y su pobreza;&#39;</span>,</span>
+<span id="cb128-10"><a href="#cb128-10"></a> <span class="st">&#39;&#39;</span>,</span>
+<span id="cb128-11"><a href="#cb128-11"></a> <span class="st">&#39;sueña el que a medrar empieza,&#39;</span>,</span>
+<span id="cb128-12"><a href="#cb128-12"></a> <span class="st">&#39;sueña el que afana y pretende,&#39;</span>,</span>
+<span id="cb128-13"><a href="#cb128-13"></a> <span class="st">&#39;sueña el que agravia y ofende,&#39;</span>,</span>
+<span id="cb128-14"><a href="#cb128-14"></a> <span class="st">&#39;&#39;</span>,</span>
+<span id="cb128-15"><a href="#cb128-15"></a> <span class="st">&#39;y en el mundo, en conclusión,&#39;</span>,</span>
+<span id="cb128-16"><a href="#cb128-16"></a> <span class="st">&#39;todos sueñan lo que son,&#39;</span>,</span>
+<span id="cb128-17"><a href="#cb128-17"></a> <span class="st">&#39;aunque ninguno lo entiende.&#39;</span>,</span>
+<span id="cb128-18"><a href="#cb128-18"></a> <span class="st">&#39;&#39;</span>]</span></code></pre></div>
+<p>如果使用open创建文件对象，一定要用close关闭它。关闭文件可以返回操作系统资源：</p>
+<div class="sourceCode" id="cb129"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb129-1"><a href="#cb129-1"></a>In [<span class="dv">211</span>]: f.close()</span></code></pre></div>
+<p>用with语句可以可以更容易地清理打开的文件：</p>
+<div class="sourceCode" id="cb130"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb130-1"><a href="#cb130-1"></a>In [<span class="dv">212</span>]: <span class="cf">with</span> <span class="bu">open</span>(path) <span class="im">as</span> f:</span>
+<span id="cb130-2"><a href="#cb130-2"></a>   .....:     lines <span class="op">=</span> [x.rstrip() <span class="cf">for</span> x <span class="kw">in</span> f]</span></code></pre></div>
+<p>这样可以在退出代码块时，自动关闭文件。</p>
+<p>如果输入f =open(path,‘w’)，就会有一个新文件被创建在examples/segismundo.txt，并覆盖掉该位置原来的任何数据。另外有一个x文件模式，它可以创建可写的文件，但是如果文件路径存在，就无法创建。表3-3列出了所有的读/写模式。</p>
+<figure>
+<img src="http://upload-images.jianshu.io/upload_images/7178691-28274484129f0ea7.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="" /><figcaption>表3-3 Python的文件模式</figcaption>
+</figure>
+<p>对于可读文件，一些常用的方法是read、seek和tell。read会从文件返回字符。字符的内容是由文件的编码决定的（如UTF-8），如果是二进制模式打开的就是原始字节：</p>
+<div class="sourceCode" id="cb131"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb131-1"><a href="#cb131-1"></a>In [<span class="dv">213</span>]: f <span class="op">=</span> <span class="bu">open</span>(path)</span>
+<span id="cb131-2"><a href="#cb131-2"></a></span>
+<span id="cb131-3"><a href="#cb131-3"></a>In [<span class="dv">214</span>]: f.read(<span class="dv">10</span>)</span>
+<span id="cb131-4"><a href="#cb131-4"></a>Out[<span class="dv">214</span>]: <span class="st">&#39;Sueña el r&#39;</span></span>
+<span id="cb131-5"><a href="#cb131-5"></a></span>
+<span id="cb131-6"><a href="#cb131-6"></a>In [<span class="dv">215</span>]: f2 <span class="op">=</span> <span class="bu">open</span>(path, <span class="st">&#39;rb&#39;</span>)  <span class="co"># Binary mode</span></span>
+<span id="cb131-7"><a href="#cb131-7"></a></span>
+<span id="cb131-8"><a href="#cb131-8"></a>In [<span class="dv">216</span>]: f2.read(<span class="dv">10</span>)</span>
+<span id="cb131-9"><a href="#cb131-9"></a>Out[<span class="dv">216</span>]: b<span class="st">&#39;Sue</span><span class="ch">\xc3\xb1</span><span class="st">a el &#39;</span></span></code></pre></div>
+<p>read模式会将文件句柄的位置提前，提前的数量是读取的字节数。tell可以给出当前的位置：</p>
+<div class="sourceCode" id="cb132"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb132-1"><a href="#cb132-1"></a>In [<span class="dv">217</span>]: f.tell()</span>
+<span id="cb132-2"><a href="#cb132-2"></a>Out[<span class="dv">217</span>]: <span class="dv">11</span></span>
+<span id="cb132-3"><a href="#cb132-3"></a></span>
+<span id="cb132-4"><a href="#cb132-4"></a>In [<span class="dv">218</span>]: f2.tell()</span>
+<span id="cb132-5"><a href="#cb132-5"></a>Out[<span class="dv">218</span>]: <span class="dv">10</span></span></code></pre></div>
+<p>尽管我们从文件读取了10个字符，位置却是11，这是因为用默认的编码用了这么多字节才解码了这10个字符。你可以用sys模块检查默认的编码：</p>
+<div class="sourceCode" id="cb133"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb133-1"><a href="#cb133-1"></a>In [<span class="dv">219</span>]: <span class="im">import</span> sys</span>
+<span id="cb133-2"><a href="#cb133-2"></a></span>
+<span id="cb133-3"><a href="#cb133-3"></a>In [<span class="dv">220</span>]: sys.getdefaultencoding()</span>
+<span id="cb133-4"><a href="#cb133-4"></a>Out[<span class="dv">220</span>]: <span class="st">&#39;utf-8&#39;</span></span></code></pre></div>
+<p>seek将文件位置更改为文件中的指定字节：</p>
+<div class="sourceCode" id="cb134"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb134-1"><a href="#cb134-1"></a>In [<span class="dv">221</span>]: f.seek(<span class="dv">3</span>)</span>
+<span id="cb134-2"><a href="#cb134-2"></a>Out[<span class="dv">221</span>]: <span class="dv">3</span></span>
+<span id="cb134-3"><a href="#cb134-3"></a></span>
+<span id="cb134-4"><a href="#cb134-4"></a>In [<span class="dv">222</span>]: f.read(<span class="dv">1</span>)</span>
+<span id="cb134-5"><a href="#cb134-5"></a>Out[<span class="dv">222</span>]: <span class="st">&#39;ñ&#39;</span></span></code></pre></div>
+<p>最后，关闭文件：</p>
+<div class="sourceCode" id="cb135"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb135-1"><a href="#cb135-1"></a>In [<span class="dv">223</span>]: f.close()</span>
+<span id="cb135-2"><a href="#cb135-2"></a></span>
+<span id="cb135-3"><a href="#cb135-3"></a>In [<span class="dv">224</span>]: f2.close()</span></code></pre></div>
+<p>向文件写入，可以使用文件的write或writelines方法。例如，我们可以创建一个无空行版的prof_mod.py：</p>
+<div class="sourceCode" id="cb136"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb136-1"><a href="#cb136-1"></a>In [<span class="dv">225</span>]: <span class="cf">with</span> <span class="bu">open</span>(<span class="st">&#39;tmp.txt&#39;</span>, <span class="st">&#39;w&#39;</span>) <span class="im">as</span> handle:</span>
+<span id="cb136-2"><a href="#cb136-2"></a>   .....:     handle.writelines(x <span class="cf">for</span> x <span class="kw">in</span> <span class="bu">open</span>(path) <span class="cf">if</span> <span class="bu">len</span>(x) <span class="op">&gt;</span> <span class="dv">1</span>)</span>
+<span id="cb136-3"><a href="#cb136-3"></a></span>
+<span id="cb136-4"><a href="#cb136-4"></a>In [<span class="dv">226</span>]: <span class="cf">with</span> <span class="bu">open</span>(<span class="st">&#39;tmp.txt&#39;</span>) <span class="im">as</span> f:</span>
+<span id="cb136-5"><a href="#cb136-5"></a>   .....:     lines <span class="op">=</span> f.readlines()</span>
+<span id="cb136-6"><a href="#cb136-6"></a></span>
+<span id="cb136-7"><a href="#cb136-7"></a>In [<span class="dv">227</span>]: lines</span>
+<span id="cb136-8"><a href="#cb136-8"></a>Out[<span class="dv">227</span>]: </span>
+<span id="cb136-9"><a href="#cb136-9"></a>[<span class="st">&#39;Sueña el rico en su riqueza,</span><span class="ch">\n</span><span class="st">&#39;</span>,</span>
+<span id="cb136-10"><a href="#cb136-10"></a> <span class="st">&#39;que más cuidados le ofrece;</span><span class="ch">\n</span><span class="st">&#39;</span>,</span>
+<span id="cb136-11"><a href="#cb136-11"></a> <span class="st">&#39;sueña el pobre que padece</span><span class="ch">\n</span><span class="st">&#39;</span>,</span>
+<span id="cb136-12"><a href="#cb136-12"></a> <span class="st">&#39;su miseria y su pobreza;</span><span class="ch">\n</span><span class="st">&#39;</span>,</span>
+<span id="cb136-13"><a href="#cb136-13"></a> <span class="st">&#39;sueña el que a medrar empieza,</span><span class="ch">\n</span><span class="st">&#39;</span>,</span>
+<span id="cb136-14"><a href="#cb136-14"></a> <span class="st">&#39;sueña el que afana y pretende,</span><span class="ch">\n</span><span class="st">&#39;</span>,</span>
+<span id="cb136-15"><a href="#cb136-15"></a> <span class="st">&#39;sueña el que agravia y ofende,</span><span class="ch">\n</span><span class="st">&#39;</span>,</span>
+<span id="cb136-16"><a href="#cb136-16"></a> <span class="st">&#39;y en el mundo, en conclusión,</span><span class="ch">\n</span><span class="st">&#39;</span>,</span>
+<span id="cb136-17"><a href="#cb136-17"></a> <span class="st">&#39;todos sueñan lo que son,</span><span class="ch">\n</span><span class="st">&#39;</span>,</span>
+<span id="cb136-18"><a href="#cb136-18"></a> <span class="st">&#39;aunque ninguno lo entiende.</span><span class="ch">\n</span><span class="st">&#39;</span>]</span></code></pre></div>
+<p>表3-4列出了一些最常用的文件方法。</p>
+<figure>
+<img src="http://upload-images.jianshu.io/upload_images/7178691-d25bd6e730afeb39.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="" /><figcaption>表3-4 Python重要的文件方法或属性</figcaption>
+</figure>
+<h2 id="文件的字节和unicode">文件的字节和Unicode</h2>
+<p>Python文件的默认操作是“文本模式”，也就是说，你需要处理Python的字符串（即Unicode）。它与“二进制模式”相对，文件模式加一个b。我们来看上一节的文件（UTF-8编码、包含非ASCII字符）：</p>
+<div class="sourceCode" id="cb137"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb137-1"><a href="#cb137-1"></a>In [<span class="dv">230</span>]: <span class="cf">with</span> <span class="bu">open</span>(path) <span class="im">as</span> f:</span>
+<span id="cb137-2"><a href="#cb137-2"></a>   .....:     chars <span class="op">=</span> f.read(<span class="dv">10</span>)</span>
+<span id="cb137-3"><a href="#cb137-3"></a></span>
+<span id="cb137-4"><a href="#cb137-4"></a>In [<span class="dv">231</span>]: chars</span>
+<span id="cb137-5"><a href="#cb137-5"></a>Out[<span class="dv">231</span>]: <span class="st">&#39;Sueña el r&#39;</span></span></code></pre></div>
+<p>UTF-8是长度可变的Unicode编码，所以当我从文件请求一定数量的字符时，Python会从文件读取足够多（可能少至10或多至40字节）的字节进行解码。如果以“rb”模式打开文件，则读取确切的请求字节数：</p>
+<div class="sourceCode" id="cb138"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb138-1"><a href="#cb138-1"></a>In [<span class="dv">232</span>]: <span class="cf">with</span> <span class="bu">open</span>(path, <span class="st">&#39;rb&#39;</span>) <span class="im">as</span> f:</span>
+<span id="cb138-2"><a href="#cb138-2"></a>   .....:     data <span class="op">=</span> f.read(<span class="dv">10</span>)</span>
+<span id="cb138-3"><a href="#cb138-3"></a></span>
+<span id="cb138-4"><a href="#cb138-4"></a>In [<span class="dv">233</span>]: data</span>
+<span id="cb138-5"><a href="#cb138-5"></a>Out[<span class="dv">233</span>]: b<span class="st">&#39;Sue</span><span class="ch">\xc3\xb1</span><span class="st">a el &#39;</span></span></code></pre></div>
+<p>取决于文本的编码，你可以将字节解码为str对象，但只有当每个编码的Unicode字符都完全成形时才能这么做：</p>
+<div class="sourceCode" id="cb139"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb139-1"><a href="#cb139-1"></a>In [<span class="dv">234</span>]: data.decode(<span class="st">&#39;utf8&#39;</span>)</span>
+<span id="cb139-2"><a href="#cb139-2"></a>Out[<span class="dv">234</span>]: <span class="st">&#39;Sueña el &#39;</span></span>
+<span id="cb139-3"><a href="#cb139-3"></a></span>
+<span id="cb139-4"><a href="#cb139-4"></a>In [<span class="dv">235</span>]: data[:<span class="dv">4</span>].decode(<span class="st">&#39;utf8&#39;</span>)</span>
+<span id="cb139-5"><a href="#cb139-5"></a><span class="op">---------------------------------------------------------------------------</span></span>
+<span id="cb139-6"><a href="#cb139-6"></a><span class="pp">UnicodeDecodeError</span>                        Traceback (most recent call last)</span>
+<span id="cb139-7"><a href="#cb139-7"></a><span class="op">&lt;</span>ipython<span class="op">-</span><span class="bu">input</span><span class="op">-</span><span class="dv">235</span><span class="op">-</span>300e0af10bb7<span class="op">&gt;</span> <span class="kw">in</span> <span class="op">&lt;</span>module<span class="op">&gt;</span>()</span>
+<span id="cb139-8"><a href="#cb139-8"></a><span class="op">----&gt;</span> <span class="dv">1</span> data[:<span class="dv">4</span>].decode(<span class="st">&#39;utf8&#39;</span>)</span>
+<span id="cb139-9"><a href="#cb139-9"></a><span class="pp">UnicodeDecodeError</span>: <span class="st">&#39;utf-8&#39;</span> codec can<span class="st">&#39;t decode byte 0xc3 in position 3: unexpecte</span></span>
+<span id="cb139-10"><a href="#cb139-10"></a><span class="st">d end of data</span></span></code></pre></div>
+<p>文本模式结合了open的编码选项，提供了一种更方便的方法将Unicode转换为另一种编码：</p>
+<div class="sourceCode" id="cb140"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb140-1"><a href="#cb140-1"></a>In [<span class="dv">236</span>]: sink_path <span class="op">=</span> <span class="st">&#39;sink.txt&#39;</span></span>
+<span id="cb140-2"><a href="#cb140-2"></a></span>
+<span id="cb140-3"><a href="#cb140-3"></a>In [<span class="dv">237</span>]: <span class="cf">with</span> <span class="bu">open</span>(path) <span class="im">as</span> source:</span>
+<span id="cb140-4"><a href="#cb140-4"></a>   .....:     <span class="cf">with</span> <span class="bu">open</span>(sink_path, <span class="st">&#39;xt&#39;</span>, encoding<span class="op">=</span><span class="st">&#39;iso-8859-1&#39;</span>) <span class="im">as</span> sink:</span>
+<span id="cb140-5"><a href="#cb140-5"></a>   .....:         sink.write(source.read())</span>
+<span id="cb140-6"><a href="#cb140-6"></a></span>
+<span id="cb140-7"><a href="#cb140-7"></a>In [<span class="dv">238</span>]: <span class="cf">with</span> <span class="bu">open</span>(sink_path, encoding<span class="op">=</span><span class="st">&#39;iso-8859-1&#39;</span>) <span class="im">as</span> f:</span>
+<span id="cb140-8"><a href="#cb140-8"></a>   .....:     <span class="bu">print</span>(f.read(<span class="dv">10</span>))</span>
+<span id="cb140-9"><a href="#cb140-9"></a>Sueña el r</span></code></pre></div>
+<p>注意，不要在二进制模式中使用seek。如果文件位置位于定义Unicode字符的字节的中间位置，读取后面会产生错误：</p>
+<div class="sourceCode" id="cb141"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb141-1"><a href="#cb141-1"></a>In [<span class="dv">240</span>]: f <span class="op">=</span> <span class="bu">open</span>(path)</span>
+<span id="cb141-2"><a href="#cb141-2"></a></span>
+<span id="cb141-3"><a href="#cb141-3"></a>In [<span class="dv">241</span>]: f.read(<span class="dv">5</span>)</span>
+<span id="cb141-4"><a href="#cb141-4"></a>Out[<span class="dv">241</span>]: <span class="st">&#39;Sueña&#39;</span></span>
+<span id="cb141-5"><a href="#cb141-5"></a></span>
+<span id="cb141-6"><a href="#cb141-6"></a>In [<span class="dv">242</span>]: f.seek(<span class="dv">4</span>)</span>
+<span id="cb141-7"><a href="#cb141-7"></a>Out[<span class="dv">242</span>]: <span class="dv">4</span></span>
+<span id="cb141-8"><a href="#cb141-8"></a></span>
+<span id="cb141-9"><a href="#cb141-9"></a>In [<span class="dv">243</span>]: f.read(<span class="dv">1</span>)</span>
+<span id="cb141-10"><a href="#cb141-10"></a><span class="op">---------------------------------------------------------------------------</span></span>
+<span id="cb141-11"><a href="#cb141-11"></a><span class="pp">UnicodeDecodeError</span>                        Traceback (most recent call last)</span>
+<span id="cb141-12"><a href="#cb141-12"></a><span class="op">&lt;</span>ipython<span class="op">-</span><span class="bu">input</span><span class="op">-</span><span class="dv">243</span><span class="op">-</span>7841103e33f5<span class="op">&gt;</span> <span class="kw">in</span> <span class="op">&lt;</span>module<span class="op">&gt;</span>()</span>
+<span id="cb141-13"><a href="#cb141-13"></a><span class="op">----&gt;</span> <span class="dv">1</span> f.read(<span class="dv">1</span>)</span>
+<span id="cb141-14"><a href="#cb141-14"></a><span class="op">/</span>miniconda<span class="op">/</span>envs<span class="op">/</span>book<span class="op">-</span>env<span class="op">/</span>lib<span class="op">/</span>python3<span class="fl">.6</span><span class="op">/</span>codecs.py <span class="kw">in</span> decode(<span class="va">self</span>, <span class="bu">input</span>, final)</span>
+<span id="cb141-15"><a href="#cb141-15"></a>    <span class="dv">319</span>         <span class="co"># decode input (taking the buffer into account)</span></span>
+<span id="cb141-16"><a href="#cb141-16"></a>    <span class="dv">320</span>         data <span class="op">=</span> <span class="va">self</span>.<span class="bu">buffer</span> <span class="op">+</span> <span class="bu">input</span></span>
+<span id="cb141-17"><a href="#cb141-17"></a><span class="op">--&gt;</span> <span class="dv">321</span>         (result, consumed) <span class="op">=</span> <span class="va">self</span>._buffer_decode(data, <span class="va">self</span>.errors, final</span>
+<span id="cb141-18"><a href="#cb141-18"></a>)</span>
+<span id="cb141-19"><a href="#cb141-19"></a>    <span class="dv">322</span>         <span class="co"># keep undecoded input until the next call</span></span>
+<span id="cb141-20"><a href="#cb141-20"></a>    <span class="dv">323</span>         <span class="va">self</span>.<span class="bu">buffer</span> <span class="op">=</span> data[consumed:]</span>
+<span id="cb141-21"><a href="#cb141-21"></a><span class="pp">UnicodeDecodeError</span>: <span class="st">&#39;utf-8&#39;</span> codec can<span class="st">&#39;t decode byte 0xb1 in position 0: invalid s</span></span>
+<span id="cb141-22"><a href="#cb141-22"></a><span class="st">tart byte</span></span>
+<span id="cb141-23"><a href="#cb141-23"></a></span>
+<span id="cb141-24"><a href="#cb141-24"></a><span class="st">In [244]: f.close()</span></span></code></pre></div>
+<p>如果你经常要对非ASCII字符文本进行数据分析，通晓Python的Unicode功能是非常重要的。更多内容，参阅Python官方文档。</p>
+<h1 id="结论">3.4 结论</h1>
+<p>我们已经学过了Python的基础、环境和语法，接下来学习NumPy和Python的面向数组计算。</p>

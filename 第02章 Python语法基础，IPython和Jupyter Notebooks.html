@@ -1,0 +1,924 @@
+<h1 id="第2章-python语法基础ipython和jupyter-notebooks">第2章 Python语法基础，IPython和Jupyter Notebooks</h1>
+<p>当我在2011年和2012年写作本书的第一版时，可用的学习Python数据分析的资源很少。这部分上是一个鸡和蛋的问题：我们现在使用的库，比如pandas、scikit-learn和statsmodels，那时相对来说并不成熟。2017年，数据科学、数据分析和机器学习的资源已经很多，原来通用的科学计算拓展到了计算机科学家、物理学家和其它研究领域的工作人员。学习Python和成为软件工程师的优秀书籍也有了。</p>
+<p>因为这本书是专注于Python数据处理的，对于一些Python的数据结构和库的特性难免不足。因此，本章和第3章的内容只够你能学习本书后面的内容。</p>
+<p>在我来看，没有必要为了数据分析而去精通Python。我鼓励你使用IPython shell和Jupyter试验示例代码，并学习不同类型、函数和方法的文档。虽然我已尽力让本书内容循序渐进，但读者偶尔仍会碰到没有之前介绍过的内容。</p>
+<p>本书大部分内容关注的是基于表格的分析和处理大规模数据集的数据准备工具。为了使用这些工具，必须首先将混乱的数据规整为整洁的表格（或结构化）形式。幸好，Python是一个理想的语言，可以快速整理数据。Python使用得越熟练，越容易准备新数据集以进行分析。</p>
+<p>最好在IPython和Jupyter中亲自尝试本书中使用的工具。当你学会了如何启动Ipython和Jupyter，我建议你跟随示例代码进行练习。与任何键盘驱动的操作环境一样，记住常见的命令也是学习曲线的一部分。</p>
+<blockquote>
+<p>笔记：本章没有介绍Python的某些概念，如类和面向对象编程，你可能会发现它们在Python数据分析中很有用。 为了加强Python知识，我建议你学习官方Python教程，<a href="https://docs.python.org/3/，或是通用的Python教程书籍，比如：">https://docs.python.org/3/，或是通用的Python教程书籍，比如：</a></p>
+<ul>
+<li>Python Cookbook，第3版，David Beazley和Brian K. Jones著（O’Reilly）</li>
+<li>流畅的Python，Luciano Ramalho著 (O’Reilly)</li>
+<li>高效的Python，Brett Slatkin著 (Pearson)</li>
+</ul>
+</blockquote>
+<h2 id="python解释器">2.1 Python解释器</h2>
+<p>Python是解释性语言。Python解释器同一时间只能运行一个程序的一条语句。标准的交互Python解释器可以在命令行中通过键入<code>python</code>命令打开：</p>
+<pre class="text"><code>$ python
+Python 3.6.0 | packaged by conda-forge | (default, Jan 13 2017, 23:17:12)
+[GCC 4.8.2 20140120 (Red Hat 4.8.2-15)] on linux
+Type &quot;help&quot;, &quot;copyright&quot;, &quot;credits&quot; or &quot;license&quot; for more information.
+&gt;&gt;&gt; a = 5
+&gt;&gt;&gt; print(a)
+5</code></pre>
+<p><code>&gt;&gt;&gt;</code>提示输入代码。要退出Python解释器返回终端，可以输入<code>exit()</code>或按Ctrl-D。</p>
+<p>运行Python程序只需调用Python的同时，使用一个<code>.py</code>文件作为它的第一个参数。假设创建了一个<code>hello_world.py</code>文件，它的内容是：</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1"></a><span class="bu">print</span>(<span class="st">&#39;Hello world&#39;</span>)</span></code></pre></div>
+<p>你可以用下面的命令运行它（<code>hello_world.py</code>文件必须位于终端的工作目录）：</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1"></a>$ python hello_world.py</span>
+<span id="cb3-2"><a href="#cb3-2"></a>Hello world</span></code></pre></div>
+<p>一些Python程序员总是这样执行Python代码的，从事数据分析和科学计算的人却会使用IPython，一个强化的Python解释器，或Jupyter notebooks，一个网页代码笔记本，它原先是IPython的一个子项目。在本章中，我介绍了如何使用IPython和Jupyter，在附录A中有更深入的介绍。当你使用<code>%run</code>命令，IPython会同样执行指定文件中的代码，结束之后，还可以与结果交互：</p>
+<pre class="text"><code>$ ipython
+Python 3.6.0 | packaged by conda-forge | (default, Jan 13 2017, 23:17:12)
+Type &quot;copyright&quot;, &quot;credits&quot; or &quot;license&quot; for more information.
+
+IPython 5.1.0 -- An enhanced Interactive Python.
+?         -&gt; Introduction and overview of IPython&#39;s features.
+%quickref -&gt; Quick reference.
+help      -&gt; Python&#39;s own help system.
+object?   -&gt; Details about &#39;object&#39;, use &#39;object??&#39; for extra details.
+
+In [1]: %run hello_world.py
+Hello world
+
+In [2]:</code></pre>
+<p>IPython默认采用序号的格式<code>In [2]:</code>，与标准的<code>&gt;&gt;&gt;</code>提示符不同。</p>
+<h2 id="ipython基础">2.2 IPython基础</h2>
+<p>在本节中，我们会教你打开运行IPython shell和jupyter notebook，并介绍一些基本概念。</p>
+<h3 id="运行ipython-shell">运行IPython Shell</h3>
+<p>你可以用<code>ipython</code>在命令行打开IPython Shell，就像打开普通的Python解释器：</p>
+<pre class="text"><code>$ ipython
+Python 3.6.0 | packaged by conda-forge | (default, Jan 13 2017, 23:17:12)
+Type &quot;copyright&quot;, &quot;credits&quot; or &quot;license&quot; for more information.
+
+IPython 5.1.0 -- An enhanced Interactive Python.
+?         -&gt; Introduction and overview of IPython&#39;s features.
+%quickref -&gt; Quick reference.
+help      -&gt; Python&#39;s own help system.
+object?   -&gt; Details about &#39;object&#39;, use &#39;object??&#39; for extra details.
+
+In [1]: a = 5
+In [2]: a
+Out[2]: 5</code></pre>
+<p>你可以通过输入代码并按Return（或Enter），运行任意Python语句。当你只输入一个变量，它会显示代表的对象：</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1"></a>In [<span class="dv">5</span>]: <span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb6-2"><a href="#cb6-2"></a></span>
+<span id="cb6-3"><a href="#cb6-3"></a>In [<span class="dv">6</span>]: data <span class="op">=</span> {i : np.random.randn() <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">7</span>)}</span>
+<span id="cb6-4"><a href="#cb6-4"></a></span>
+<span id="cb6-5"><a href="#cb6-5"></a>In [<span class="dv">7</span>]: data</span>
+<span id="cb6-6"><a href="#cb6-6"></a>Out[<span class="dv">7</span>]: </span>
+<span id="cb6-7"><a href="#cb6-7"></a>{<span class="dv">0</span>: <span class="op">-</span><span class="fl">0.20470765948471295</span>,</span>
+<span id="cb6-8"><a href="#cb6-8"></a> <span class="dv">1</span>: <span class="fl">0.47894333805754824</span>,</span>
+<span id="cb6-9"><a href="#cb6-9"></a> <span class="dv">2</span>: <span class="op">-</span><span class="fl">0.5194387150567381</span>,</span>
+<span id="cb6-10"><a href="#cb6-10"></a> <span class="dv">3</span>: <span class="op">-</span><span class="fl">0.55573030434749</span>,</span>
+<span id="cb6-11"><a href="#cb6-11"></a> <span class="dv">4</span>: <span class="fl">1.9657805725027142</span>,</span>
+<span id="cb6-12"><a href="#cb6-12"></a> <span class="dv">5</span>: <span class="fl">1.3934058329729904</span>,</span>
+<span id="cb6-13"><a href="#cb6-13"></a><span class="dv">6</span>: <span class="fl">0.09290787674371767</span>}</span></code></pre></div>
+<p>前两行是Python代码语句；第二条语句创建一个名为<code>data</code>的变量，它引用一个新创建的Python字典。最后一行打印<code>data</code>的值。</p>
+<p>许多Python对象被格式化为更易读的形式，或称作<code>pretty-printed</code>，它与普通的<code>print</code>不同。如果在标准Python解释器中打印上述<code>data</code>变量，则可读性要降低：</p>
+<pre class="text"><code>&gt;&gt;&gt; from numpy.random import randn
+&gt;&gt;&gt; data = {i : randn() for i in range(7)}
+&gt;&gt;&gt; print(data)
+{0: -1.5948255432744511, 1: 0.10569006472787983, 2: 1.972367135977295,
+3: 0.15455217573074576, 4: -0.24058577449429575, 5: -1.2904897053651216,
+6: 0.3308507317325902}</code></pre>
+<p>IPython还支持执行任意代码块（通过一个华丽的复制-粘贴方法）和整段Python脚本的功能。你也可以使用Jupyter notebook运行大代码块，接下来就会看到。</p>
+<h3 id="运行jupyter-notebook">运行Jupyter Notebook</h3>
+<p>notebook是Jupyter项目的重要组件之一，它是一个代码、文本（有标记或无标记）、数据可视化或其它输出的交互式文档。Jupyter Notebook需要与内核互动，内核是Jupyter与其它编程语言的交互编程协议。Python的Jupyter内核是使用IPython。要启动Jupyter，在命令行中输入<code>jupyter notebook</code>:</p>
+<pre class="text"><code>$ jupyter notebook
+[I 15:20:52.739 NotebookApp] Serving notebooks from local directory:
+/home/wesm/code/pydata-book
+[I 15:20:52.739 NotebookApp] 0 active kernels
+[I 15:20:52.739 NotebookApp] The Jupyter Notebook is running at:
+http://localhost:8888/
+[I 15:20:52.740 NotebookApp] Use Control-C to stop this server and shut down
+all kernels (twice to skip confirmation).
+Created new window in existing browser session.</code></pre>
+<p>在多数平台上，Jupyter会自动打开默认的浏览器（除非指定了<code>--no-browser</code>）。或者，可以在启动notebook之后，手动打开网页<code>http://localhost:8888/</code>。图2-1展示了Google Chrome中的notebook。</p>
+<blockquote>
+<p>笔记：许多人使用Jupyter作为本地的计算环境，但它也可以部署到服务器上远程访问。这里不做介绍，如果需要的话，鼓励读者自行到网上学习。</p>
+</blockquote>
+<figure>
+<img src="http://upload-images.jianshu.io/upload_images/7178691-c76c4f40777d3ef1.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="" /><figcaption>图2-1 Jupyter notebook启动页面</figcaption>
+</figure>
+<p>要新建一个notebook，点击按钮New，选择“Python3”或“conda[默认项]”。如果是第一次，点击空格，输入一行Python代码。然后按Shift-Enter执行。</p>
+<figure>
+<img src="http://upload-images.jianshu.io/upload_images/7178691-86a6813291ead445.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="" /><figcaption>图2-2 Jupyter新notebook页面</figcaption>
+</figure>
+<p>当保存notebook时（File目录下的Save and Checkpoint），会创建一个后缀名为<code>.ipynb</code>的文件。这是一个自包含文件格式，包含当前笔记本中的所有内容（包括所有已评估的代码输出）。可以被其它Jupyter用户加载和编辑。要加载存在的notebook，把它放到启动notebook进程的相同目录内。你可以用本书的示例代码练习，见图2-3。</p>
+<p>虽然Jupyter notebook和IPython shell使用起来不同，本章中几乎所有的命令和工具都可以通用。</p>
+<figure>
+<img src="http://upload-images.jianshu.io/upload_images/7178691-bc9a0b4c30363747.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="" /><figcaption>图2-3 Jupyter查看一个存在的notebook的页面</figcaption>
+</figure>
+<h3 id="tab补全">Tab补全</h3>
+<p>从外观上，IPython shell和标准的Python解释器只是看起来不同。IPython shell的进步之一是具备其它IDE和交互计算分析环境都有的tab补全功能。在shell中输入表达式，按下Tab，会搜索已输入变量（对象、函数等等）的命名空间：</p>
+<pre class="text"><code>In [1]: an_apple = 27
+
+In [2]: an_example = 42
+
+In [3]: an&lt;Tab&gt;
+an_apple    and         an_example  any</code></pre>
+<p>在这个例子中，IPython呈现出了之前两个定义的变量和Python的关键字和内建的函数<code>any</code>。当然，你也可以补全任何对象的方法和属性：</p>
+<pre class="text"><code>In [3]: b = [1, 2, 3]
+
+In [4]: b.&lt;Tab&gt;
+b.append  b.count   b.insert  b.reverse
+b.clear   b.extend  b.pop     b.sort
+b.copy    b.index   b.remove</code></pre>
+<p>同样也适用于模块：</p>
+<pre class="text"><code>In [1]: import datetime
+
+In [2]: datetime.&lt;Tab&gt;
+datetime.date          datetime.MAXYEAR       datetime.timedelta
+datetime.datetime      datetime.MINYEAR       datetime.timezone
+datetime.datetime_CAPI datetime.time          datetime.tzinfo</code></pre>
+<p>在Jupyter notebook和新版的IPython（5.0及以上），自动补全功能是下拉框的形式。</p>
+<blockquote>
+<p>笔记：注意，默认情况下，IPython会隐藏下划线开头的方法和属性，比如魔术方法和内部的“私有”方法和属性，以避免混乱的显示（和让新手迷惑！）这些也可以tab补全，但是你必须首先键入一个下划线才能看到它们。如果你喜欢总是在tab补全中看到这样的方法，你可以IPython配置中进行设置。可以在IPython文档中查找方法。</p>
+</blockquote>
+<p>除了补全命名、对象和模块属性，Tab还可以补全其它的。当输入看似文件路径时（即使是Python字符串），按下Tab也可以补全电脑上对应的文件信息：</p>
+<pre class="text"><code>In [7]: datasets/movielens/&lt;Tab&gt;
+datasets/movielens/movies.dat    datasets/movielens/README
+datasets/movielens/ratings.dat   datasets/movielens/users.dat
+
+In [7]: path = &#39;datasets/movielens/&lt;Tab&gt;
+datasets/movielens/movies.dat    datasets/movielens/README
+datasets/movielens/ratings.dat   datasets/movielens/users.dat</code></pre>
+<p>结合<code>%run</code>，tab补全可以节省许多键盘操作。</p>
+<p>另外，tab补全可以补全函数的关键词参数（包括等于号=）。见图2-4。</p>
+<figure>
+<img src="http://upload-images.jianshu.io/upload_images/7178691-8188b0386238c16a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="" /><figcaption>图2-4 Jupyter notebook中自动补全函数关键词</figcaption>
+</figure>
+<p>后面会仔细地学习函数。</p>
+<h3 id="自省">自省</h3>
+<p>在变量前后使用问号？，可以显示对象的信息：</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1"></a>In [<span class="dv">8</span>]: b <span class="op">=</span> [<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>]</span>
+<span id="cb13-2"><a href="#cb13-2"></a></span>
+<span id="cb13-3"><a href="#cb13-3"></a>In [<span class="dv">9</span>]: b?</span>
+<span id="cb13-4"><a href="#cb13-4"></a>Type:       <span class="bu">list</span></span>
+<span id="cb13-5"><a href="#cb13-5"></a>String Form:[<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>]</span>
+<span id="cb13-6"><a href="#cb13-6"></a>Length:     <span class="dv">3</span></span>
+<span id="cb13-7"><a href="#cb13-7"></a>Docstring:</span>
+<span id="cb13-8"><a href="#cb13-8"></a><span class="bu">list</span>() <span class="op">-&gt;</span> new empty <span class="bu">list</span></span>
+<span id="cb13-9"><a href="#cb13-9"></a><span class="bu">list</span>(iterable) <span class="op">-&gt;</span> new <span class="bu">list</span> initialized <span class="im">from</span> iterable<span class="st">&#39;s items</span></span>
+<span id="cb13-10"><a href="#cb13-10"></a></span>
+<span id="cb13-11"><a href="#cb13-11"></a><span class="st">In [10]: print?</span></span>
+<span id="cb13-12"><a href="#cb13-12"></a><span class="st">Docstring:</span></span>
+<span id="cb13-13"><a href="#cb13-13"></a><span class="st">print(value, ..., sep=&#39;</span> <span class="st">&#39;, end=&#39;</span><span class="op">\</span>n<span class="st">&#39;, file=sys.stdout, flush=False)</span></span>
+<span id="cb13-14"><a href="#cb13-14"></a></span>
+<span id="cb13-15"><a href="#cb13-15"></a><span class="st">Prints the values to a stream, or to sys.stdout by default.</span></span>
+<span id="cb13-16"><a href="#cb13-16"></a><span class="st">Optional keyword arguments:</span></span>
+<span id="cb13-17"><a href="#cb13-17"></a><span class="st">file:  a file-like object (stream); defaults to the current sys.stdout.</span></span>
+<span id="cb13-18"><a href="#cb13-18"></a><span class="st">sep:   string inserted between values, default a space.</span></span>
+<span id="cb13-19"><a href="#cb13-19"></a><span class="st">end:   string appended after the last value, default a newline.</span></span>
+<span id="cb13-20"><a href="#cb13-20"></a><span class="st">flush: whether to forcibly flush the stream.</span></span>
+<span id="cb13-21"><a href="#cb13-21"></a><span class="st">Type:      builtin_function_or_method</span></span></code></pre></div>
+<p>这可以作为对象的自省。如果对象是一个函数或实例方法，定义过的文档字符串，也会显示出信息。假设我们写了一个如下的函数：</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1"></a><span class="kw">def</span> add_numbers(a, b):</span>
+<span id="cb14-2"><a href="#cb14-2"></a>    <span class="co">&quot;&quot;&quot;</span></span>
+<span id="cb14-3"><a href="#cb14-3"></a><span class="co">    Add two numbers together</span></span>
+<span id="cb14-4"><a href="#cb14-4"></a></span>
+<span id="cb14-5"><a href="#cb14-5"></a><span class="co">    Returns</span></span>
+<span id="cb14-6"><a href="#cb14-6"></a><span class="co">    -------</span></span>
+<span id="cb14-7"><a href="#cb14-7"></a><span class="co">    the_sum : type of arguments</span></span>
+<span id="cb14-8"><a href="#cb14-8"></a><span class="co">    &quot;&quot;&quot;</span></span>
+<span id="cb14-9"><a href="#cb14-9"></a>    <span class="cf">return</span> a <span class="op">+</span> b</span></code></pre></div>
+<p>然后使用?符号，就可以显示如下的文档字符串：</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1"></a>In [<span class="dv">11</span>]: add_numbers?</span>
+<span id="cb15-2"><a href="#cb15-2"></a>Signature: add_numbers(a, b)</span>
+<span id="cb15-3"><a href="#cb15-3"></a>Docstring:</span>
+<span id="cb15-4"><a href="#cb15-4"></a>Add two numbers together</span>
+<span id="cb15-5"><a href="#cb15-5"></a></span>
+<span id="cb15-6"><a href="#cb15-6"></a>Returns</span>
+<span id="cb15-7"><a href="#cb15-7"></a><span class="op">-------</span></span>
+<span id="cb15-8"><a href="#cb15-8"></a>the_sum : <span class="bu">type</span> of arguments</span>
+<span id="cb15-9"><a href="#cb15-9"></a>File:      <span class="op">&lt;</span>ipython<span class="op">-</span><span class="bu">input</span><span class="op">-</span><span class="dv">9</span><span class="op">-</span>6a548a216e27<span class="op">&gt;</span></span>
+<span id="cb15-10"><a href="#cb15-10"></a>Type:      function</span></code></pre></div>
+<p>使用??会显示函数的源码：</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1"></a>In [<span class="dv">12</span>]: add_numbers??</span>
+<span id="cb16-2"><a href="#cb16-2"></a>Signature: add_numbers(a, b)</span>
+<span id="cb16-3"><a href="#cb16-3"></a>Source:</span>
+<span id="cb16-4"><a href="#cb16-4"></a><span class="kw">def</span> add_numbers(a, b):</span>
+<span id="cb16-5"><a href="#cb16-5"></a>    <span class="co">&quot;&quot;&quot;</span></span>
+<span id="cb16-6"><a href="#cb16-6"></a><span class="co">    Add two numbers together</span></span>
+<span id="cb16-7"><a href="#cb16-7"></a></span>
+<span id="cb16-8"><a href="#cb16-8"></a><span class="co">    Returns</span></span>
+<span id="cb16-9"><a href="#cb16-9"></a><span class="co">    -------</span></span>
+<span id="cb16-10"><a href="#cb16-10"></a><span class="co">    the_sum : type of arguments</span></span>
+<span id="cb16-11"><a href="#cb16-11"></a><span class="co">    &quot;&quot;&quot;</span></span>
+<span id="cb16-12"><a href="#cb16-12"></a>    <span class="cf">return</span> a <span class="op">+</span> b</span>
+<span id="cb16-13"><a href="#cb16-13"></a>File:      <span class="op">&lt;</span>ipython<span class="op">-</span><span class="bu">input</span><span class="op">-</span><span class="dv">9</span><span class="op">-</span>6a548a216e27<span class="op">&gt;</span></span>
+<span id="cb16-14"><a href="#cb16-14"></a>Type:      function</span></code></pre></div>
+<p>?还有一个用途，就是像Unix或Windows命令行一样搜索IPython的命名空间。字符与通配符结合可以匹配所有的名字。例如，我们可以获得所有包含load的顶级NumPy命名空间：</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1"></a>In [<span class="dv">13</span>]: np.<span class="op">*</span>load<span class="op">*</span>?</span>
+<span id="cb17-2"><a href="#cb17-2"></a>np.__loader__</span>
+<span id="cb17-3"><a href="#cb17-3"></a>np.load</span>
+<span id="cb17-4"><a href="#cb17-4"></a>np.loads</span>
+<span id="cb17-5"><a href="#cb17-5"></a>np.loadtxt</span>
+<span id="cb17-6"><a href="#cb17-6"></a>np.pkgload</span></code></pre></div>
+<h3 id="run命令">%run命令</h3>
+<p>你可以用<code>%run</code>命令运行所有的Python程序。假设有一个文件<code>ipython_script_test.py</code>：</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1"></a><span class="kw">def</span> f(x, y, z):</span>
+<span id="cb18-2"><a href="#cb18-2"></a>    <span class="cf">return</span> (x <span class="op">+</span> y) <span class="op">/</span> z</span>
+<span id="cb18-3"><a href="#cb18-3"></a></span>
+<span id="cb18-4"><a href="#cb18-4"></a>a <span class="op">=</span> <span class="dv">5</span></span>
+<span id="cb18-5"><a href="#cb18-5"></a>b <span class="op">=</span> <span class="dv">6</span></span>
+<span id="cb18-6"><a href="#cb18-6"></a>c <span class="op">=</span> <span class="fl">7.5</span></span>
+<span id="cb18-7"><a href="#cb18-7"></a></span>
+<span id="cb18-8"><a href="#cb18-8"></a>result <span class="op">=</span> f(a, b, c)</span></code></pre></div>
+<p>可以如下运行：</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1"></a>In [<span class="dv">14</span>]: <span class="op">%</span>run ipython_script_test.py</span></code></pre></div>
+<p>这段脚本运行在空的命名空间（没有import和其它定义的变量），因此结果和普通的运行方式<code>python script.py</code>相同。文件中所有定义的变量（import、函数和全局变量，除非抛出异常），都可以在IPython shell中随后访问：</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1"></a>In [<span class="dv">15</span>]: c</span>
+<span id="cb20-2"><a href="#cb20-2"></a>Out [<span class="dv">15</span>]: <span class="fl">7.5</span></span>
+<span id="cb20-3"><a href="#cb20-3"></a></span>
+<span id="cb20-4"><a href="#cb20-4"></a>In [<span class="dv">16</span>]: result</span>
+<span id="cb20-5"><a href="#cb20-5"></a>Out[<span class="dv">16</span>]: <span class="fl">1.4666666666666666</span></span></code></pre></div>
+<p>如果一个Python脚本需要命令行参数（在<code>sys.argv</code>中查找），可以在文件路径之后传递，就像在命令行上运行一样。</p>
+<blockquote>
+<p>笔记：如果想让一个脚本访问IPython已经定义过的变量，可以使用<code>%run -i</code>。</p>
+</blockquote>
+<p>在Jupyter notebook中，你也可以使用<code>%load</code>，它将脚本导入到一个代码格中：</p>
+<pre class="text"><code>&gt;&gt;&gt; %load ipython_script_test.py
+
+    def f(x, y, z):
+        return (x + y) / z
+    a = 5
+    b = 6
+    c = 7.5
+
+    result = f(a, b, c)</code></pre>
+<h3 id="中断运行的代码">中断运行的代码</h3>
+<p>代码运行时按Ctrl-C，无论是%run或长时间运行命令，都会导致<code>KeyboardInterrupt</code>。这会导致几乎所有Python程序立即停止，除非一些特殊情况。</p>
+<blockquote>
+<p>警告：当Python代码调用了一些编译的扩展模块，按Ctrl-C不一定将执行的程序立即停止。在这种情况下，你必须等待，直到控制返回Python解释器，或者在更糟糕的情况下强制终止Python进程。</p>
+</blockquote>
+<h3 id="从剪贴板执行程序">从剪贴板执行程序</h3>
+<p>如果使用Jupyter notebook，你可以将代码复制粘贴到任意代码格执行。在IPython shell中也可以从剪贴板执行。假设在其它应用中复制了如下代码：</p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1"></a>x <span class="op">=</span> <span class="dv">5</span></span>
+<span id="cb22-2"><a href="#cb22-2"></a>y <span class="op">=</span> <span class="dv">7</span></span>
+<span id="cb22-3"><a href="#cb22-3"></a><span class="cf">if</span> x <span class="op">&gt;</span> <span class="dv">5</span>:</span>
+<span id="cb22-4"><a href="#cb22-4"></a>    x <span class="op">+=</span> <span class="dv">1</span></span>
+<span id="cb22-5"><a href="#cb22-5"></a></span>
+<span id="cb22-6"><a href="#cb22-6"></a>    y <span class="op">=</span> <span class="dv">8</span></span></code></pre></div>
+<p>最简单的方法是使用<code>%paste</code>和<code>%cpaste</code>函数。<code>%paste</code>可以直接运行剪贴板中的代码：</p>
+<div class="sourceCode" id="cb23"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1"></a>In [<span class="dv">17</span>]: <span class="op">%</span>paste</span>
+<span id="cb23-2"><a href="#cb23-2"></a>x <span class="op">=</span> <span class="dv">5</span></span>
+<span id="cb23-3"><a href="#cb23-3"></a>y <span class="op">=</span> <span class="dv">7</span></span>
+<span id="cb23-4"><a href="#cb23-4"></a><span class="cf">if</span> x <span class="op">&gt;</span> <span class="dv">5</span>:</span>
+<span id="cb23-5"><a href="#cb23-5"></a>    x <span class="op">+=</span> <span class="dv">1</span></span>
+<span id="cb23-6"><a href="#cb23-6"></a></span>
+<span id="cb23-7"><a href="#cb23-7"></a>    y <span class="op">=</span> <span class="dv">8</span></span>
+<span id="cb23-8"><a href="#cb23-8"></a><span class="co">## -- End pasted text --</span></span></code></pre></div>
+<p><code>%cpaste</code>功能类似，但会给出一条提示：</p>
+<div class="sourceCode" id="cb24"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1"></a>In [<span class="dv">18</span>]: <span class="op">%</span>cpaste</span>
+<span id="cb24-2"><a href="#cb24-2"></a>Pasting code<span class="op">;</span> enter <span class="st">&#39;--&#39;</span> alone on the line to stop <span class="kw">or</span> use Ctrl<span class="op">-</span>D.</span>
+<span id="cb24-3"><a href="#cb24-3"></a>:x <span class="op">=</span> <span class="dv">5</span></span>
+<span id="cb24-4"><a href="#cb24-4"></a>:y <span class="op">=</span> <span class="dv">7</span></span>
+<span id="cb24-5"><a href="#cb24-5"></a>:<span class="cf">if</span> x <span class="op">&gt;</span> <span class="dv">5</span>:</span>
+<span id="cb24-6"><a href="#cb24-6"></a>:    x <span class="op">+=</span> <span class="dv">1</span></span>
+<span id="cb24-7"><a href="#cb24-7"></a>:</span>
+<span id="cb24-8"><a href="#cb24-8"></a>:    y <span class="op">=</span> <span class="dv">8</span></span>
+<span id="cb24-9"><a href="#cb24-9"></a>:<span class="op">--</span></span></code></pre></div>
+<p>使用<code>%cpaste</code>，你可以粘贴任意多的代码再运行。你可能想在运行前，先看看代码。如果粘贴了错误的代码，可以用Ctrl-C中断。</p>
+<h3 id="键盘快捷键">键盘快捷键</h3>
+<p>IPython有许多键盘快捷键进行导航提示（类似Emacs文本编辑器或UNIX bash Shell）和交互shell的历史命令。表2-1总结了常见的快捷键。图2-5展示了一部分，如移动光标。</p>
+<figure>
+<img src="http://upload-images.jianshu.io/upload_images/7178691-9ed3866ea25c11f8.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="" /><figcaption>图2-5 IPython shell中一些快捷键的说明</figcaption>
+</figure>
+<figure>
+<img src="http://upload-images.jianshu.io/upload_images/7178691-e179f5ea00e50691.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="" /><figcaption>表2-1 IPython的标准快捷键</figcaption>
+</figure>
+<p>Jupyter notebooks有另外一套庞大的快捷键。因为它的快捷键比IPython的变化快，建议你参阅Jupyter notebook的帮助文档。</p>
+<h3 id="魔术命令">魔术命令</h3>
+<p>IPython中特殊的命令（Python中没有）被称作“魔术”命令。这些命令可以使普通任务更便捷，更容易控制IPython系统。魔术命令是在指令前添加百分号%前缀。例如，可以用<code>%timeit</code>（这个命令后面会详谈）测量任何Python语句，例如矩阵乘法，的执行时间：</p>
+<div class="sourceCode" id="cb25"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1"></a>In [<span class="dv">20</span>]: a <span class="op">=</span> np.random.randn(<span class="dv">100</span>, <span class="dv">100</span>)</span>
+<span id="cb25-2"><a href="#cb25-2"></a></span>
+<span id="cb25-3"><a href="#cb25-3"></a>In [<span class="dv">20</span>]: <span class="op">%</span>timeit np.dot(a, a)</span>
+<span id="cb25-4"><a href="#cb25-4"></a><span class="dv">10000</span> loops, best of <span class="dv">3</span>: <span class="fl">20.9</span> µs per loop</span></code></pre></div>
+<p>魔术命令可以被看做IPython中运行的命令行。许多魔术命令有“命令行”选项，可以通过？查看：</p>
+<pre class="text"><code>In [21]: %debug?
+Docstring:
+::
+
+  %debug [--breakpoint FILE:LINE] [statement [statement ...]]
+
+Activate the interactive debugger.
+
+This magic command support two ways of activating debugger.
+One is to activate debugger before executing code.  This way, you
+can set a break point, to step through the code from the point.
+You can use this mode by giving statements to execute and optionally
+a breakpoint.
+
+The other one is to activate debugger in post-mortem mode.  You can
+activate this mode simply running %debug without any argument.
+If an exception has just occurred, this lets you inspect its stack
+frames interactively.  Note that this will always work only on the last
+traceback that occurred, so you must call this quickly after an
+exception that you wish to inspect has fired, because if another one
+occurs, it clobbers the previous one.
+
+If you want IPython to automatically do this on every exception, see
+the %pdb magic for more details.
+
+positional arguments:
+  statement             Code to run in debugger. You can omit this in cell
+                        magic mode.
+
+optional arguments:
+  --breakpoint &lt;FILE:LINE&gt;, -b &lt;FILE:LINE&gt;
+                        Set break point at LINE in FILE.</code></pre>
+<p>魔术函数默认可以不用百分号，只要没有变量和函数名相同。这个特点被称为“自动魔术”，可以用<code>%automagic</code>打开或关闭。</p>
+<p>一些魔术函数与Python函数很像，它的结果可以赋值给一个变量：</p>
+<pre class="text"><code>In [22]: %pwd
+Out[22]: &#39;/home/wesm/code/pydata-book
+
+In [23]: foo = %pwd
+
+In [24]: foo
+Out[24]: &#39;/home/wesm/code/pydata-book&#39;</code></pre>
+<p>IPython的文档可以在shell中打开，我建议你用<code>%quickref</code>或<code>%magic</code>学习下所有特殊命令。表2-2列出了一些可以提高生产率的交互计算和Python开发的IPython指令。</p>
+<figure>
+<img src="http://upload-images.jianshu.io/upload_images/7178691-c72b11add9b8ccf8.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="" /><figcaption>表2-2 一些常用的IPython魔术命令</figcaption>
+</figure>
+<h3 id="集成matplotlib">集成Matplotlib</h3>
+<p>IPython在分析计算领域能够流行的原因之一是它非常好的集成了数据可视化和其它用户界面库，比如matplotlib。不用担心以前没用过matplotlib，本书后面会详细介绍。<code>%matplotlib</code>魔术函数配置了IPython shell和Jupyter notebook中的matplotlib。这点很重要，其它创建的图不会出现（notebook）或获取session的控制，直到结束（shell）。</p>
+<p>在IPython shell中，运行<code>%matplotlib</code>可以进行设置，可以创建多个绘图窗口，而不会干扰控制台session：</p>
+<pre class="text"><code>In [26]: %matplotlib
+Using matplotlib backend: Qt4Agg</code></pre>
+<p>在JUpyter中，命令有所不同（图2-6）：</p>
+<pre class="text"><code>In [26]: %matplotlib inline</code></pre>
+<figure>
+<img src="http://upload-images.jianshu.io/upload_images/7178691-3ab3738a92a15486.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="" /><figcaption>图2-6 Jupyter行内matplotlib作图</figcaption>
+</figure>
+<h2 id="python语法基础">2.3 Python语法基础</h2>
+<p>在本节中，我将概述基本的Python概念和语言机制。在下一章，我将详细介绍Python的数据结构、函数和其它内建工具。</p>
+<h3 id="语言的语义">语言的语义</h3>
+<p>Python的语言设计强调的是可读性、简洁和清晰。有些人称Python为“可执行的伪代码”。</p>
+<h3 id="使用缩进而不是括号">使用缩进，而不是括号</h3>
+<p>Python使用空白字符（tab和空格）来组织代码，而不是像其它语言，比如R、C++、JAVA和Perl那样使用括号。看一个排序算法的<code>for</code>循环：</p>
+<div class="sourceCode" id="cb30"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1"></a><span class="cf">for</span> x <span class="kw">in</span> array:</span>
+<span id="cb30-2"><a href="#cb30-2"></a>    <span class="cf">if</span> x <span class="op">&lt;</span> pivot:</span>
+<span id="cb30-3"><a href="#cb30-3"></a>        less.append(x)</span>
+<span id="cb30-4"><a href="#cb30-4"></a>    <span class="cf">else</span>:</span>
+<span id="cb30-5"><a href="#cb30-5"></a>        greater.append(x)</span></code></pre></div>
+<p>冒号标志着缩进代码块的开始，冒号之后的所有代码的缩进量必须相同，直到代码块结束。不管是否喜欢这种形式，使用空白符是Python程序员开发的一部分，在我看来，这可以让python的代码可读性大大优于其它语言。虽然期初看起来很奇怪，经过一段时间，你就能适应了。</p>
+<blockquote>
+<p>笔记：我强烈建议你使用四个空格作为默认的缩进，可以使用tab代替四个空格。许多文本编辑器的设置是使用制表位替代空格。某些人使用tabs或不同数目的空格数，常见的是使用两个空格。大多数情况下，四个空格是大多数人采用的方法，因此建议你也这样做。</p>
+</blockquote>
+<p>你应该已经看到，Python的语句不需要用分号结尾。但是，分号却可以用来给同在一行的语句切分：</p>
+<div class="sourceCode" id="cb31"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb31-1"><a href="#cb31-1"></a>a <span class="op">=</span> <span class="dv">5</span><span class="op">;</span> b <span class="op">=</span> <span class="dv">6</span><span class="op">;</span> c <span class="op">=</span> <span class="dv">7</span></span></code></pre></div>
+<p>Python不建议将多条语句放到一行，这会降低代码的可读性。</p>
+<h3 id="万物皆对象">万物皆对象</h3>
+<p>Python语言的一个重要特性就是它的对象模型的一致性。每个数字、字符串、数据结构、函数、类、模块等等，都是在Python解释器的自有“盒子”内，它被认为是Python对象。每个对象都有类型（例如，字符串或函数）和内部数据。在实际中，这可以让语言非常灵活，因为函数也可以被当做对象使用。</p>
+<h3 id="注释">注释</h3>
+<p>任何前面带有井号#的文本都会被Python解释器忽略。这通常被用来添加注释。有时，你会想排除一段代码，但并不删除。简便的方法就是将其注释掉：</p>
+<div class="sourceCode" id="cb32"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb32-1"><a href="#cb32-1"></a>results <span class="op">=</span> []</span>
+<span id="cb32-2"><a href="#cb32-2"></a><span class="cf">for</span> line <span class="kw">in</span> file_handle:</span>
+<span id="cb32-3"><a href="#cb32-3"></a>    <span class="co"># keep the empty lines for now</span></span>
+<span id="cb32-4"><a href="#cb32-4"></a>    <span class="co"># if len(line) == 0:</span></span>
+<span id="cb32-5"><a href="#cb32-5"></a>    <span class="co">#   continue</span></span>
+<span id="cb32-6"><a href="#cb32-6"></a>    results.append(line.replace(<span class="st">&#39;foo&#39;</span>, <span class="st">&#39;bar&#39;</span>))</span></code></pre></div>
+<p>也可以在执行过的代码后面添加注释。一些人习惯在代码之前添加注释，前者这种方法有时也是有用的：</p>
+<div class="sourceCode" id="cb33"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb33-1"><a href="#cb33-1"></a><span class="bu">print</span>(<span class="st">&quot;Reached this line&quot;</span>)  <span class="co"># Simple status report</span></span></code></pre></div>
+<h3 id="函数和对象方法调用">函数和对象方法调用</h3>
+<p>你可以用圆括号调用函数，传递零个或几个参数，或者将返回值给一个变量：</p>
+<div class="sourceCode" id="cb34"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb34-1"><a href="#cb34-1"></a>result <span class="op">=</span> f(x, y, z)</span>
+<span id="cb34-2"><a href="#cb34-2"></a>g()</span></code></pre></div>
+<p>几乎Python中的每个对象都有附加的函数，称作方法，可以用来访问对象的内容。可以用下面的语句调用：</p>
+<div class="sourceCode" id="cb35"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb35-1"><a href="#cb35-1"></a>obj.some_method(x, y, z)</span></code></pre></div>
+<p>函数可以使用位置和关键词参数：</p>
+<div class="sourceCode" id="cb36"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb36-1"><a href="#cb36-1"></a>result <span class="op">=</span> f(a, b, c, d<span class="op">=</span><span class="dv">5</span>, e<span class="op">=</span><span class="st">&#39;foo&#39;</span>)</span></code></pre></div>
+<p>后面会有更多介绍。</p>
+<h3 id="变量和参数传递">变量和参数传递</h3>
+<p>当在Python中创建变量（或名字），你就在等号右边创建了一个对这个变量的引用。考虑一个整数列表：</p>
+<div class="sourceCode" id="cb37"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb37-1"><a href="#cb37-1"></a>In [<span class="dv">8</span>]: a <span class="op">=</span> [<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>]</span></code></pre></div>
+<p>假设将a赋值给一个新变量b：</p>
+<div class="sourceCode" id="cb38"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb38-1"><a href="#cb38-1"></a>In [<span class="dv">9</span>]: b <span class="op">=</span> a</span></code></pre></div>
+<p>在有些方法中，这个赋值会将数据[1, 2, 3]也复制。在Python中，a和b实际上是同一个对象，即原有列表[1, 2, 3]（见图2-7）。你可以在a中添加一个元素，然后检查b：</p>
+<div class="sourceCode" id="cb39"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb39-1"><a href="#cb39-1"></a>In [<span class="dv">10</span>]: a.append(<span class="dv">4</span>)</span>
+<span id="cb39-2"><a href="#cb39-2"></a></span>
+<span id="cb39-3"><a href="#cb39-3"></a>In [<span class="dv">11</span>]: b</span>
+<span id="cb39-4"><a href="#cb39-4"></a>Out[<span class="dv">11</span>]: [<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>]</span></code></pre></div>
+<figure>
+<img src="http://upload-images.jianshu.io/upload_images/7178691-3e3a8c6b9c5040fc.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="" /><figcaption>图2-7 对同一对象的双重引用</figcaption>
+</figure>
+<p>理解Python的引用的含义，数据是何时、如何、为何复制的，是非常重要的。尤其是当你用Python处理大的数据集时。</p>
+<blockquote>
+<p>笔记：赋值也被称作绑定，我们是把一个名字绑定给一个对象。变量名有时可能被称为绑定变量。</p>
+</blockquote>
+<p>当你将对象作为参数传递给函数时，新的局域变量创建了对原始对象的引用，而不是复制。如果在函数里绑定一个新对象到一个变量，这个变动不会反映到上一层。因此可以改变可变参数的内容。假设有以下函数：</p>
+<div class="sourceCode" id="cb40"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb40-1"><a href="#cb40-1"></a><span class="kw">def</span> append_element(some_list, element):</span>
+<span id="cb40-2"><a href="#cb40-2"></a>    some_list.append(element)</span></code></pre></div>
+<p>然后有：</p>
+<div class="sourceCode" id="cb41"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb41-1"><a href="#cb41-1"></a>In [<span class="dv">27</span>]: data <span class="op">=</span> [<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>]</span>
+<span id="cb41-2"><a href="#cb41-2"></a></span>
+<span id="cb41-3"><a href="#cb41-3"></a>In [<span class="dv">28</span>]: append_element(data, <span class="dv">4</span>)</span>
+<span id="cb41-4"><a href="#cb41-4"></a></span>
+<span id="cb41-5"><a href="#cb41-5"></a>In [<span class="dv">29</span>]: data</span>
+<span id="cb41-6"><a href="#cb41-6"></a>Out[<span class="dv">29</span>]: [<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>]</span></code></pre></div>
+<h3 id="动态引用强类型">动态引用，强类型</h3>
+<p>与许多编译语言（如JAVA和C++）对比，Python中的对象引用不包含附属的类型。下面的代码是没有问题的：</p>
+<div class="sourceCode" id="cb42"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb42-1"><a href="#cb42-1"></a>In [<span class="dv">12</span>]: a <span class="op">=</span> <span class="dv">5</span></span>
+<span id="cb42-2"><a href="#cb42-2"></a></span>
+<span id="cb42-3"><a href="#cb42-3"></a>In [<span class="dv">13</span>]: <span class="bu">type</span>(a)</span>
+<span id="cb42-4"><a href="#cb42-4"></a>Out[<span class="dv">13</span>]: <span class="bu">int</span></span>
+<span id="cb42-5"><a href="#cb42-5"></a></span>
+<span id="cb42-6"><a href="#cb42-6"></a>In [<span class="dv">14</span>]: a <span class="op">=</span> <span class="st">&#39;foo&#39;</span></span>
+<span id="cb42-7"><a href="#cb42-7"></a></span>
+<span id="cb42-8"><a href="#cb42-8"></a>In [<span class="dv">15</span>]: <span class="bu">type</span>(a)</span>
+<span id="cb42-9"><a href="#cb42-9"></a>Out[<span class="dv">15</span>]: <span class="bu">str</span></span></code></pre></div>
+<p>变量是在特殊命名空间中的对象的名字，类型信息保存在对象自身中。一些人可能会说Python不是“类型化语言”。这是不正确的，看下面的例子：</p>
+<pre class="text"><code>In [16]: &#39;5&#39; + 5
+---------------------------------------------------------------------------
+TypeError                                 Traceback (most recent call last)
+&lt;ipython-input-16-f9dbf5f0b234&gt; in &lt;module&gt;()
+----&gt; 1 &#39;5&#39; + 5
+TypeError: must be str, not int</code></pre>
+<p>在某些语言中，例如Visual Basic，字符串‘5’可能被默许转换（或投射）为整数，因此会产生10。但在其它语言中，例如JavaScript，整数5会被投射成字符串，结果是联结字符串‘55’。在这个方面，Python被认为是强类型化语言，意味着每个对象都有明确的类型（或类），默许转换只会发生在特定的情况下，例如：</p>
+<pre class="text"><code>In [17]: a = 4.5
+
+In [18]: b = 2
+
+# String formatting, to be visited later
+In [19]: print(&#39;a is {0}, b is {1}&#39;.format(type(a), type(b)))
+a is &lt;class &#39;float&#39;&gt;, b is &lt;class &#39;int&#39;&gt;
+
+In [20]: a / b
+Out[20]: 2.25</code></pre>
+<p>知道对象的类型很重要，最好能让函数可以处理多种类型的输入。你可以用<code>isinstance</code>函数检查对象是某个类型的实例：</p>
+<pre class="text"><code>In [21]: a = 5
+
+In [22]: isinstance(a, int)
+Out[22]: True</code></pre>
+<p><code>isinstance</code>可以用类型元组，检查对象的类型是否在元组中：</p>
+<pre class="text"><code>In [23]: a = 5; b = 4.5
+
+In [24]: isinstance(a, (int, float))
+Out[24]: True
+
+In [25]: isinstance(b, (int, float))
+Out[25]: True</code></pre>
+<h3 id="属性和方法">属性和方法</h3>
+<p>Python的对象通常都有属性（其它存储在对象内部的Python对象）和方法（对象的附属函数可以访问对象的内部数据）。可以用<code>obj.attribute_name</code>访问属性和方法：</p>
+<pre class="text"><code>In [1]: a = &#39;foo&#39;
+
+In [2]: a.&lt;Press Tab&gt;
+a.capitalize  a.format      a.isupper     a.rindex      a.strip
+a.center      a.index       a.join        a.rjust       a.swapcase
+a.count       a.isalnum     a.ljust       a.rpartition  a.title
+a.decode      a.isalpha     a.lower       a.rsplit      a.translate
+a.encode      a.isdigit     a.lstrip      a.rstrip      a.upper
+a.endswith    a.islower     a.partition   a.split       a.zfill
+a.expandtabs  a.isspace     a.replace     a.splitlines
+a.find        a.istitle     a.rfind       a.startswith</code></pre>
+<p>也可以用<code>getattr</code>函数，通过名字访问属性和方法：</p>
+<pre class="text"><code>In [27]: getattr(a, &#39;split&#39;)
+Out[27]: &lt;function str.split&gt;</code></pre>
+<p>在其它语言中，访问对象的名字通常称作“反射”。本书不会大量使用<code>getattr</code>函数和相关的<code>hasattr</code>和<code>setattr</code>函数，使用这些函数可以高效编写原生的、可重复使用的代码。</p>
+<h3 id="鸭子类型">鸭子类型</h3>
+<p>经常地，你可能不关心对象的类型，只关心对象是否有某些方法或用途。这通常被称为“鸭子类型”，来自“走起来像鸭子、叫起来像鸭子，那么它就是鸭子”的说法。例如，你可以通过验证一个对象是否遵循迭代协议，判断它是可迭代的。对于许多对象，这意味着它有一个<code>__iter__</code>魔术方法，其它更好的判断方法是使用<code>iter</code>函数：</p>
+<div class="sourceCode" id="cb49"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb49-1"><a href="#cb49-1"></a><span class="kw">def</span> isiterable(obj):</span>
+<span id="cb49-2"><a href="#cb49-2"></a>    <span class="cf">try</span>:</span>
+<span id="cb49-3"><a href="#cb49-3"></a>        <span class="bu">iter</span>(obj)</span>
+<span id="cb49-4"><a href="#cb49-4"></a>        <span class="cf">return</span> <span class="va">True</span></span>
+<span id="cb49-5"><a href="#cb49-5"></a>    <span class="cf">except</span> <span class="pp">TypeError</span>: <span class="co"># not iterable</span></span>
+<span id="cb49-6"><a href="#cb49-6"></a>        <span class="cf">return</span> <span class="va">False</span></span></code></pre></div>
+<p>这个函数会返回字符串以及大多数Python集合类型为<code>True</code>：</p>
+<pre class="text"><code>In [29]: isiterable(&#39;a string&#39;)
+Out[29]: True
+
+In [30]: isiterable([1, 2, 3])
+Out[30]: True
+
+In [31]: isiterable(5)
+Out[31]: False</code></pre>
+<p>我总是用这个功能编写可以接受多种输入类型的函数。常见的例子是编写一个函数可以接受任意类型的序列（list、tuple、ndarray）或是迭代器。你可先检验对象是否是列表（或是NUmPy数组），如果不是的话，将其转变成列表：</p>
+<div class="sourceCode" id="cb51"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb51-1"><a href="#cb51-1"></a><span class="cf">if</span> <span class="kw">not</span> <span class="bu">isinstance</span>(x, <span class="bu">list</span>) <span class="kw">and</span> isiterable(x):</span>
+<span id="cb51-2"><a href="#cb51-2"></a>    x <span class="op">=</span> <span class="bu">list</span>(x)</span></code></pre></div>
+<h3 id="引入">引入</h3>
+<p>在Python中，模块就是一个有<code>.py</code>扩展名、包含Python代码的文件。假设有以下模块：</p>
+<div class="sourceCode" id="cb52"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb52-1"><a href="#cb52-1"></a><span class="co"># some_module.py</span></span>
+<span id="cb52-2"><a href="#cb52-2"></a>PI <span class="op">=</span> <span class="fl">3.14159</span></span>
+<span id="cb52-3"><a href="#cb52-3"></a></span>
+<span id="cb52-4"><a href="#cb52-4"></a><span class="kw">def</span> f(x):</span>
+<span id="cb52-5"><a href="#cb52-5"></a>    <span class="cf">return</span> x <span class="op">+</span> <span class="dv">2</span></span>
+<span id="cb52-6"><a href="#cb52-6"></a></span>
+<span id="cb52-7"><a href="#cb52-7"></a><span class="kw">def</span> g(a, b):</span>
+<span id="cb52-8"><a href="#cb52-8"></a>    <span class="cf">return</span> a <span class="op">+</span> b</span></code></pre></div>
+<p>如果想从同目录下的另一个文件访问<code>some_module.py</code>中定义的变量和函数，可以：</p>
+<div class="sourceCode" id="cb53"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb53-1"><a href="#cb53-1"></a><span class="im">import</span> some_module</span>
+<span id="cb53-2"><a href="#cb53-2"></a>result <span class="op">=</span> some_module.f(<span class="dv">5</span>)</span>
+<span id="cb53-3"><a href="#cb53-3"></a>pi <span class="op">=</span> some_module.PI</span></code></pre></div>
+<p>或者：</p>
+<div class="sourceCode" id="cb54"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb54-1"><a href="#cb54-1"></a><span class="im">from</span> some_module <span class="im">import</span> f, g, PI</span>
+<span id="cb54-2"><a href="#cb54-2"></a>result <span class="op">=</span> g(<span class="dv">5</span>, PI)</span></code></pre></div>
+<p>使用<code>as</code>关键词，你可以给引入起不同的变量名：</p>
+<div class="sourceCode" id="cb55"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb55-1"><a href="#cb55-1"></a><span class="im">import</span> some_module <span class="im">as</span> sm</span>
+<span id="cb55-2"><a href="#cb55-2"></a><span class="im">from</span> some_module <span class="im">import</span> PI <span class="im">as</span> pi, g <span class="im">as</span> gf</span>
+<span id="cb55-3"><a href="#cb55-3"></a></span>
+<span id="cb55-4"><a href="#cb55-4"></a>r1 <span class="op">=</span> sm.f(pi)</span>
+<span id="cb55-5"><a href="#cb55-5"></a>r2 <span class="op">=</span> gf(<span class="dv">6</span>, pi)</span></code></pre></div>
+<h3 id="二元运算符和比较运算符">二元运算符和比较运算符</h3>
+<p>大多数二元数学运算和比较都不难想到：</p>
+<div class="sourceCode" id="cb56"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb56-1"><a href="#cb56-1"></a>In [<span class="dv">32</span>]: <span class="dv">5</span> <span class="op">-</span> <span class="dv">7</span></span>
+<span id="cb56-2"><a href="#cb56-2"></a>Out[<span class="dv">32</span>]: <span class="op">-</span><span class="dv">2</span></span>
+<span id="cb56-3"><a href="#cb56-3"></a></span>
+<span id="cb56-4"><a href="#cb56-4"></a>In [<span class="dv">33</span>]: <span class="dv">12</span> <span class="op">+</span> <span class="fl">21.5</span></span>
+<span id="cb56-5"><a href="#cb56-5"></a>Out[<span class="dv">33</span>]: <span class="fl">33.5</span></span>
+<span id="cb56-6"><a href="#cb56-6"></a></span>
+<span id="cb56-7"><a href="#cb56-7"></a>In [<span class="dv">34</span>]: <span class="dv">5</span> <span class="op">&lt;=</span> <span class="dv">2</span></span>
+<span id="cb56-8"><a href="#cb56-8"></a>Out[<span class="dv">34</span>]: <span class="va">False</span></span></code></pre></div>
+<p>表2-3列出了所有的二元运算符。</p>
+<p>要判断两个引用是否指向同一个对象，可以使用<code>is</code>方法。<code>is not</code>可以判断两个对象是不同的：</p>
+<div class="sourceCode" id="cb57"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb57-1"><a href="#cb57-1"></a>In [<span class="dv">35</span>]: a <span class="op">=</span> [<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>]</span>
+<span id="cb57-2"><a href="#cb57-2"></a></span>
+<span id="cb57-3"><a href="#cb57-3"></a>In [<span class="dv">36</span>]: b <span class="op">=</span> a</span>
+<span id="cb57-4"><a href="#cb57-4"></a></span>
+<span id="cb57-5"><a href="#cb57-5"></a>In [<span class="dv">37</span>]: c <span class="op">=</span> <span class="bu">list</span>(a)</span>
+<span id="cb57-6"><a href="#cb57-6"></a></span>
+<span id="cb57-7"><a href="#cb57-7"></a>In [<span class="dv">38</span>]: a <span class="kw">is</span> b</span>
+<span id="cb57-8"><a href="#cb57-8"></a>Out[<span class="dv">38</span>]: <span class="va">True</span></span>
+<span id="cb57-9"><a href="#cb57-9"></a></span>
+<span id="cb57-10"><a href="#cb57-10"></a>In [<span class="dv">39</span>]: a <span class="kw">is</span> <span class="kw">not</span> c</span>
+<span id="cb57-11"><a href="#cb57-11"></a>Out[<span class="dv">39</span>]: <span class="va">True</span></span></code></pre></div>
+<p>因为<code>list</code>总是创建一个新的Python列表（即复制），我们可以断定c是不同于a的。使用<code>is</code>比较与<code>==</code>运算符不同，如下：</p>
+<div class="sourceCode" id="cb58"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb58-1"><a href="#cb58-1"></a>In [<span class="dv">40</span>]: a <span class="op">==</span> c</span>
+<span id="cb58-2"><a href="#cb58-2"></a>Out[<span class="dv">40</span>]: <span class="va">True</span></span></code></pre></div>
+<p><code>is</code>和<code>is not</code>常用来判断一个变量是否为<code>None</code>，因为只有一个<code>None</code>的实例：</p>
+<div class="sourceCode" id="cb59"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb59-1"><a href="#cb59-1"></a>In [<span class="dv">41</span>]: a <span class="op">=</span> <span class="va">None</span></span>
+<span id="cb59-2"><a href="#cb59-2"></a></span>
+<span id="cb59-3"><a href="#cb59-3"></a>In [<span class="dv">42</span>]: a <span class="kw">is</span> <span class="va">None</span></span>
+<span id="cb59-4"><a href="#cb59-4"></a>Out[<span class="dv">42</span>]: <span class="va">True</span></span></code></pre></div>
+<figure>
+<img src="http://upload-images.jianshu.io/upload_images/7178691-9fb5f25b33166acf.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="" /><figcaption>表2-3 二元运算符</figcaption>
+</figure>
+<h3 id="可变与不可变对象">可变与不可变对象</h3>
+<p>Python中的大多数对象，比如列表、字典、NumPy数组，和用户定义的类型（类），都是可变的。意味着这些对象或包含的值可以被修改：</p>
+<div class="sourceCode" id="cb60"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb60-1"><a href="#cb60-1"></a>In [<span class="dv">43</span>]: a_list <span class="op">=</span> [<span class="st">&#39;foo&#39;</span>, <span class="dv">2</span>, [<span class="dv">4</span>, <span class="dv">5</span>]]</span>
+<span id="cb60-2"><a href="#cb60-2"></a></span>
+<span id="cb60-3"><a href="#cb60-3"></a>In [<span class="dv">44</span>]: a_list[<span class="dv">2</span>] <span class="op">=</span> (<span class="dv">3</span>, <span class="dv">4</span>)</span>
+<span id="cb60-4"><a href="#cb60-4"></a></span>
+<span id="cb60-5"><a href="#cb60-5"></a>In [<span class="dv">45</span>]: a_list</span>
+<span id="cb60-6"><a href="#cb60-6"></a>Out[<span class="dv">45</span>]: [<span class="st">&#39;foo&#39;</span>, <span class="dv">2</span>, (<span class="dv">3</span>, <span class="dv">4</span>)]</span></code></pre></div>
+<p>其它的，例如字符串和元组，是不可变的：</p>
+<div class="sourceCode" id="cb61"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb61-1"><a href="#cb61-1"></a>In [<span class="dv">46</span>]: a_tuple <span class="op">=</span> (<span class="dv">3</span>, <span class="dv">5</span>, (<span class="dv">4</span>, <span class="dv">5</span>))</span>
+<span id="cb61-2"><a href="#cb61-2"></a></span>
+<span id="cb61-3"><a href="#cb61-3"></a>In [<span class="dv">47</span>]: a_tuple[<span class="dv">1</span>] <span class="op">=</span> <span class="st">&#39;four&#39;</span></span>
+<span id="cb61-4"><a href="#cb61-4"></a><span class="op">---------------------------------------------------------------------------</span></span>
+<span id="cb61-5"><a href="#cb61-5"></a><span class="pp">TypeError</span>                                 Traceback (most recent call last)</span>
+<span id="cb61-6"><a href="#cb61-6"></a><span class="op">&lt;</span>ipython<span class="op">-</span><span class="bu">input</span><span class="op">-</span><span class="dv">47</span><span class="op">-</span>b7966a9ae0f1<span class="op">&gt;</span> <span class="kw">in</span> <span class="op">&lt;</span>module<span class="op">&gt;</span>()</span>
+<span id="cb61-7"><a href="#cb61-7"></a><span class="op">----&gt;</span> <span class="dv">1</span> a_tuple[<span class="dv">1</span>] <span class="op">=</span> <span class="st">&#39;four&#39;</span></span>
+<span id="cb61-8"><a href="#cb61-8"></a><span class="pp">TypeError</span>: <span class="st">&#39;tuple&#39;</span> <span class="bu">object</span> does <span class="kw">not</span> support item assignment</span></code></pre></div>
+<p>记住，可以修改一个对象并不意味就要修改它。这被称为副作用。例如，当写一个函数，任何副作用都要在文档或注释中写明。如果可能的话，我推荐避免副作用，采用不可变的方式，即使要用到可变对象。</p>
+<h3 id="标量类型">标量类型</h3>
+<p>Python的标准库中有一些内建的类型，用于处理数值数据、字符串、布尔值，和日期时间。这些单值类型被称为标量类型，本书中称其为标量。表2-4列出了主要的标量。日期和时间处理会另外讨论，因为它们是标准库的<code>datetime</code>模块提供的。</p>
+<figure>
+<img src="http://upload-images.jianshu.io/upload_images/7178691-27a30ac3e7d262a1.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="" /><figcaption>表2-4 Python的标量</figcaption>
+</figure>
+<h3 id="数值类型">数值类型</h3>
+<p>Python的主要数值类型是<code>int</code>和<code>float</code>。<code>int</code>可以存储任意大的数：</p>
+<div class="sourceCode" id="cb62"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb62-1"><a href="#cb62-1"></a>In [<span class="dv">48</span>]: ival <span class="op">=</span> <span class="dv">17239871</span></span>
+<span id="cb62-2"><a href="#cb62-2"></a></span>
+<span id="cb62-3"><a href="#cb62-3"></a>In [<span class="dv">49</span>]: ival <span class="op">**</span> <span class="dv">6</span></span>
+<span id="cb62-4"><a href="#cb62-4"></a>Out[<span class="dv">49</span>]: <span class="dv">26254519291092456596965462913230729701102721</span></span></code></pre></div>
+<p>浮点数使用Python的<code>float</code>类型。每个数都是双精度（64位）的值。也可以用科学计数法表示：</p>
+<div class="sourceCode" id="cb63"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb63-1"><a href="#cb63-1"></a>In [<span class="dv">50</span>]: fval <span class="op">=</span> <span class="fl">7.243</span></span>
+<span id="cb63-2"><a href="#cb63-2"></a></span>
+<span id="cb63-3"><a href="#cb63-3"></a>In [<span class="dv">51</span>]: fval2 <span class="op">=</span> <span class="fl">6.78e-5</span></span></code></pre></div>
+<p>不能得到整数的除法会得到浮点数：</p>
+<div class="sourceCode" id="cb64"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb64-1"><a href="#cb64-1"></a>In [<span class="dv">52</span>]: <span class="dv">3</span> <span class="op">/</span> <span class="dv">2</span></span>
+<span id="cb64-2"><a href="#cb64-2"></a>Out[<span class="dv">52</span>]: <span class="fl">1.5</span></span></code></pre></div>
+<p>要获得C-风格的整除（去掉小数部分），可以使用底除运算符//：</p>
+<div class="sourceCode" id="cb65"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb65-1"><a href="#cb65-1"></a>In [<span class="dv">53</span>]: <span class="dv">3</span> <span class="op">//</span> <span class="dv">2</span></span>
+<span id="cb65-2"><a href="#cb65-2"></a>Out[<span class="dv">53</span>]: <span class="dv">1</span></span></code></pre></div>
+<h3 id="字符串">字符串</h3>
+<p>许多人是因为Python强大而灵活的字符串处理而使用Python的。你可以用单引号或双引号来写字符串：</p>
+<div class="sourceCode" id="cb66"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb66-1"><a href="#cb66-1"></a>a <span class="op">=</span> <span class="st">&#39;one way of writing a string&#39;</span></span>
+<span id="cb66-2"><a href="#cb66-2"></a>b <span class="op">=</span> <span class="st">&quot;another way&quot;</span></span></code></pre></div>
+<p>对于有换行符的字符串，可以使用三引号，’’’或"""都行：</p>
+<div class="sourceCode" id="cb67"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb67-1"><a href="#cb67-1"></a>c <span class="op">=</span> <span class="st">&quot;&quot;&quot;</span></span>
+<span id="cb67-2"><a href="#cb67-2"></a><span class="st">This is a longer string that</span></span>
+<span id="cb67-3"><a href="#cb67-3"></a><span class="st">spans multiple lines</span></span>
+<span id="cb67-4"><a href="#cb67-4"></a><span class="st">&quot;&quot;&quot;</span></span></code></pre></div>
+<p>字符串<code>c</code>实际包含四行文本，"""后面和lines后面的换行符。可以用<code>count</code>方法计算<code>c</code>中的新的行：</p>
+<div class="sourceCode" id="cb68"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb68-1"><a href="#cb68-1"></a>In [<span class="dv">55</span>]: c.count(<span class="st">&#39;</span><span class="ch">\n</span><span class="st">&#39;</span>)</span>
+<span id="cb68-2"><a href="#cb68-2"></a>Out[<span class="dv">55</span>]: <span class="dv">3</span></span></code></pre></div>
+<p>Python的字符串是不可变的，不能修改字符串：</p>
+<div class="sourceCode" id="cb69"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb69-1"><a href="#cb69-1"></a>In [<span class="dv">56</span>]: a <span class="op">=</span> <span class="st">&#39;this is a string&#39;</span></span>
+<span id="cb69-2"><a href="#cb69-2"></a></span>
+<span id="cb69-3"><a href="#cb69-3"></a>In [<span class="dv">57</span>]: a[<span class="dv">10</span>] <span class="op">=</span> <span class="st">&#39;f&#39;</span></span>
+<span id="cb69-4"><a href="#cb69-4"></a><span class="op">---------------------------------------------------------------------------</span></span>
+<span id="cb69-5"><a href="#cb69-5"></a><span class="pp">TypeError</span>                                 Traceback (most recent call last)</span>
+<span id="cb69-6"><a href="#cb69-6"></a><span class="op">&lt;</span>ipython<span class="op">-</span><span class="bu">input</span><span class="op">-</span><span class="dv">57</span><span class="op">-</span>5ca625d1e504<span class="op">&gt;</span> <span class="kw">in</span> <span class="op">&lt;</span>module<span class="op">&gt;</span>()</span>
+<span id="cb69-7"><a href="#cb69-7"></a><span class="op">----&gt;</span> <span class="dv">1</span> a[<span class="dv">10</span>] <span class="op">=</span> <span class="st">&#39;f&#39;</span></span>
+<span id="cb69-8"><a href="#cb69-8"></a><span class="pp">TypeError</span>: <span class="st">&#39;str&#39;</span> <span class="bu">object</span> does <span class="kw">not</span> support item assignment</span>
+<span id="cb69-9"><a href="#cb69-9"></a></span>
+<span id="cb69-10"><a href="#cb69-10"></a>In [<span class="dv">58</span>]: b <span class="op">=</span> a.replace(<span class="st">&#39;string&#39;</span>, <span class="st">&#39;longer string&#39;</span>)</span>
+<span id="cb69-11"><a href="#cb69-11"></a></span>
+<span id="cb69-12"><a href="#cb69-12"></a>In [<span class="dv">59</span>]: b</span>
+<span id="cb69-13"><a href="#cb69-13"></a>Out[<span class="dv">59</span>]: <span class="st">&#39;this is a longer string&#39;</span></span></code></pre></div>
+<p>经过以上的操作，变量<code>a</code>并没有被修改：</p>
+<div class="sourceCode" id="cb70"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb70-1"><a href="#cb70-1"></a>In [<span class="dv">60</span>]: a</span>
+<span id="cb70-2"><a href="#cb70-2"></a>Out[<span class="dv">60</span>]: <span class="st">&#39;this is a string&#39;</span></span></code></pre></div>
+<p>许多Python对象使用<code>str</code>函数可以被转化为字符串：</p>
+<div class="sourceCode" id="cb71"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb71-1"><a href="#cb71-1"></a>In [<span class="dv">61</span>]: a <span class="op">=</span> <span class="fl">5.6</span></span>
+<span id="cb71-2"><a href="#cb71-2"></a></span>
+<span id="cb71-3"><a href="#cb71-3"></a>In [<span class="dv">62</span>]: s <span class="op">=</span> <span class="bu">str</span>(a)</span>
+<span id="cb71-4"><a href="#cb71-4"></a></span>
+<span id="cb71-5"><a href="#cb71-5"></a>In [<span class="dv">63</span>]: <span class="bu">print</span>(s)</span>
+<span id="cb71-6"><a href="#cb71-6"></a><span class="fl">5.6</span></span></code></pre></div>
+<p>字符串是一个序列的Unicode字符，因此可以像其它序列，比如列表和元组（下一章会详细介绍两者）一样处理：</p>
+<div class="sourceCode" id="cb72"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb72-1"><a href="#cb72-1"></a>In [<span class="dv">64</span>]: s <span class="op">=</span> <span class="st">&#39;python&#39;</span></span>
+<span id="cb72-2"><a href="#cb72-2"></a></span>
+<span id="cb72-3"><a href="#cb72-3"></a>In [<span class="dv">65</span>]: <span class="bu">list</span>(s)</span>
+<span id="cb72-4"><a href="#cb72-4"></a>Out[<span class="dv">65</span>]: [<span class="st">&#39;p&#39;</span>, <span class="st">&#39;y&#39;</span>, <span class="st">&#39;t&#39;</span>, <span class="st">&#39;h&#39;</span>, <span class="st">&#39;o&#39;</span>, <span class="st">&#39;n&#39;</span>]</span>
+<span id="cb72-5"><a href="#cb72-5"></a></span>
+<span id="cb72-6"><a href="#cb72-6"></a>In [<span class="dv">66</span>]: s[:<span class="dv">3</span>]</span>
+<span id="cb72-7"><a href="#cb72-7"></a>Out[<span class="dv">66</span>]: <span class="st">&#39;pyt&#39;</span></span></code></pre></div>
+<p>语法<code>s[:3]</code>被称作切片，适用于许多Python序列。后面会更详细的介绍，本书中用到很多切片。</p>
+<p>反斜杠是转义字符，意思是它备用来表示特殊字符，比如换行符。要写一个包含反斜杠的字符串，需要进行转义：</p>
+<div class="sourceCode" id="cb73"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb73-1"><a href="#cb73-1"></a>In [<span class="dv">67</span>]: s <span class="op">=</span> <span class="st">&#39;12</span><span class="ch">\\</span><span class="st">34&#39;</span></span>
+<span id="cb73-2"><a href="#cb73-2"></a></span>
+<span id="cb73-3"><a href="#cb73-3"></a>In [<span class="dv">68</span>]: <span class="bu">print</span>(s)</span>
+<span id="cb73-4"><a href="#cb73-4"></a><span class="dv">12</span><span class="op">\</span><span class="dv">34</span></span></code></pre></div>
+<p>如果字符串中包含许多反斜杠，但没有特殊字符，这样做就很麻烦。幸好，可以在字符串前面加一个r，表明字符就是它自身：</p>
+<div class="sourceCode" id="cb74"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb74-1"><a href="#cb74-1"></a>In [<span class="dv">69</span>]: s <span class="op">=</span> <span class="vs">r&#39;this\has\no\special\characters&#39;</span></span>
+<span id="cb74-2"><a href="#cb74-2"></a></span>
+<span id="cb74-3"><a href="#cb74-3"></a>In [<span class="dv">70</span>]: s</span>
+<span id="cb74-4"><a href="#cb74-4"></a>Out[<span class="dv">70</span>]: <span class="st">&#39;this</span><span class="ch">\\</span><span class="st">has</span><span class="ch">\\</span><span class="st">no</span><span class="ch">\\</span><span class="st">special</span><span class="ch">\\</span><span class="st">characters&#39;</span></span></code></pre></div>
+<p>r表示raw。</p>
+<p>将两个字符串合并，会产生一个新的字符串：</p>
+<div class="sourceCode" id="cb75"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb75-1"><a href="#cb75-1"></a>In [<span class="dv">71</span>]: a <span class="op">=</span> <span class="st">&#39;this is the first half &#39;</span></span>
+<span id="cb75-2"><a href="#cb75-2"></a></span>
+<span id="cb75-3"><a href="#cb75-3"></a>In [<span class="dv">72</span>]: b <span class="op">=</span> <span class="st">&#39;and this is the second half&#39;</span></span>
+<span id="cb75-4"><a href="#cb75-4"></a></span>
+<span id="cb75-5"><a href="#cb75-5"></a>In [<span class="dv">73</span>]: a <span class="op">+</span> b</span>
+<span id="cb75-6"><a href="#cb75-6"></a>Out[<span class="dv">73</span>]: <span class="st">&#39;this is the first half and this is the second half&#39;</span></span></code></pre></div>
+<p>字符串的模板化或格式化，是另一个重要的主题。Python 3拓展了此类的方法，这里只介绍一些。字符串对象有<code>format</code>方法，可以替换格式化的参数为字符串，产生一个新的字符串：</p>
+<div class="sourceCode" id="cb76"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb76-1"><a href="#cb76-1"></a>In [<span class="dv">74</span>]: template <span class="op">=</span> <span class="st">&#39;</span><span class="sc">{0:.2f}</span><span class="st"> </span><span class="sc">{1:s}</span><span class="st"> are worth US$</span><span class="sc">{2:d}</span><span class="st">&#39;</span></span></code></pre></div>
+<p>在这个字符串中，</p>
+<ul>
+<li><code>{0:.2f}</code>表示格式化第一个参数为带有两位小数的浮点数。</li>
+<li><code>{1:s}</code>表示格式化第二个参数为字符串。</li>
+<li><code>{2:d}</code>表示格式化第三个参数为一个整数。</li>
+</ul>
+<p>要替换参数为这些格式化的参数，我们传递<code>format</code>方法一个序列：</p>
+<div class="sourceCode" id="cb77"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb77-1"><a href="#cb77-1"></a>In [<span class="dv">75</span>]: template.<span class="bu">format</span>(<span class="fl">4.5560</span>, <span class="st">&#39;Argentine Pesos&#39;</span>, <span class="dv">1</span>)</span>
+<span id="cb77-2"><a href="#cb77-2"></a>Out[<span class="dv">75</span>]: <span class="st">&#39;4.56 Argentine Pesos are worth US$1&#39;</span></span></code></pre></div>
+<p>字符串格式化是一个很深的主题，有多种方法和大量的选项，可以控制字符串中的值是如何格式化的。推荐参阅Python官方文档。</p>
+<p>这里概括介绍字符串处理，第8章的数据分析会详细介绍。</p>
+<h3 id="字节和unicode">字节和Unicode</h3>
+<p>在Python 3及以上版本中，Unicode是一级的字符串类型，这样可以更一致的处理ASCII和Non-ASCII文本。在老的Python版本中，字符串都是字节，不使用Unicode编码。假如知道字符编码，可以将其转化为Unicode。看一个例子：</p>
+<div class="sourceCode" id="cb78"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb78-1"><a href="#cb78-1"></a>In [<span class="dv">76</span>]: val <span class="op">=</span> <span class="st">&quot;español&quot;</span></span>
+<span id="cb78-2"><a href="#cb78-2"></a></span>
+<span id="cb78-3"><a href="#cb78-3"></a>In [<span class="dv">77</span>]: val</span>
+<span id="cb78-4"><a href="#cb78-4"></a>Out[<span class="dv">77</span>]: <span class="st">&#39;español&#39;</span></span></code></pre></div>
+<p>可以用<code>encode</code>将这个Unicode字符串编码为UTF-8：</p>
+<div class="sourceCode" id="cb79"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb79-1"><a href="#cb79-1"></a>In [<span class="dv">78</span>]: val_utf8 <span class="op">=</span> val.encode(<span class="st">&#39;utf-8&#39;</span>)</span>
+<span id="cb79-2"><a href="#cb79-2"></a></span>
+<span id="cb79-3"><a href="#cb79-3"></a>In [<span class="dv">79</span>]: val_utf8</span>
+<span id="cb79-4"><a href="#cb79-4"></a>Out[<span class="dv">79</span>]: b<span class="st">&#39;espa</span><span class="ch">\xc3\xb1</span><span class="st">ol&#39;</span></span>
+<span id="cb79-5"><a href="#cb79-5"></a></span>
+<span id="cb79-6"><a href="#cb79-6"></a>In [<span class="dv">80</span>]: <span class="bu">type</span>(val_utf8)</span>
+<span id="cb79-7"><a href="#cb79-7"></a>Out[<span class="dv">80</span>]: <span class="bu">bytes</span></span></code></pre></div>
+<p>如果你知道一个字节对象的Unicode编码，用<code>decode</code>方法可以解码：</p>
+<div class="sourceCode" id="cb80"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb80-1"><a href="#cb80-1"></a>In [<span class="dv">81</span>]: val_utf8.decode(<span class="st">&#39;utf-8&#39;</span>)</span>
+<span id="cb80-2"><a href="#cb80-2"></a>Out[<span class="dv">81</span>]: <span class="st">&#39;español&#39;</span></span></code></pre></div>
+<p>虽然UTF-8编码已经变成主流，但因为历史的原因，你仍然可能碰到其它编码的数据：</p>
+<div class="sourceCode" id="cb81"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb81-1"><a href="#cb81-1"></a>In [<span class="dv">82</span>]: val.encode(<span class="st">&#39;latin1&#39;</span>)</span>
+<span id="cb81-2"><a href="#cb81-2"></a>Out[<span class="dv">82</span>]: b<span class="st">&#39;espa</span><span class="ch">\xf1</span><span class="st">ol&#39;</span></span>
+<span id="cb81-3"><a href="#cb81-3"></a></span>
+<span id="cb81-4"><a href="#cb81-4"></a>In [<span class="dv">83</span>]: val.encode(<span class="st">&#39;utf-16&#39;</span>)</span>
+<span id="cb81-5"><a href="#cb81-5"></a>Out[<span class="dv">83</span>]: b<span class="st">&#39;</span><span class="ch">\xff\xfe</span><span class="st">e</span><span class="ch">\x00</span><span class="st">s</span><span class="ch">\x00</span><span class="st">p</span><span class="ch">\x00</span><span class="st">a</span><span class="ch">\x00\xf1\x00</span><span class="st">o</span><span class="ch">\x00</span><span class="st">l</span><span class="ch">\x00</span><span class="st">&#39;</span></span>
+<span id="cb81-6"><a href="#cb81-6"></a></span>
+<span id="cb81-7"><a href="#cb81-7"></a>In [<span class="dv">84</span>]: val.encode(<span class="st">&#39;utf-16le&#39;</span>)</span>
+<span id="cb81-8"><a href="#cb81-8"></a>Out[<span class="dv">84</span>]: b<span class="st">&#39;e</span><span class="ch">\x00</span><span class="st">s</span><span class="ch">\x00</span><span class="st">p</span><span class="ch">\x00</span><span class="st">a</span><span class="ch">\x00\xf1\x00</span><span class="st">o</span><span class="ch">\x00</span><span class="st">l</span><span class="ch">\x00</span><span class="st">&#39;</span></span></code></pre></div>
+<p>工作中碰到的文件很多都是字节对象，盲目地将所有数据编码为Unicode是不可取的。</p>
+<p>虽然用的不多，你可以在字节文本的前面加上一个b：</p>
+<div class="sourceCode" id="cb82"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb82-1"><a href="#cb82-1"></a>In [<span class="dv">85</span>]: bytes_val <span class="op">=</span> b<span class="st">&#39;this is bytes&#39;</span></span>
+<span id="cb82-2"><a href="#cb82-2"></a></span>
+<span id="cb82-3"><a href="#cb82-3"></a>In [<span class="dv">86</span>]: bytes_val</span>
+<span id="cb82-4"><a href="#cb82-4"></a>Out[<span class="dv">86</span>]: b<span class="st">&#39;this is bytes&#39;</span></span>
+<span id="cb82-5"><a href="#cb82-5"></a></span>
+<span id="cb82-6"><a href="#cb82-6"></a>In [<span class="dv">87</span>]: decoded <span class="op">=</span> bytes_val.decode(<span class="st">&#39;utf8&#39;</span>)</span>
+<span id="cb82-7"><a href="#cb82-7"></a></span>
+<span id="cb82-8"><a href="#cb82-8"></a>In [<span class="dv">88</span>]: decoded  <span class="co"># this is str (Unicode) now</span></span>
+<span id="cb82-9"><a href="#cb82-9"></a>Out[<span class="dv">88</span>]: <span class="st">&#39;this is bytes&#39;</span></span></code></pre></div>
+<h3 id="布尔值">布尔值</h3>
+<p>Python中的布尔值有两个，True和False。比较和其它条件表达式可以用True和False判断。布尔值可以与and和or结合使用：</p>
+<div class="sourceCode" id="cb83"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb83-1"><a href="#cb83-1"></a>In [<span class="dv">89</span>]: <span class="va">True</span> <span class="kw">and</span> <span class="va">True</span></span>
+<span id="cb83-2"><a href="#cb83-2"></a>Out[<span class="dv">89</span>]: <span class="va">True</span></span>
+<span id="cb83-3"><a href="#cb83-3"></a></span>
+<span id="cb83-4"><a href="#cb83-4"></a>In [<span class="dv">90</span>]: <span class="va">False</span> <span class="kw">or</span> <span class="va">True</span></span>
+<span id="cb83-5"><a href="#cb83-5"></a>Out[<span class="dv">90</span>]: <span class="va">True</span></span></code></pre></div>
+<h3 id="类型转换">类型转换</h3>
+<p>str、bool、int和float也是函数，可以用来转换类型：</p>
+<div class="sourceCode" id="cb84"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb84-1"><a href="#cb84-1"></a>In [<span class="dv">91</span>]: s <span class="op">=</span> <span class="st">&#39;3.14159&#39;</span></span>
+<span id="cb84-2"><a href="#cb84-2"></a></span>
+<span id="cb84-3"><a href="#cb84-3"></a>In [<span class="dv">92</span>]: fval <span class="op">=</span> <span class="bu">float</span>(s)</span>
+<span id="cb84-4"><a href="#cb84-4"></a></span>
+<span id="cb84-5"><a href="#cb84-5"></a>In [<span class="dv">93</span>]: <span class="bu">type</span>(fval)</span>
+<span id="cb84-6"><a href="#cb84-6"></a>Out[<span class="dv">93</span>]: <span class="bu">float</span></span>
+<span id="cb84-7"><a href="#cb84-7"></a></span>
+<span id="cb84-8"><a href="#cb84-8"></a>In [<span class="dv">94</span>]: <span class="bu">int</span>(fval)</span>
+<span id="cb84-9"><a href="#cb84-9"></a>Out[<span class="dv">94</span>]: <span class="dv">3</span></span>
+<span id="cb84-10"><a href="#cb84-10"></a></span>
+<span id="cb84-11"><a href="#cb84-11"></a>In [<span class="dv">95</span>]: <span class="bu">bool</span>(fval)</span>
+<span id="cb84-12"><a href="#cb84-12"></a>Out[<span class="dv">95</span>]: <span class="va">True</span></span>
+<span id="cb84-13"><a href="#cb84-13"></a></span>
+<span id="cb84-14"><a href="#cb84-14"></a>In [<span class="dv">96</span>]: <span class="bu">bool</span>(<span class="dv">0</span>)</span>
+<span id="cb84-15"><a href="#cb84-15"></a>Out[<span class="dv">96</span>]: <span class="va">False</span></span></code></pre></div>
+<h3 id="none">None</h3>
+<p>None是Python的空值类型。如果一个函数没有明确的返回值，就会默认返回None：</p>
+<div class="sourceCode" id="cb85"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb85-1"><a href="#cb85-1"></a>In [<span class="dv">97</span>]: a <span class="op">=</span> <span class="va">None</span></span>
+<span id="cb85-2"><a href="#cb85-2"></a></span>
+<span id="cb85-3"><a href="#cb85-3"></a>In [<span class="dv">98</span>]: a <span class="kw">is</span> <span class="va">None</span></span>
+<span id="cb85-4"><a href="#cb85-4"></a>Out[<span class="dv">98</span>]: <span class="va">True</span></span>
+<span id="cb85-5"><a href="#cb85-5"></a></span>
+<span id="cb85-6"><a href="#cb85-6"></a>In [<span class="dv">99</span>]: b <span class="op">=</span> <span class="dv">5</span></span>
+<span id="cb85-7"><a href="#cb85-7"></a></span>
+<span id="cb85-8"><a href="#cb85-8"></a>In [<span class="dv">100</span>]: b <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span></span>
+<span id="cb85-9"><a href="#cb85-9"></a>Out[<span class="dv">100</span>]: <span class="va">True</span></span></code></pre></div>
+<p>None也常常作为函数的默认参数：</p>
+<div class="sourceCode" id="cb86"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb86-1"><a href="#cb86-1"></a><span class="kw">def</span> add_and_maybe_multiply(a, b, c<span class="op">=</span><span class="va">None</span>):</span>
+<span id="cb86-2"><a href="#cb86-2"></a>    result <span class="op">=</span> a <span class="op">+</span> b</span>
+<span id="cb86-3"><a href="#cb86-3"></a></span>
+<span id="cb86-4"><a href="#cb86-4"></a>    <span class="cf">if</span> c <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span>:</span>
+<span id="cb86-5"><a href="#cb86-5"></a>        result <span class="op">=</span> result <span class="op">*</span> c</span>
+<span id="cb86-6"><a href="#cb86-6"></a></span>
+<span id="cb86-7"><a href="#cb86-7"></a>    <span class="cf">return</span> result</span></code></pre></div>
+<p>另外，None不仅是一个保留字，还是唯一的NoneType的实例：</p>
+<div class="sourceCode" id="cb87"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb87-1"><a href="#cb87-1"></a>In [<span class="dv">101</span>]: <span class="bu">type</span>(<span class="va">None</span>)</span>
+<span id="cb87-2"><a href="#cb87-2"></a>Out[<span class="dv">101</span>]: NoneType</span></code></pre></div>
+<h3 id="日期和时间">日期和时间</h3>
+<p>Python内建的<code>datetime</code>模块提供了<code>datetime</code>、<code>date</code>和<code>time</code>类型。<code>datetime</code>类型结合了<code>date</code>和<code>time</code>，是最常使用的：</p>
+<div class="sourceCode" id="cb88"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb88-1"><a href="#cb88-1"></a>In [<span class="dv">102</span>]: <span class="im">from</span> datetime <span class="im">import</span> datetime, date, time</span>
+<span id="cb88-2"><a href="#cb88-2"></a></span>
+<span id="cb88-3"><a href="#cb88-3"></a>In [<span class="dv">103</span>]: dt <span class="op">=</span> datetime(<span class="dv">2011</span>, <span class="dv">10</span>, <span class="dv">29</span>, <span class="dv">20</span>, <span class="dv">30</span>, <span class="dv">21</span>)</span>
+<span id="cb88-4"><a href="#cb88-4"></a></span>
+<span id="cb88-5"><a href="#cb88-5"></a>In [<span class="dv">104</span>]: dt.day</span>
+<span id="cb88-6"><a href="#cb88-6"></a>Out[<span class="dv">104</span>]: <span class="dv">29</span></span>
+<span id="cb88-7"><a href="#cb88-7"></a></span>
+<span id="cb88-8"><a href="#cb88-8"></a>In [<span class="dv">105</span>]: dt.minute</span>
+<span id="cb88-9"><a href="#cb88-9"></a>Out[<span class="dv">105</span>]: <span class="dv">30</span></span></code></pre></div>
+<p>根据<code>datetime</code>实例，你可以用<code>date</code>和<code>time</code>提取出各自的对象：</p>
+<div class="sourceCode" id="cb89"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb89-1"><a href="#cb89-1"></a>In [<span class="dv">106</span>]: dt.date()</span>
+<span id="cb89-2"><a href="#cb89-2"></a>Out[<span class="dv">106</span>]: datetime.date(<span class="dv">2011</span>, <span class="dv">10</span>, <span class="dv">29</span>)</span>
+<span id="cb89-3"><a href="#cb89-3"></a></span>
+<span id="cb89-4"><a href="#cb89-4"></a>In [<span class="dv">107</span>]: dt.time()</span>
+<span id="cb89-5"><a href="#cb89-5"></a>Out[<span class="dv">107</span>]: datetime.time(<span class="dv">20</span>, <span class="dv">30</span>, <span class="dv">21</span>)</span></code></pre></div>
+<p><code>strftime</code>方法可以将datetime格式化为字符串：</p>
+<div class="sourceCode" id="cb90"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb90-1"><a href="#cb90-1"></a>In [<span class="dv">108</span>]: dt.strftime(<span class="st">&#39;%m/</span><span class="sc">%d</span><span class="st">/%Y %H:%M&#39;</span>)</span>
+<span id="cb90-2"><a href="#cb90-2"></a>Out[<span class="dv">108</span>]: <span class="st">&#39;10/29/2011 20:30&#39;</span></span></code></pre></div>
+<p><code>strptime</code>可以将字符串转换成<code>datetime</code>对象：</p>
+<div class="sourceCode" id="cb91"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb91-1"><a href="#cb91-1"></a>In [<span class="dv">109</span>]: datetime.strptime(<span class="st">&#39;20091031&#39;</span>, <span class="st">&#39;%Y%m</span><span class="sc">%d</span><span class="st">&#39;</span>)</span>
+<span id="cb91-2"><a href="#cb91-2"></a>Out[<span class="dv">109</span>]: datetime.datetime(<span class="dv">2009</span>, <span class="dv">10</span>, <span class="dv">31</span>, <span class="dv">0</span>, <span class="dv">0</span>)</span></code></pre></div>
+<p>表2-5列出了所有的格式化命令。</p>
+<figure>
+<img src="http://upload-images.jianshu.io/upload_images/7178691-100f9a20c1536553.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="" /><figcaption>表2-5 Datetime格式化指令（与ISO C89兼容）</figcaption>
+</figure>
+<p>当你聚类或对时间序列进行分组，替换datetimes的time字段有时会很有用。例如，用0替换分和秒：</p>
+<div class="sourceCode" id="cb92"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb92-1"><a href="#cb92-1"></a>In [<span class="dv">110</span>]: dt.replace(minute<span class="op">=</span><span class="dv">0</span>, second<span class="op">=</span><span class="dv">0</span>)</span>
+<span id="cb92-2"><a href="#cb92-2"></a>Out[<span class="dv">110</span>]: datetime.datetime(<span class="dv">2011</span>, <span class="dv">10</span>, <span class="dv">29</span>, <span class="dv">20</span>, <span class="dv">0</span>)</span></code></pre></div>
+<p>因为<code>datetime.datetime</code>是不可变类型，上面的方法会产生新的对象。</p>
+<p>两个datetime对象的差会产生一个<code>datetime.timedelta</code>类型：</p>
+<div class="sourceCode" id="cb93"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb93-1"><a href="#cb93-1"></a>In [<span class="dv">111</span>]: dt2 <span class="op">=</span> datetime(<span class="dv">2011</span>, <span class="dv">11</span>, <span class="dv">15</span>, <span class="dv">22</span>, <span class="dv">30</span>)</span>
+<span id="cb93-2"><a href="#cb93-2"></a></span>
+<span id="cb93-3"><a href="#cb93-3"></a>In [<span class="dv">112</span>]: delta <span class="op">=</span> dt2 <span class="op">-</span> dt</span>
+<span id="cb93-4"><a href="#cb93-4"></a></span>
+<span id="cb93-5"><a href="#cb93-5"></a>In [<span class="dv">113</span>]: delta</span>
+<span id="cb93-6"><a href="#cb93-6"></a>Out[<span class="dv">113</span>]: datetime.timedelta(<span class="dv">17</span>, <span class="dv">7179</span>)</span>
+<span id="cb93-7"><a href="#cb93-7"></a></span>
+<span id="cb93-8"><a href="#cb93-8"></a>In [<span class="dv">114</span>]: <span class="bu">type</span>(delta)</span>
+<span id="cb93-9"><a href="#cb93-9"></a>Out[<span class="dv">114</span>]: datetime.timedelta</span></code></pre></div>
+<p>结果<code>timedelta(17, 7179)</code>指明了<code>timedelta</code>将17天、7179秒的编码方式。</p>
+<p>将<code>timedelta</code>添加到<code>datetime</code>，会产生一个新的偏移<code>datetime</code>：</p>
+<div class="sourceCode" id="cb94"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb94-1"><a href="#cb94-1"></a>In [<span class="dv">115</span>]: dt</span>
+<span id="cb94-2"><a href="#cb94-2"></a>Out[<span class="dv">115</span>]: datetime.datetime(<span class="dv">2011</span>, <span class="dv">10</span>, <span class="dv">29</span>, <span class="dv">20</span>, <span class="dv">30</span>, <span class="dv">21</span>)</span>
+<span id="cb94-3"><a href="#cb94-3"></a></span>
+<span id="cb94-4"><a href="#cb94-4"></a>In [<span class="dv">116</span>]: dt <span class="op">+</span> delta</span>
+<span id="cb94-5"><a href="#cb94-5"></a>Out[<span class="dv">116</span>]: datetime.datetime(<span class="dv">2011</span>, <span class="dv">11</span>, <span class="dv">15</span>, <span class="dv">22</span>, <span class="dv">30</span>)</span></code></pre></div>
+<h3 id="控制流">控制流</h3>
+<p>Python有若干内建的关键字进行条件逻辑、循环和其它控制流操作。</p>
+<h3 id="ifelif和else">if、elif和else</h3>
+<p>if是最广为人知的控制流语句。它检查一个条件，如果为True，就执行后面的语句：</p>
+<div class="sourceCode" id="cb95"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb95-1"><a href="#cb95-1"></a><span class="cf">if</span> x <span class="op">&lt;</span> <span class="dv">0</span>:</span>
+<span id="cb95-2"><a href="#cb95-2"></a>    <span class="bu">print</span>(<span class="st">&#39;It&#39;</span>s negative<span class="st">&#39;)</span></span></code></pre></div>
+<p><code>if</code>后面可以跟一个或多个<code>elif</code>，所有条件都是False时，还可以添加一个<code>else</code>：</p>
+<div class="sourceCode" id="cb96"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb96-1"><a href="#cb96-1"></a><span class="cf">if</span> x <span class="op">&lt;</span> <span class="dv">0</span>:</span>
+<span id="cb96-2"><a href="#cb96-2"></a>    <span class="bu">print</span>(<span class="st">&#39;It&#39;</span>s negative<span class="st">&#39;)</span></span>
+<span id="cb96-3"><a href="#cb96-3"></a><span class="st">elif x == 0:</span></span>
+<span id="cb96-4"><a href="#cb96-4"></a><span class="st">    print(&#39;</span>Equal to zero<span class="st">&#39;)</span></span>
+<span id="cb96-5"><a href="#cb96-5"></a><span class="st">elif 0 &lt; x &lt; 5:</span></span>
+<span id="cb96-6"><a href="#cb96-6"></a><span class="st">    print(&#39;</span>Positive but smaller than <span class="dv">5</span><span class="st">&#39;)</span></span>
+<span id="cb96-7"><a href="#cb96-7"></a><span class="st">else:</span></span>
+<span id="cb96-8"><a href="#cb96-8"></a><span class="st">    print(&#39;</span>Positive <span class="kw">and</span> larger than <span class="kw">or</span> equal to <span class="dv">5</span><span class="st">&#39;)</span></span></code></pre></div>
+<p>如果某个条件为True，后面的<code>elif</code>就不会被执行。当使用and和or时，复合条件语句是从左到右执行：</p>
+<div class="sourceCode" id="cb97"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb97-1"><a href="#cb97-1"></a>In [<span class="dv">117</span>]: a <span class="op">=</span> <span class="dv">5</span><span class="op">;</span> b <span class="op">=</span> <span class="dv">7</span></span>
+<span id="cb97-2"><a href="#cb97-2"></a></span>
+<span id="cb97-3"><a href="#cb97-3"></a>In [<span class="dv">118</span>]: c <span class="op">=</span> <span class="dv">8</span><span class="op">;</span> d <span class="op">=</span> <span class="dv">4</span></span>
+<span id="cb97-4"><a href="#cb97-4"></a></span>
+<span id="cb97-5"><a href="#cb97-5"></a>In [<span class="dv">119</span>]: <span class="cf">if</span> a <span class="op">&lt;</span> b <span class="kw">or</span> c <span class="op">&gt;</span> d:</span>
+<span id="cb97-6"><a href="#cb97-6"></a>   .....:     <span class="bu">print</span>(<span class="st">&#39;Made it&#39;</span>)</span>
+<span id="cb97-7"><a href="#cb97-7"></a>Made it</span></code></pre></div>
+<p>在这个例子中，<code>c &gt; d</code>不会被执行，因为第一个比较是True：</p>
+<p>也可以把比较式串在一起：</p>
+<div class="sourceCode" id="cb98"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb98-1"><a href="#cb98-1"></a>In [<span class="dv">120</span>]: <span class="dv">4</span> <span class="op">&gt;</span> <span class="dv">3</span> <span class="op">&gt;</span> <span class="dv">2</span> <span class="op">&gt;</span> <span class="dv">1</span></span>
+<span id="cb98-2"><a href="#cb98-2"></a>Out[<span class="dv">120</span>]: <span class="va">True</span></span></code></pre></div>
+<h3 id="for循环">for循环</h3>
+<p>for循环是在一个集合（列表或元组）中进行迭代，或者就是一个迭代器。for循环的标准语法是：</p>
+<div class="sourceCode" id="cb99"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb99-1"><a href="#cb99-1"></a><span class="cf">for</span> value <span class="kw">in</span> collection:</span>
+<span id="cb99-2"><a href="#cb99-2"></a>    <span class="co"># do something with value</span></span></code></pre></div>
+<p>你可以用continue使for循环提前，跳过剩下的部分。看下面这个例子，将一个列表中的整数相加，跳过None：</p>
+<div class="sourceCode" id="cb100"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb100-1"><a href="#cb100-1"></a>sequence <span class="op">=</span> [<span class="dv">1</span>, <span class="dv">2</span>, <span class="va">None</span>, <span class="dv">4</span>, <span class="va">None</span>, <span class="dv">5</span>]</span>
+<span id="cb100-2"><a href="#cb100-2"></a>total <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb100-3"><a href="#cb100-3"></a><span class="cf">for</span> value <span class="kw">in</span> sequence:</span>
+<span id="cb100-4"><a href="#cb100-4"></a>    <span class="cf">if</span> value <span class="kw">is</span> <span class="va">None</span>:</span>
+<span id="cb100-5"><a href="#cb100-5"></a>        <span class="cf">continue</span></span>
+<span id="cb100-6"><a href="#cb100-6"></a>    total <span class="op">+=</span> value</span></code></pre></div>
+<p>可以用<code>break</code>跳出for循环。下面的代码将各元素相加，直到遇到5：</p>
+<div class="sourceCode" id="cb101"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb101-1"><a href="#cb101-1"></a>sequence <span class="op">=</span> [<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">0</span>, <span class="dv">4</span>, <span class="dv">6</span>, <span class="dv">5</span>, <span class="dv">2</span>, <span class="dv">1</span>]</span>
+<span id="cb101-2"><a href="#cb101-2"></a>total_until_5 <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb101-3"><a href="#cb101-3"></a><span class="cf">for</span> value <span class="kw">in</span> sequence:</span>
+<span id="cb101-4"><a href="#cb101-4"></a>    <span class="cf">if</span> value <span class="op">==</span> <span class="dv">5</span>:</span>
+<span id="cb101-5"><a href="#cb101-5"></a>        <span class="cf">break</span></span>
+<span id="cb101-6"><a href="#cb101-6"></a>    total_until_5 <span class="op">+=</span> value</span></code></pre></div>
+<p>break只中断for循环的最内层，其余的for循环仍会运行：</p>
+<div class="sourceCode" id="cb102"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb102-1"><a href="#cb102-1"></a>In [<span class="dv">121</span>]: <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">4</span>):</span>
+<span id="cb102-2"><a href="#cb102-2"></a>   .....:     <span class="cf">for</span> j <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">4</span>):</span>
+<span id="cb102-3"><a href="#cb102-3"></a>   .....:         <span class="cf">if</span> j <span class="op">&gt;</span> i:</span>
+<span id="cb102-4"><a href="#cb102-4"></a>   .....:             <span class="cf">break</span></span>
+<span id="cb102-5"><a href="#cb102-5"></a>   .....:         <span class="bu">print</span>((i, j))</span>
+<span id="cb102-6"><a href="#cb102-6"></a>   .....:</span>
+<span id="cb102-7"><a href="#cb102-7"></a>(<span class="dv">0</span>, <span class="dv">0</span>)</span>
+<span id="cb102-8"><a href="#cb102-8"></a>(<span class="dv">1</span>, <span class="dv">0</span>)</span>
+<span id="cb102-9"><a href="#cb102-9"></a>(<span class="dv">1</span>, <span class="dv">1</span>)</span>
+<span id="cb102-10"><a href="#cb102-10"></a>(<span class="dv">2</span>, <span class="dv">0</span>)</span>
+<span id="cb102-11"><a href="#cb102-11"></a>(<span class="dv">2</span>, <span class="dv">1</span>)</span>
+<span id="cb102-12"><a href="#cb102-12"></a>(<span class="dv">2</span>, <span class="dv">2</span>)</span>
+<span id="cb102-13"><a href="#cb102-13"></a>(<span class="dv">3</span>, <span class="dv">0</span>)</span>
+<span id="cb102-14"><a href="#cb102-14"></a>(<span class="dv">3</span>, <span class="dv">1</span>)</span>
+<span id="cb102-15"><a href="#cb102-15"></a>(<span class="dv">3</span>, <span class="dv">2</span>)</span>
+<span id="cb102-16"><a href="#cb102-16"></a>(<span class="dv">3</span>, <span class="dv">3</span>)</span></code></pre></div>
+<p>如果集合或迭代器中的元素序列（元组或列表），可以用for循环将其方便地拆分成变量：</p>
+<div class="sourceCode" id="cb103"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb103-1"><a href="#cb103-1"></a><span class="cf">for</span> a, b, c <span class="kw">in</span> iterator:</span>
+<span id="cb103-2"><a href="#cb103-2"></a>    <span class="co"># do something</span></span></code></pre></div>
+<h3 id="while循环">While循环</h3>
+<p>while循环指定了条件和代码，当条件为False或用break退出循环，代码才会退出：</p>
+<div class="sourceCode" id="cb104"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb104-1"><a href="#cb104-1"></a>x <span class="op">=</span> <span class="dv">256</span></span>
+<span id="cb104-2"><a href="#cb104-2"></a>total <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb104-3"><a href="#cb104-3"></a><span class="cf">while</span> x <span class="op">&gt;</span> <span class="dv">0</span>:</span>
+<span id="cb104-4"><a href="#cb104-4"></a>    <span class="cf">if</span> total <span class="op">&gt;</span> <span class="dv">500</span>:</span>
+<span id="cb104-5"><a href="#cb104-5"></a>        <span class="cf">break</span></span>
+<span id="cb104-6"><a href="#cb104-6"></a>    total <span class="op">+=</span> x</span>
+<span id="cb104-7"><a href="#cb104-7"></a>    x <span class="op">=</span> x <span class="op">//</span> <span class="dv">2</span></span></code></pre></div>
+<h3 id="pass">pass</h3>
+<p>pass是Python中的非操作语句。代码块不需要任何动作时可以使用（作为未执行代码的占位符）；因为Python需要使用空白字符划定代码块，所以需要pass：</p>
+<div class="sourceCode" id="cb105"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb105-1"><a href="#cb105-1"></a><span class="cf">if</span> x <span class="op">&lt;</span> <span class="dv">0</span>:</span>
+<span id="cb105-2"><a href="#cb105-2"></a>    <span class="bu">print</span>(<span class="st">&#39;negative!&#39;</span>)</span>
+<span id="cb105-3"><a href="#cb105-3"></a><span class="cf">elif</span> x <span class="op">==</span> <span class="dv">0</span>:</span>
+<span id="cb105-4"><a href="#cb105-4"></a>    <span class="co"># </span><span class="al">TODO</span><span class="co">: put something smart here</span></span>
+<span id="cb105-5"><a href="#cb105-5"></a>    <span class="cf">pass</span></span>
+<span id="cb105-6"><a href="#cb105-6"></a><span class="cf">else</span>:</span>
+<span id="cb105-7"><a href="#cb105-7"></a>    <span class="bu">print</span>(<span class="st">&#39;positive!&#39;</span>)</span></code></pre></div>
+<h3 id="range">range</h3>
+<p>range函数返回一个迭代器，它产生一个均匀分布的整数序列：</p>
+<div class="sourceCode" id="cb106"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb106-1"><a href="#cb106-1"></a>In [<span class="dv">122</span>]: <span class="bu">range</span>(<span class="dv">10</span>)</span>
+<span id="cb106-2"><a href="#cb106-2"></a>Out[<span class="dv">122</span>]: <span class="bu">range</span>(<span class="dv">0</span>, <span class="dv">10</span>)</span>
+<span id="cb106-3"><a href="#cb106-3"></a></span>
+<span id="cb106-4"><a href="#cb106-4"></a>In [<span class="dv">123</span>]: <span class="bu">list</span>(<span class="bu">range</span>(<span class="dv">10</span>))</span>
+<span id="cb106-5"><a href="#cb106-5"></a>Out[<span class="dv">123</span>]: [<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">5</span>, <span class="dv">6</span>, <span class="dv">7</span>, <span class="dv">8</span>, <span class="dv">9</span>]</span></code></pre></div>
+<p>range的三个参数是（起点，终点，步进）：</p>
+<div class="sourceCode" id="cb107"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb107-1"><a href="#cb107-1"></a>In [<span class="dv">124</span>]: <span class="bu">list</span>(<span class="bu">range</span>(<span class="dv">0</span>, <span class="dv">20</span>, <span class="dv">2</span>))</span>
+<span id="cb107-2"><a href="#cb107-2"></a>Out[<span class="dv">124</span>]: [<span class="dv">0</span>, <span class="dv">2</span>, <span class="dv">4</span>, <span class="dv">6</span>, <span class="dv">8</span>, <span class="dv">10</span>, <span class="dv">12</span>, <span class="dv">14</span>, <span class="dv">16</span>, <span class="dv">18</span>]</span>
+<span id="cb107-3"><a href="#cb107-3"></a></span>
+<span id="cb107-4"><a href="#cb107-4"></a>In [<span class="dv">125</span>]: <span class="bu">list</span>(<span class="bu">range</span>(<span class="dv">5</span>, <span class="dv">0</span>, <span class="op">-</span><span class="dv">1</span>))</span>
+<span id="cb107-5"><a href="#cb107-5"></a>Out[<span class="dv">125</span>]: [<span class="dv">5</span>, <span class="dv">4</span>, <span class="dv">3</span>, <span class="dv">2</span>, <span class="dv">1</span>]</span></code></pre></div>
+<p>可以看到，range产生的整数不包括终点。range的常见用法是用序号迭代序列：</p>
+<div class="sourceCode" id="cb108"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb108-1"><a href="#cb108-1"></a>seq <span class="op">=</span> [<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>]</span>
+<span id="cb108-2"><a href="#cb108-2"></a><span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="bu">len</span>(seq)):</span>
+<span id="cb108-3"><a href="#cb108-3"></a>    val <span class="op">=</span> seq[i]</span></code></pre></div>
+<p>可以使用list来存储range在其他数据结构中生成的所有整数，默认的迭代器形式通常是你想要的。下面的代码对0到99999中3或5的倍数求和：</p>
+<div class="sourceCode" id="cb109"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb109-1"><a href="#cb109-1"></a><span class="bu">sum</span> <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb109-2"><a href="#cb109-2"></a><span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">100000</span>):</span>
+<span id="cb109-3"><a href="#cb109-3"></a>    <span class="co"># % is the modulo operator</span></span>
+<span id="cb109-4"><a href="#cb109-4"></a>    <span class="cf">if</span> i <span class="op">%</span> <span class="dv">3</span> <span class="op">==</span> <span class="dv">0</span> <span class="kw">or</span> i <span class="op">%</span> <span class="dv">5</span> <span class="op">==</span> <span class="dv">0</span>:</span>
+<span id="cb109-5"><a href="#cb109-5"></a>        <span class="bu">sum</span> <span class="op">+=</span> i</span></code></pre></div>
+<p>虽然range可以产生任意大的数，但任意时刻耗用的内存却很小。</p>
+<h3 id="三元表达式">三元表达式</h3>
+<p>Python中的三元表达式可以将if-else语句放到一行里。语法如下：</p>
+<div class="sourceCode" id="cb110"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb110-1"><a href="#cb110-1"></a>value <span class="op">=</span> true<span class="op">-</span>expr <span class="cf">if</span> condition <span class="cf">else</span> false<span class="op">-</span>expr</span></code></pre></div>
+<p><code>true-expr</code>或<code>false-expr</code>可以是任何Python代码。它和下面的代码效果相同：</p>
+<div class="sourceCode" id="cb111"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb111-1"><a href="#cb111-1"></a><span class="cf">if</span> condition:</span>
+<span id="cb111-2"><a href="#cb111-2"></a>    value <span class="op">=</span> true<span class="op">-</span>expr</span>
+<span id="cb111-3"><a href="#cb111-3"></a><span class="cf">else</span>:</span>
+<span id="cb111-4"><a href="#cb111-4"></a>    value <span class="op">=</span> false<span class="op">-</span>expr</span></code></pre></div>
+<p>下面是一个更具体的例子：</p>
+<div class="sourceCode" id="cb112"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb112-1"><a href="#cb112-1"></a>In [<span class="dv">126</span>]: x <span class="op">=</span> <span class="dv">5</span></span>
+<span id="cb112-2"><a href="#cb112-2"></a></span>
+<span id="cb112-3"><a href="#cb112-3"></a>In [<span class="dv">127</span>]: <span class="st">&#39;Non-negative&#39;</span> <span class="cf">if</span> x <span class="op">&gt;=</span> <span class="dv">0</span> <span class="cf">else</span> <span class="st">&#39;Negative&#39;</span></span>
+<span id="cb112-4"><a href="#cb112-4"></a>Out[<span class="dv">127</span>]: <span class="st">&#39;Non-negative&#39;</span></span></code></pre></div>
+<p>和if-else一样，只有一个表达式会被执行。因此，三元表达式中的if和else可以包含大量的计算，但只有True的分支会被执行。因此，三元表达式中的if和else可以包含大量的计算，但只有True的分支会被执行。</p>
+<p>虽然使用三元表达式可以压缩代码，但会降低代码可读性。</p>

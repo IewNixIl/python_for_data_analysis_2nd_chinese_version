@@ -1,0 +1,1184 @@
+<p>在许多应用中，数据可能分散在许多文件或数据库中，存储的形式也不利于分析。本章关注可以聚合、合并、重塑数据的方法。</p>
+<p>首先，我会介绍pandas的层次化索引，它广泛用于以上操作。然后，我深入介绍了一些特殊的数据操作。在第14章，你可以看到这些工具的多种应用。</p>
+<h1 id="层次化索引">8.1 层次化索引</h1>
+<p>层次化索引（hierarchical indexing）是pandas的一项重要功能，它使你能在一个轴上拥有多个（两个以上）索引级别。抽象点说，它使你能以低维度形式处理高维度数据。我们先来看一个简单的例子：创建一个Series，并用一个由列表或数组组成的列表作为索引：</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1"></a>In [<span class="dv">9</span>]: data <span class="op">=</span> pd.Series(np.random.randn(<span class="dv">9</span>),</span>
+<span id="cb1-2"><a href="#cb1-2"></a>   ...:                  index<span class="op">=</span>[[<span class="st">&#39;a&#39;</span>, <span class="st">&#39;a&#39;</span>, <span class="st">&#39;a&#39;</span>, <span class="st">&#39;b&#39;</span>, <span class="st">&#39;b&#39;</span>, <span class="st">&#39;c&#39;</span>, <span class="st">&#39;c&#39;</span>, <span class="st">&#39;d&#39;</span>, <span class="st">&#39;d&#39;</span>],</span>
+<span id="cb1-3"><a href="#cb1-3"></a>   ...:                         [<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">1</span>, <span class="dv">3</span>, <span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">2</span>, <span class="dv">3</span>]])</span>
+<span id="cb1-4"><a href="#cb1-4"></a></span>
+<span id="cb1-5"><a href="#cb1-5"></a>In [<span class="dv">10</span>]: data</span>
+<span id="cb1-6"><a href="#cb1-6"></a>Out[<span class="dv">10</span>]: </span>
+<span id="cb1-7"><a href="#cb1-7"></a>a  <span class="dv">1</span>   <span class="op">-</span><span class="fl">0.204708</span></span>
+<span id="cb1-8"><a href="#cb1-8"></a>   <span class="dv">2</span>    <span class="fl">0.478943</span></span>
+<span id="cb1-9"><a href="#cb1-9"></a>   <span class="dv">3</span>   <span class="op">-</span><span class="fl">0.519439</span></span>
+<span id="cb1-10"><a href="#cb1-10"></a>b  <span class="dv">1</span>   <span class="op">-</span><span class="fl">0.555730</span></span>
+<span id="cb1-11"><a href="#cb1-11"></a>   <span class="dv">3</span>    <span class="fl">1.965781</span></span>
+<span id="cb1-12"><a href="#cb1-12"></a>c  <span class="dv">1</span>    <span class="fl">1.393406</span></span>
+<span id="cb1-13"><a href="#cb1-13"></a>   <span class="dv">2</span>    <span class="fl">0.092908</span></span>
+<span id="cb1-14"><a href="#cb1-14"></a>d  <span class="dv">2</span>    <span class="fl">0.281746</span></span>
+<span id="cb1-15"><a href="#cb1-15"></a>   <span class="dv">3</span>    <span class="fl">0.769023</span></span>
+<span id="cb1-16"><a href="#cb1-16"></a>dtype: float64</span></code></pre></div>
+<p>看到的结果是经过美化的带有MultiIndex索引的Series的格式。索引之间的“间隔”表示“直接使用上面的标签”：</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1"></a>In [<span class="dv">11</span>]: data.index</span>
+<span id="cb2-2"><a href="#cb2-2"></a>Out[<span class="dv">11</span>]: </span>
+<span id="cb2-3"><a href="#cb2-3"></a>MultiIndex(levels<span class="op">=</span>[[<span class="st">&#39;a&#39;</span>, <span class="st">&#39;b&#39;</span>, <span class="st">&#39;c&#39;</span>, <span class="st">&#39;d&#39;</span>], [<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>]],</span>
+<span id="cb2-4"><a href="#cb2-4"></a>           labels<span class="op">=</span>[[<span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">3</span>], [<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">0</span>, <span class="dv">2</span>, <span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">2</span>]])</span></code></pre></div>
+<p>对于一个层次化索引的对象，可以使用所谓的部分索引，使用它选取数据子集的操作更简单：</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1"></a>In [<span class="dv">12</span>]: data[<span class="st">&#39;b&#39;</span>]</span>
+<span id="cb3-2"><a href="#cb3-2"></a>Out[<span class="dv">12</span>]: </span>
+<span id="cb3-3"><a href="#cb3-3"></a><span class="dv">1</span>   <span class="op">-</span><span class="fl">0.555730</span></span>
+<span id="cb3-4"><a href="#cb3-4"></a><span class="dv">3</span>    <span class="fl">1.965781</span></span>
+<span id="cb3-5"><a href="#cb3-5"></a>dtype: float64</span>
+<span id="cb3-6"><a href="#cb3-6"></a></span>
+<span id="cb3-7"><a href="#cb3-7"></a>In [<span class="dv">13</span>]: data[<span class="st">&#39;b&#39;</span>:<span class="st">&#39;c&#39;</span>]</span>
+<span id="cb3-8"><a href="#cb3-8"></a>Out[<span class="dv">13</span>]: </span>
+<span id="cb3-9"><a href="#cb3-9"></a>b  <span class="dv">1</span>   <span class="op">-</span><span class="fl">0.555730</span></span>
+<span id="cb3-10"><a href="#cb3-10"></a>   <span class="dv">3</span>    <span class="fl">1.965781</span></span>
+<span id="cb3-11"><a href="#cb3-11"></a>c  <span class="dv">1</span>    <span class="fl">1.393406</span></span>
+<span id="cb3-12"><a href="#cb3-12"></a>   <span class="dv">2</span>    <span class="fl">0.092908</span></span>
+<span id="cb3-13"><a href="#cb3-13"></a>dtype: float64</span>
+<span id="cb3-14"><a href="#cb3-14"></a></span>
+<span id="cb3-15"><a href="#cb3-15"></a>In [<span class="dv">14</span>]: data.loc[[<span class="st">&#39;b&#39;</span>, <span class="st">&#39;d&#39;</span>]]</span>
+<span id="cb3-16"><a href="#cb3-16"></a>Out[<span class="dv">14</span>]: </span>
+<span id="cb3-17"><a href="#cb3-17"></a>b  <span class="dv">1</span>   <span class="op">-</span><span class="fl">0.555730</span></span>
+<span id="cb3-18"><a href="#cb3-18"></a>   <span class="dv">3</span>    <span class="fl">1.965781</span></span>
+<span id="cb3-19"><a href="#cb3-19"></a>d  <span class="dv">2</span>    <span class="fl">0.281746</span></span>
+<span id="cb3-20"><a href="#cb3-20"></a>   <span class="dv">3</span>    <span class="fl">0.769023</span></span>
+<span id="cb3-21"><a href="#cb3-21"></a>dtype: float64</span></code></pre></div>
+<p>有时甚至还可以在“内层”中进行选取：</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1"></a>In [<span class="dv">15</span>]: data.loc[:, <span class="dv">2</span>]</span>
+<span id="cb4-2"><a href="#cb4-2"></a>Out[<span class="dv">15</span>]: </span>
+<span id="cb4-3"><a href="#cb4-3"></a>a    <span class="fl">0.478943</span></span>
+<span id="cb4-4"><a href="#cb4-4"></a>c    <span class="fl">0.092908</span></span>
+<span id="cb4-5"><a href="#cb4-5"></a>d    <span class="fl">0.281746</span></span>
+<span id="cb4-6"><a href="#cb4-6"></a>dtype: float64</span></code></pre></div>
+<p>层次化索引在数据重塑和基于分组的操作（如透视表生成）中扮演着重要的角色。例如，可以通过unstack方法将这段数据重新安排到一个DataFrame中：</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1"></a>In [<span class="dv">16</span>]: data.unstack()</span>
+<span id="cb5-2"><a href="#cb5-2"></a>Out[<span class="dv">16</span>]: </span>
+<span id="cb5-3"><a href="#cb5-3"></a>          <span class="dv">1</span>         <span class="dv">2</span>         <span class="dv">3</span></span>
+<span id="cb5-4"><a href="#cb5-4"></a>a <span class="op">-</span><span class="fl">0.204708</span>  <span class="fl">0.478943</span> <span class="op">-</span><span class="fl">0.519439</span></span>
+<span id="cb5-5"><a href="#cb5-5"></a>b <span class="op">-</span><span class="fl">0.555730</span>       NaN  <span class="fl">1.965781</span></span>
+<span id="cb5-6"><a href="#cb5-6"></a>c  <span class="fl">1.393406</span>  <span class="fl">0.092908</span>       NaN</span>
+<span id="cb5-7"><a href="#cb5-7"></a>d       NaN  <span class="fl">0.281746</span>  <span class="fl">0.769023</span></span></code></pre></div>
+<p>unstack的逆运算是stack：</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1"></a>In [<span class="dv">17</span>]: data.unstack().stack()</span>
+<span id="cb6-2"><a href="#cb6-2"></a>Out[<span class="dv">17</span>]: </span>
+<span id="cb6-3"><a href="#cb6-3"></a>a  <span class="dv">1</span>   <span class="op">-</span><span class="fl">0.204708</span></span>
+<span id="cb6-4"><a href="#cb6-4"></a>   <span class="dv">2</span>    <span class="fl">0.478943</span></span>
+<span id="cb6-5"><a href="#cb6-5"></a>   <span class="dv">3</span>   <span class="op">-</span><span class="fl">0.519439</span></span>
+<span id="cb6-6"><a href="#cb6-6"></a>b  <span class="dv">1</span>   <span class="op">-</span><span class="fl">0.555730</span></span>
+<span id="cb6-7"><a href="#cb6-7"></a>   <span class="dv">3</span>    <span class="fl">1.965781</span></span>
+<span id="cb6-8"><a href="#cb6-8"></a>c  <span class="dv">1</span>    <span class="fl">1.393406</span></span>
+<span id="cb6-9"><a href="#cb6-9"></a>   <span class="dv">2</span>    <span class="fl">0.092908</span></span>
+<span id="cb6-10"><a href="#cb6-10"></a>d  <span class="dv">2</span>    <span class="fl">0.281746</span></span>
+<span id="cb6-11"><a href="#cb6-11"></a>   <span class="dv">3</span>    <span class="fl">0.769023</span></span>
+<span id="cb6-12"><a href="#cb6-12"></a>dtype: float64</span></code></pre></div>
+<p>stack和unstack将在本章后面详细讲解。</p>
+<p>对于一个DataFrame，每条轴都可以有分层索引：</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1"></a>In [<span class="dv">18</span>]: frame <span class="op">=</span> pd.DataFrame(np.arange(<span class="dv">12</span>).reshape((<span class="dv">4</span>, <span class="dv">3</span>)),</span>
+<span id="cb7-2"><a href="#cb7-2"></a>   ....:                      index<span class="op">=</span>[[<span class="st">&#39;a&#39;</span>, <span class="st">&#39;a&#39;</span>, <span class="st">&#39;b&#39;</span>, <span class="st">&#39;b&#39;</span>], [<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">1</span>, <span class="dv">2</span>]],</span>
+<span id="cb7-3"><a href="#cb7-3"></a>   ....:                      columns<span class="op">=</span>[[<span class="st">&#39;Ohio&#39;</span>, <span class="st">&#39;Ohio&#39;</span>, <span class="st">&#39;Colorado&#39;</span>],</span>
+<span id="cb7-4"><a href="#cb7-4"></a>   ....:                               [<span class="st">&#39;Green&#39;</span>, <span class="st">&#39;Red&#39;</span>, <span class="st">&#39;Green&#39;</span>]])</span>
+<span id="cb7-5"><a href="#cb7-5"></a></span>
+<span id="cb7-6"><a href="#cb7-6"></a>In [<span class="dv">19</span>]: frame</span>
+<span id="cb7-7"><a href="#cb7-7"></a>Out[<span class="dv">19</span>]: </span>
+<span id="cb7-8"><a href="#cb7-8"></a>     Ohio     Colorado</span>
+<span id="cb7-9"><a href="#cb7-9"></a>    Green Red    Green</span>
+<span id="cb7-10"><a href="#cb7-10"></a>a <span class="dv">1</span>     <span class="dv">0</span>   <span class="dv">1</span>        <span class="dv">2</span></span>
+<span id="cb7-11"><a href="#cb7-11"></a>  <span class="dv">2</span>     <span class="dv">3</span>   <span class="dv">4</span>        <span class="dv">5</span></span>
+<span id="cb7-12"><a href="#cb7-12"></a>b <span class="dv">1</span>     <span class="dv">6</span>   <span class="dv">7</span>        <span class="dv">8</span></span>
+<span id="cb7-13"><a href="#cb7-13"></a>  <span class="dv">2</span>     <span class="dv">9</span>  <span class="dv">10</span>       <span class="dv">11</span></span></code></pre></div>
+<p>各层都可以有名字（可以是字符串，也可以是别的Python对象）。如果指定了名称，它们就会显示在控制台输出中：</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1"></a>In [<span class="dv">20</span>]: frame.index.names <span class="op">=</span> [<span class="st">&#39;key1&#39;</span>, <span class="st">&#39;key2&#39;</span>]</span>
+<span id="cb8-2"><a href="#cb8-2"></a></span>
+<span id="cb8-3"><a href="#cb8-3"></a>In [<span class="dv">21</span>]: frame.columns.names <span class="op">=</span> [<span class="st">&#39;state&#39;</span>, <span class="st">&#39;color&#39;</span>]</span>
+<span id="cb8-4"><a href="#cb8-4"></a></span>
+<span id="cb8-5"><a href="#cb8-5"></a>In [<span class="dv">22</span>]: frame</span>
+<span id="cb8-6"><a href="#cb8-6"></a>Out[<span class="dv">22</span>]: </span>
+<span id="cb8-7"><a href="#cb8-7"></a>state      Ohio     Colorado</span>
+<span id="cb8-8"><a href="#cb8-8"></a>color     Green Red    Green</span>
+<span id="cb8-9"><a href="#cb8-9"></a>key1 key2                   </span>
+<span id="cb8-10"><a href="#cb8-10"></a>a    <span class="dv">1</span>        <span class="dv">0</span>   <span class="dv">1</span>        <span class="dv">2</span></span>
+<span id="cb8-11"><a href="#cb8-11"></a>     <span class="dv">2</span>        <span class="dv">3</span>   <span class="dv">4</span>        <span class="dv">5</span></span>
+<span id="cb8-12"><a href="#cb8-12"></a>b    <span class="dv">1</span>        <span class="dv">6</span>   <span class="dv">7</span>        <span class="dv">8</span></span>
+<span id="cb8-13"><a href="#cb8-13"></a>     <span class="dv">2</span>        <span class="dv">9</span>  <span class="dv">10</span>       <span class="dv">11</span></span></code></pre></div>
+<blockquote>
+<p>注意：小心区分索引名state、color与行标签。</p>
+</blockquote>
+<p>有了部分列索引，因此可以轻松选取列分组：</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1"></a>In [<span class="dv">23</span>]: frame[<span class="st">&#39;Ohio&#39;</span>]</span>
+<span id="cb9-2"><a href="#cb9-2"></a>Out[<span class="dv">23</span>]: </span>
+<span id="cb9-3"><a href="#cb9-3"></a>color      Green  Red</span>
+<span id="cb9-4"><a href="#cb9-4"></a>key1 key2            </span>
+<span id="cb9-5"><a href="#cb9-5"></a>a    <span class="dv">1</span>         <span class="dv">0</span>    <span class="dv">1</span></span>
+<span id="cb9-6"><a href="#cb9-6"></a>     <span class="dv">2</span>         <span class="dv">3</span>    <span class="dv">4</span></span>
+<span id="cb9-7"><a href="#cb9-7"></a>b    <span class="dv">1</span>         <span class="dv">6</span>    <span class="dv">7</span></span>
+<span id="cb9-8"><a href="#cb9-8"></a>     <span class="dv">2</span>         <span class="dv">9</span>   <span class="dv">10</span></span></code></pre></div>
+<p>可以单独创建MultiIndex然后复用。上面那个DataFrame中的（带有分级名称）列可以这样创建：</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1"></a>MultiIndex.from_arrays([[<span class="st">&#39;Ohio&#39;</span>, <span class="st">&#39;Ohio&#39;</span>, <span class="st">&#39;Colorado&#39;</span>], [<span class="st">&#39;Green&#39;</span>, <span class="st">&#39;Red&#39;</span>, <span class="st">&#39;Green&#39;</span>]],</span>
+<span id="cb10-2"><a href="#cb10-2"></a>                       names<span class="op">=</span>[<span class="st">&#39;state&#39;</span>, <span class="st">&#39;color&#39;</span>])</span></code></pre></div>
+<h2 id="重排与分级排序">重排与分级排序</h2>
+<p>有时，你需要重新调整某条轴上各级别的顺序，或根据指定级别上的值对数据进行排序。swaplevel接受两个级别编号或名称，并返回一个互换了级别的新对象（但数据不会发生变化）：</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1"></a>In [<span class="dv">24</span>]: frame.swaplevel(<span class="st">&#39;key1&#39;</span>, <span class="st">&#39;key2&#39;</span>)</span>
+<span id="cb11-2"><a href="#cb11-2"></a>Out[<span class="dv">24</span>]: </span>
+<span id="cb11-3"><a href="#cb11-3"></a>state      Ohio     Colorado</span>
+<span id="cb11-4"><a href="#cb11-4"></a>color     Green Red    Green</span>
+<span id="cb11-5"><a href="#cb11-5"></a>key2 key1                   </span>
+<span id="cb11-6"><a href="#cb11-6"></a><span class="dv">1</span>    a        <span class="dv">0</span>   <span class="dv">1</span>        <span class="dv">2</span></span>
+<span id="cb11-7"><a href="#cb11-7"></a><span class="dv">2</span>    a        <span class="dv">3</span>   <span class="dv">4</span>        <span class="dv">5</span></span>
+<span id="cb11-8"><a href="#cb11-8"></a><span class="dv">1</span>    b        <span class="dv">6</span>   <span class="dv">7</span>        <span class="dv">8</span></span>
+<span id="cb11-9"><a href="#cb11-9"></a><span class="dv">2</span>    b        <span class="dv">9</span>  <span class="dv">10</span>       <span class="dv">11</span></span></code></pre></div>
+<p>而sort_index则根据单个级别中的值对数据进行排序。交换级别时，常常也会用到sort_index，这样最终结果就是按照指定顺序进行字母排序了：</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1"></a>In [<span class="dv">25</span>]: frame.sort_index(level<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb12-2"><a href="#cb12-2"></a>Out[<span class="dv">25</span>]: </span>
+<span id="cb12-3"><a href="#cb12-3"></a>state      Ohio     Colorado</span>
+<span id="cb12-4"><a href="#cb12-4"></a>color     Green Red    Green</span>
+<span id="cb12-5"><a href="#cb12-5"></a>key1 key2                   </span>
+<span id="cb12-6"><a href="#cb12-6"></a>a    <span class="dv">1</span>        <span class="dv">0</span>   <span class="dv">1</span>        <span class="dv">2</span></span>
+<span id="cb12-7"><a href="#cb12-7"></a>b    <span class="dv">1</span>        <span class="dv">6</span>   <span class="dv">7</span>        <span class="dv">8</span></span>
+<span id="cb12-8"><a href="#cb12-8"></a>a    <span class="dv">2</span>        <span class="dv">3</span>   <span class="dv">4</span>        <span class="dv">5</span></span>
+<span id="cb12-9"><a href="#cb12-9"></a>b    <span class="dv">2</span>        <span class="dv">9</span>  <span class="dv">10</span>       <span class="dv">11</span></span>
+<span id="cb12-10"><a href="#cb12-10"></a></span>
+<span id="cb12-11"><a href="#cb12-11"></a>In [<span class="dv">26</span>]: frame.swaplevel(<span class="dv">0</span>, <span class="dv">1</span>).sort_index(level<span class="op">=</span><span class="dv">0</span>)</span>
+<span id="cb12-12"><a href="#cb12-12"></a>Out[<span class="dv">26</span>]: </span>
+<span id="cb12-13"><a href="#cb12-13"></a>state      Ohio     Colorado</span>
+<span id="cb12-14"><a href="#cb12-14"></a>color     Green Red    Green</span>
+<span id="cb12-15"><a href="#cb12-15"></a>key2 key1                   </span>
+<span id="cb12-16"><a href="#cb12-16"></a><span class="dv">1</span>    a        <span class="dv">0</span>   <span class="dv">1</span>        <span class="dv">2</span></span>
+<span id="cb12-17"><a href="#cb12-17"></a>     b        <span class="dv">6</span>   <span class="dv">7</span>        <span class="dv">8</span></span>
+<span id="cb12-18"><a href="#cb12-18"></a><span class="dv">2</span>    a        <span class="dv">3</span>   <span class="dv">4</span>        <span class="dv">5</span></span>
+<span id="cb12-19"><a href="#cb12-19"></a>     b        <span class="dv">9</span>  <span class="dv">10</span>       <span class="dv">11</span></span></code></pre></div>
+<h2 id="根据级别汇总统计">根据级别汇总统计</h2>
+<p>许多对DataFrame和Series的描述和汇总统计都有一个level选项，它用于指定在某条轴上求和的级别。再以上面那个DataFrame为例，我们可以根据行或列上的级别来进行求和：</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1"></a>In [<span class="dv">27</span>]: frame.<span class="bu">sum</span>(level<span class="op">=</span><span class="st">&#39;key2&#39;</span>)</span>
+<span id="cb13-2"><a href="#cb13-2"></a>Out[<span class="dv">27</span>]: </span>
+<span id="cb13-3"><a href="#cb13-3"></a>state  Ohio     Colorado</span>
+<span id="cb13-4"><a href="#cb13-4"></a>color Green Red    Green</span>
+<span id="cb13-5"><a href="#cb13-5"></a>key2                    </span>
+<span id="cb13-6"><a href="#cb13-6"></a><span class="dv">1</span>         <span class="dv">6</span>   <span class="dv">8</span>       <span class="dv">10</span></span>
+<span id="cb13-7"><a href="#cb13-7"></a><span class="dv">2</span>        <span class="dv">12</span>  <span class="dv">14</span>       <span class="dv">16</span></span>
+<span id="cb13-8"><a href="#cb13-8"></a></span>
+<span id="cb13-9"><a href="#cb13-9"></a>In [<span class="dv">28</span>]: frame.<span class="bu">sum</span>(level<span class="op">=</span><span class="st">&#39;color&#39;</span>, axis<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb13-10"><a href="#cb13-10"></a>Out[<span class="dv">28</span>]: </span>
+<span id="cb13-11"><a href="#cb13-11"></a>color      Green  Red</span>
+<span id="cb13-12"><a href="#cb13-12"></a>key1 key2            </span>
+<span id="cb13-13"><a href="#cb13-13"></a>a    <span class="dv">1</span>         <span class="dv">2</span>    <span class="dv">1</span></span>
+<span id="cb13-14"><a href="#cb13-14"></a>     <span class="dv">2</span>         <span class="dv">8</span>    <span class="dv">4</span></span>
+<span id="cb13-15"><a href="#cb13-15"></a>b    <span class="dv">1</span>        <span class="dv">14</span>    <span class="dv">7</span></span>
+<span id="cb13-16"><a href="#cb13-16"></a>     <span class="dv">2</span>        <span class="dv">20</span>   <span class="dv">10</span></span></code></pre></div>
+<p>这其实是利用了pandas的groupby功能，本书稍后将对其进行详细讲解。</p>
+<h2 id="使用dataframe的列进行索引">使用DataFrame的列进行索引</h2>
+<p>人们经常想要将DataFrame的一个或多个列当做行索引来用，或者可能希望将行索引变成DataFrame的列。以下面这个DataFrame为例：</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1"></a>In [<span class="dv">29</span>]: frame <span class="op">=</span> pd.DataFrame({<span class="st">&#39;a&#39;</span>: <span class="bu">range</span>(<span class="dv">7</span>), <span class="st">&#39;b&#39;</span>: <span class="bu">range</span>(<span class="dv">7</span>, <span class="dv">0</span>, <span class="op">-</span><span class="dv">1</span>),</span>
+<span id="cb14-2"><a href="#cb14-2"></a>   ....:                       <span class="st">&#39;c&#39;</span>: [<span class="st">&#39;one&#39;</span>, <span class="st">&#39;one&#39;</span>, <span class="st">&#39;one&#39;</span>, <span class="st">&#39;two&#39;</span>, <span class="st">&#39;two&#39;</span>,</span>
+<span id="cb14-3"><a href="#cb14-3"></a>   ....:                             <span class="st">&#39;two&#39;</span>, <span class="st">&#39;two&#39;</span>],</span>
+<span id="cb14-4"><a href="#cb14-4"></a>   ....:                       <span class="st">&#39;d&#39;</span>: [<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>]})</span>
+<span id="cb14-5"><a href="#cb14-5"></a></span>
+<span id="cb14-6"><a href="#cb14-6"></a>In [<span class="dv">30</span>]: frame</span>
+<span id="cb14-7"><a href="#cb14-7"></a>Out[<span class="dv">30</span>]: </span>
+<span id="cb14-8"><a href="#cb14-8"></a>   a  b    c  d</span>
+<span id="cb14-9"><a href="#cb14-9"></a><span class="dv">0</span>  <span class="dv">0</span>  <span class="dv">7</span>  one  <span class="dv">0</span></span>
+<span id="cb14-10"><a href="#cb14-10"></a><span class="dv">1</span>  <span class="dv">1</span>  <span class="dv">6</span>  one  <span class="dv">1</span></span>
+<span id="cb14-11"><a href="#cb14-11"></a><span class="dv">2</span>  <span class="dv">2</span>  <span class="dv">5</span>  one  <span class="dv">2</span></span>
+<span id="cb14-12"><a href="#cb14-12"></a><span class="dv">3</span>  <span class="dv">3</span>  <span class="dv">4</span>  two  <span class="dv">0</span></span>
+<span id="cb14-13"><a href="#cb14-13"></a><span class="dv">4</span>  <span class="dv">4</span>  <span class="dv">3</span>  two  <span class="dv">1</span></span>
+<span id="cb14-14"><a href="#cb14-14"></a><span class="dv">5</span>  <span class="dv">5</span>  <span class="dv">2</span>  two  <span class="dv">2</span></span>
+<span id="cb14-15"><a href="#cb14-15"></a><span class="dv">6</span>  <span class="dv">6</span>  <span class="dv">1</span>  two  <span class="dv">3</span></span></code></pre></div>
+<p>DataFrame的set_index函数会将其一个或多个列转换为行索引，并创建一个新的DataFrame：</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1"></a>In [<span class="dv">31</span>]: frame2 <span class="op">=</span> frame.set_index([<span class="st">&#39;c&#39;</span>, <span class="st">&#39;d&#39;</span>])</span>
+<span id="cb15-2"><a href="#cb15-2"></a></span>
+<span id="cb15-3"><a href="#cb15-3"></a>In [<span class="dv">32</span>]: frame2</span>
+<span id="cb15-4"><a href="#cb15-4"></a>Out[<span class="dv">32</span>]: </span>
+<span id="cb15-5"><a href="#cb15-5"></a>       a  b</span>
+<span id="cb15-6"><a href="#cb15-6"></a>c   d      </span>
+<span id="cb15-7"><a href="#cb15-7"></a>one <span class="dv">0</span>  <span class="dv">0</span>  <span class="dv">7</span></span>
+<span id="cb15-8"><a href="#cb15-8"></a>    <span class="dv">1</span>  <span class="dv">1</span>  <span class="dv">6</span></span>
+<span id="cb15-9"><a href="#cb15-9"></a>    <span class="dv">2</span>  <span class="dv">2</span>  <span class="dv">5</span></span>
+<span id="cb15-10"><a href="#cb15-10"></a>two <span class="dv">0</span>  <span class="dv">3</span>  <span class="dv">4</span></span>
+<span id="cb15-11"><a href="#cb15-11"></a>    <span class="dv">1</span>  <span class="dv">4</span>  <span class="dv">3</span></span>
+<span id="cb15-12"><a href="#cb15-12"></a>    <span class="dv">2</span>  <span class="dv">5</span>  <span class="dv">2</span></span>
+<span id="cb15-13"><a href="#cb15-13"></a>    <span class="dv">3</span>  <span class="dv">6</span>  <span class="dv">1</span></span></code></pre></div>
+<p>默认情况下，那些列会从DataFrame中移除，但也可以将其保留下来：</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1"></a>In [<span class="dv">33</span>]: frame.set_index([<span class="st">&#39;c&#39;</span>, <span class="st">&#39;d&#39;</span>], drop<span class="op">=</span><span class="va">False</span>)</span>
+<span id="cb16-2"><a href="#cb16-2"></a>Out[<span class="dv">33</span>]: </span>
+<span id="cb16-3"><a href="#cb16-3"></a>       a  b    c  d</span>
+<span id="cb16-4"><a href="#cb16-4"></a>c   d              </span>
+<span id="cb16-5"><a href="#cb16-5"></a>one <span class="dv">0</span>  <span class="dv">0</span>  <span class="dv">7</span>  one  <span class="dv">0</span></span>
+<span id="cb16-6"><a href="#cb16-6"></a>    <span class="dv">1</span>  <span class="dv">1</span>  <span class="dv">6</span>  one  <span class="dv">1</span></span>
+<span id="cb16-7"><a href="#cb16-7"></a>    <span class="dv">2</span>  <span class="dv">2</span>  <span class="dv">5</span>  one  <span class="dv">2</span></span>
+<span id="cb16-8"><a href="#cb16-8"></a>two <span class="dv">0</span>  <span class="dv">3</span>  <span class="dv">4</span>  two  <span class="dv">0</span></span>
+<span id="cb16-9"><a href="#cb16-9"></a>    <span class="dv">1</span>  <span class="dv">4</span>  <span class="dv">3</span>  two  <span class="dv">1</span></span>
+<span id="cb16-10"><a href="#cb16-10"></a>    <span class="dv">2</span>  <span class="dv">5</span>  <span class="dv">2</span>  two  <span class="dv">2</span></span>
+<span id="cb16-11"><a href="#cb16-11"></a>    <span class="dv">3</span>  <span class="dv">6</span>  <span class="dv">1</span>  two  <span class="dv">3</span></span></code></pre></div>
+<p>reset_index的功能跟set_index刚好相反，层次化索引的级别会被转移到列里面：</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1"></a>In [<span class="dv">34</span>]: frame2.reset_index()</span>
+<span id="cb17-2"><a href="#cb17-2"></a>Out[<span class="dv">34</span>]:</span>
+<span id="cb17-3"><a href="#cb17-3"></a>c  d  a  b</span>
+<span id="cb17-4"><a href="#cb17-4"></a><span class="dv">0</span>  one  <span class="dv">0</span>  <span class="dv">0</span>  <span class="dv">7</span></span>
+<span id="cb17-5"><a href="#cb17-5"></a><span class="dv">1</span>  one  <span class="dv">1</span>  <span class="dv">1</span>  <span class="dv">6</span></span>
+<span id="cb17-6"><a href="#cb17-6"></a><span class="dv">2</span>  one  <span class="dv">2</span>  <span class="dv">2</span>  <span class="dv">5</span></span>
+<span id="cb17-7"><a href="#cb17-7"></a><span class="dv">3</span>  two  <span class="dv">0</span>  <span class="dv">3</span>  <span class="dv">4</span></span>
+<span id="cb17-8"><a href="#cb17-8"></a><span class="dv">4</span>  two  <span class="dv">1</span>  <span class="dv">4</span>  <span class="dv">3</span></span>
+<span id="cb17-9"><a href="#cb17-9"></a><span class="dv">5</span>  two  <span class="dv">2</span>  <span class="dv">5</span>  <span class="dv">2</span></span>
+<span id="cb17-10"><a href="#cb17-10"></a><span class="dv">6</span>  two  <span class="dv">3</span>  <span class="dv">6</span>  <span class="dv">1</span></span></code></pre></div>
+<h1 id="合并数据集">8.2 合并数据集</h1>
+<p>pandas对象中的数据可以通过一些方式进行合并：</p>
+<ul>
+<li>pandas.merge可根据一个或多个键将不同DataFrame中的行连接起来。SQL或其他关系型数据库的用户对此应该会比较熟悉，因为它实现的就是数据库的join操作。</li>
+<li>pandas.concat可以沿着一条轴将多个对象堆叠到一起。</li>
+<li>实例方法combine_first可以将重复数据拼接在一起，用一个对象中的值填充另一个对象中的缺失值。</li>
+</ul>
+<p>我将分别对它们进行讲解，并给出一些例子。本书剩余部分的示例中将经常用到它们。</p>
+<p>##数据库风格的DataFrame合并</p>
+<p>数据集的合并（merge）或连接（join）运算是通过一个或多个键将行连接起来的。这些运算是关系型数据库（基于SQL）的核心。pandas的merge函数是对数据应用这些算法的主要切入点。</p>
+<p>以一个简单的例子开始：</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1"></a>In [<span class="dv">35</span>]: df1 <span class="op">=</span> pd.DataFrame({<span class="st">&#39;key&#39;</span>: [<span class="st">&#39;b&#39;</span>, <span class="st">&#39;b&#39;</span>, <span class="st">&#39;a&#39;</span>, <span class="st">&#39;c&#39;</span>, <span class="st">&#39;a&#39;</span>, <span class="st">&#39;a&#39;</span>, <span class="st">&#39;b&#39;</span>],</span>
+<span id="cb18-2"><a href="#cb18-2"></a>   ....:                     <span class="st">&#39;data1&#39;</span>: <span class="bu">range</span>(<span class="dv">7</span>)})</span>
+<span id="cb18-3"><a href="#cb18-3"></a></span>
+<span id="cb18-4"><a href="#cb18-4"></a>In [<span class="dv">36</span>]: df2 <span class="op">=</span> pd.DataFrame({<span class="st">&#39;key&#39;</span>: [<span class="st">&#39;a&#39;</span>, <span class="st">&#39;b&#39;</span>, <span class="st">&#39;d&#39;</span>],</span>
+<span id="cb18-5"><a href="#cb18-5"></a>   ....:                     <span class="st">&#39;data2&#39;</span>: <span class="bu">range</span>(<span class="dv">3</span>)})</span>
+<span id="cb18-6"><a href="#cb18-6"></a></span>
+<span id="cb18-7"><a href="#cb18-7"></a>In [<span class="dv">37</span>]: df1</span>
+<span id="cb18-8"><a href="#cb18-8"></a>Out[<span class="dv">37</span>]: </span>
+<span id="cb18-9"><a href="#cb18-9"></a>   data1 key</span>
+<span id="cb18-10"><a href="#cb18-10"></a><span class="dv">0</span>      <span class="dv">0</span>   b</span>
+<span id="cb18-11"><a href="#cb18-11"></a><span class="dv">1</span>      <span class="dv">1</span>   b</span>
+<span id="cb18-12"><a href="#cb18-12"></a><span class="dv">2</span>      <span class="dv">2</span>   a</span>
+<span id="cb18-13"><a href="#cb18-13"></a><span class="dv">3</span>      <span class="dv">3</span>   c</span>
+<span id="cb18-14"><a href="#cb18-14"></a><span class="dv">4</span>      <span class="dv">4</span>   a</span>
+<span id="cb18-15"><a href="#cb18-15"></a><span class="dv">5</span>      <span class="dv">5</span>   a</span>
+<span id="cb18-16"><a href="#cb18-16"></a><span class="dv">6</span>      <span class="dv">6</span>   b</span>
+<span id="cb18-17"><a href="#cb18-17"></a></span>
+<span id="cb18-18"><a href="#cb18-18"></a>In [<span class="dv">38</span>]: df2</span>
+<span id="cb18-19"><a href="#cb18-19"></a>Out[<span class="dv">38</span>]: </span>
+<span id="cb18-20"><a href="#cb18-20"></a>   data2 key</span>
+<span id="cb18-21"><a href="#cb18-21"></a><span class="dv">0</span>      <span class="dv">0</span>   a</span>
+<span id="cb18-22"><a href="#cb18-22"></a><span class="dv">1</span>      <span class="dv">1</span>   b</span>
+<span id="cb18-23"><a href="#cb18-23"></a><span class="dv">2</span>      <span class="dv">2</span>   d</span></code></pre></div>
+<p>这是一种多对一的合并。df1中的数据有多个被标记为a和b的行，而df2中key列的每个值则仅对应一行。对这些对象调用merge即可得到：</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1"></a>In [<span class="dv">39</span>]: pd.merge(df1, df2)</span>
+<span id="cb19-2"><a href="#cb19-2"></a>Out[<span class="dv">39</span>]: </span>
+<span id="cb19-3"><a href="#cb19-3"></a>   data1 key  data2</span>
+<span id="cb19-4"><a href="#cb19-4"></a><span class="dv">0</span>      <span class="dv">0</span>   b      <span class="dv">1</span></span>
+<span id="cb19-5"><a href="#cb19-5"></a><span class="dv">1</span>      <span class="dv">1</span>   b      <span class="dv">1</span></span>
+<span id="cb19-6"><a href="#cb19-6"></a><span class="dv">2</span>      <span class="dv">6</span>   b      <span class="dv">1</span></span>
+<span id="cb19-7"><a href="#cb19-7"></a><span class="dv">3</span>      <span class="dv">2</span>   a      <span class="dv">0</span></span>
+<span id="cb19-8"><a href="#cb19-8"></a><span class="dv">4</span>      <span class="dv">4</span>   a      <span class="dv">0</span></span>
+<span id="cb19-9"><a href="#cb19-9"></a><span class="dv">5</span>      <span class="dv">5</span>   a      <span class="dv">0</span></span></code></pre></div>
+<p>注意，我并没有指明要用哪个列进行连接。如果没有指定，merge就会将重叠列的列名当做键。不过，最好明确指定一下：</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1"></a>In [<span class="dv">40</span>]: pd.merge(df1, df2, on<span class="op">=</span><span class="st">&#39;key&#39;</span>)</span>
+<span id="cb20-2"><a href="#cb20-2"></a>Out[<span class="dv">40</span>]: </span>
+<span id="cb20-3"><a href="#cb20-3"></a>   data1 key  data2</span>
+<span id="cb20-4"><a href="#cb20-4"></a><span class="dv">0</span>      <span class="dv">0</span>   b      <span class="dv">1</span></span>
+<span id="cb20-5"><a href="#cb20-5"></a><span class="dv">1</span>      <span class="dv">1</span>   b      <span class="dv">1</span></span>
+<span id="cb20-6"><a href="#cb20-6"></a><span class="dv">2</span>      <span class="dv">6</span>   b      <span class="dv">1</span></span>
+<span id="cb20-7"><a href="#cb20-7"></a><span class="dv">3</span>      <span class="dv">2</span>   a      <span class="dv">0</span></span>
+<span id="cb20-8"><a href="#cb20-8"></a><span class="dv">4</span>      <span class="dv">4</span>   a      <span class="dv">0</span></span>
+<span id="cb20-9"><a href="#cb20-9"></a><span class="dv">5</span>      <span class="dv">5</span>   a      <span class="dv">0</span></span></code></pre></div>
+<p>如果两个对象的列名不同，也可以分别进行指定：</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1"></a>In [<span class="dv">41</span>]: df3 <span class="op">=</span> pd.DataFrame({<span class="st">&#39;lkey&#39;</span>: [<span class="st">&#39;b&#39;</span>, <span class="st">&#39;b&#39;</span>, <span class="st">&#39;a&#39;</span>, <span class="st">&#39;c&#39;</span>, <span class="st">&#39;a&#39;</span>, <span class="st">&#39;a&#39;</span>, <span class="st">&#39;b&#39;</span>],</span>
+<span id="cb21-2"><a href="#cb21-2"></a>   ....:                     <span class="st">&#39;data1&#39;</span>: <span class="bu">range</span>(<span class="dv">7</span>)})</span>
+<span id="cb21-3"><a href="#cb21-3"></a></span>
+<span id="cb21-4"><a href="#cb21-4"></a>In [<span class="dv">42</span>]: df4 <span class="op">=</span> pd.DataFrame({<span class="st">&#39;rkey&#39;</span>: [<span class="st">&#39;a&#39;</span>, <span class="st">&#39;b&#39;</span>, <span class="st">&#39;d&#39;</span>],</span>
+<span id="cb21-5"><a href="#cb21-5"></a>   ....:                     <span class="st">&#39;data2&#39;</span>: <span class="bu">range</span>(<span class="dv">3</span>)})</span>
+<span id="cb21-6"><a href="#cb21-6"></a></span>
+<span id="cb21-7"><a href="#cb21-7"></a>In [<span class="dv">43</span>]: pd.merge(df3, df4, left_on<span class="op">=</span><span class="st">&#39;lkey&#39;</span>, right_on<span class="op">=</span><span class="st">&#39;rkey&#39;</span>)</span>
+<span id="cb21-8"><a href="#cb21-8"></a>Out[<span class="dv">43</span>]: </span>
+<span id="cb21-9"><a href="#cb21-9"></a>   data1 lkey  data2 rkey</span>
+<span id="cb21-10"><a href="#cb21-10"></a><span class="dv">0</span>      <span class="dv">0</span>    b      <span class="dv">1</span>    b</span>
+<span id="cb21-11"><a href="#cb21-11"></a><span class="dv">1</span>      <span class="dv">1</span>    b      <span class="dv">1</span>    b</span>
+<span id="cb21-12"><a href="#cb21-12"></a><span class="dv">2</span>      <span class="dv">6</span>    b      <span class="dv">1</span>    b</span>
+<span id="cb21-13"><a href="#cb21-13"></a><span class="dv">3</span>      <span class="dv">2</span>    a      <span class="dv">0</span>    a</span>
+<span id="cb21-14"><a href="#cb21-14"></a><span class="dv">4</span>      <span class="dv">4</span>    a      <span class="dv">0</span>    a</span>
+<span id="cb21-15"><a href="#cb21-15"></a><span class="dv">5</span>      <span class="dv">5</span>    a      <span class="dv">0</span>    a</span></code></pre></div>
+<p>可能你已经注意到了，结果里面c和d以及与之相关的数据消失了。默认情况下，merge做的是“内连接”；结果中的键是交集。其他方式还有“left”、“right”以及“outer”。外连接求取的是键的并集，组合了左连接和右连接的效果：</p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1"></a>In [<span class="dv">44</span>]: pd.merge(df1, df2, how<span class="op">=</span><span class="st">&#39;outer&#39;</span>)</span>
+<span id="cb22-2"><a href="#cb22-2"></a>Out[<span class="dv">44</span>]: </span>
+<span id="cb22-3"><a href="#cb22-3"></a>   data1 key  data2</span>
+<span id="cb22-4"><a href="#cb22-4"></a><span class="dv">0</span>    <span class="fl">0.0</span>   b    <span class="fl">1.0</span></span>
+<span id="cb22-5"><a href="#cb22-5"></a><span class="dv">1</span>    <span class="fl">1.0</span>   b    <span class="fl">1.0</span></span>
+<span id="cb22-6"><a href="#cb22-6"></a><span class="dv">2</span>    <span class="fl">6.0</span>   b    <span class="fl">1.0</span></span>
+<span id="cb22-7"><a href="#cb22-7"></a><span class="dv">3</span>    <span class="fl">2.0</span>   a    <span class="fl">0.0</span></span>
+<span id="cb22-8"><a href="#cb22-8"></a><span class="dv">4</span>    <span class="fl">4.0</span>   a    <span class="fl">0.0</span></span>
+<span id="cb22-9"><a href="#cb22-9"></a><span class="dv">5</span>    <span class="fl">5.0</span>   a    <span class="fl">0.0</span></span>
+<span id="cb22-10"><a href="#cb22-10"></a><span class="dv">6</span>    <span class="fl">3.0</span>   c    NaN</span>
+<span id="cb22-11"><a href="#cb22-11"></a><span class="dv">7</span>    NaN   d    <span class="fl">2.0</span></span></code></pre></div>
+<p>表8-1对这些选项进行了总结。</p>
+<figure>
+<img src="http://upload-images.jianshu.io/upload_images/7178691-e49b3341f4a3c90e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="" /><figcaption>表8-1 不同的连接类型</figcaption>
+</figure>
+<p>多对多的合并有些不直观。看下面的例子：</p>
+<div class="sourceCode" id="cb23"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1"></a>In [<span class="dv">45</span>]: df1 <span class="op">=</span> pd.DataFrame({<span class="st">&#39;key&#39;</span>: [<span class="st">&#39;b&#39;</span>, <span class="st">&#39;b&#39;</span>, <span class="st">&#39;a&#39;</span>, <span class="st">&#39;c&#39;</span>, <span class="st">&#39;a&#39;</span>, <span class="st">&#39;b&#39;</span>],</span>
+<span id="cb23-2"><a href="#cb23-2"></a>   ....:                     <span class="st">&#39;data1&#39;</span>: <span class="bu">range</span>(<span class="dv">6</span>)})</span>
+<span id="cb23-3"><a href="#cb23-3"></a></span>
+<span id="cb23-4"><a href="#cb23-4"></a>In [<span class="dv">46</span>]: df2 <span class="op">=</span> pd.DataFrame({<span class="st">&#39;key&#39;</span>: [<span class="st">&#39;a&#39;</span>, <span class="st">&#39;b&#39;</span>, <span class="st">&#39;a&#39;</span>, <span class="st">&#39;b&#39;</span>, <span class="st">&#39;d&#39;</span>],</span>
+<span id="cb23-5"><a href="#cb23-5"></a>   ....:                     <span class="st">&#39;data2&#39;</span>: <span class="bu">range</span>(<span class="dv">5</span>)})</span>
+<span id="cb23-6"><a href="#cb23-6"></a></span>
+<span id="cb23-7"><a href="#cb23-7"></a>In [<span class="dv">47</span>]: df1</span>
+<span id="cb23-8"><a href="#cb23-8"></a>Out[<span class="dv">47</span>]: </span>
+<span id="cb23-9"><a href="#cb23-9"></a>   data1 key</span>
+<span id="cb23-10"><a href="#cb23-10"></a><span class="dv">0</span>      <span class="dv">0</span>   b</span>
+<span id="cb23-11"><a href="#cb23-11"></a><span class="dv">1</span>      <span class="dv">1</span>   b</span>
+<span id="cb23-12"><a href="#cb23-12"></a><span class="dv">2</span>      <span class="dv">2</span>   a</span>
+<span id="cb23-13"><a href="#cb23-13"></a><span class="dv">3</span>      <span class="dv">3</span>   c</span>
+<span id="cb23-14"><a href="#cb23-14"></a><span class="dv">4</span>      <span class="dv">4</span>   a</span>
+<span id="cb23-15"><a href="#cb23-15"></a><span class="dv">5</span>      <span class="dv">5</span>   b</span>
+<span id="cb23-16"><a href="#cb23-16"></a></span>
+<span id="cb23-17"><a href="#cb23-17"></a>In [<span class="dv">48</span>]: df2</span>
+<span id="cb23-18"><a href="#cb23-18"></a>Out[<span class="dv">48</span>]: </span>
+<span id="cb23-19"><a href="#cb23-19"></a>   data2 key</span>
+<span id="cb23-20"><a href="#cb23-20"></a><span class="dv">0</span>      <span class="dv">0</span>   a</span>
+<span id="cb23-21"><a href="#cb23-21"></a><span class="dv">1</span>      <span class="dv">1</span>   b</span>
+<span id="cb23-22"><a href="#cb23-22"></a><span class="dv">2</span>      <span class="dv">2</span>   a</span>
+<span id="cb23-23"><a href="#cb23-23"></a><span class="dv">3</span>      <span class="dv">3</span>   b</span>
+<span id="cb23-24"><a href="#cb23-24"></a><span class="dv">4</span>      <span class="dv">4</span>   d</span>
+<span id="cb23-25"><a href="#cb23-25"></a></span>
+<span id="cb23-26"><a href="#cb23-26"></a>In [<span class="dv">49</span>]: pd.merge(df1, df2, on<span class="op">=</span><span class="st">&#39;key&#39;</span>, how<span class="op">=</span><span class="st">&#39;left&#39;</span>)</span>
+<span id="cb23-27"><a href="#cb23-27"></a>Out[<span class="dv">49</span>]: </span>
+<span id="cb23-28"><a href="#cb23-28"></a>    data1 key  data2</span>
+<span id="cb23-29"><a href="#cb23-29"></a><span class="dv">0</span>       <span class="dv">0</span>   b    <span class="fl">1.0</span></span>
+<span id="cb23-30"><a href="#cb23-30"></a><span class="dv">1</span>       <span class="dv">0</span>   b    <span class="fl">3.0</span></span>
+<span id="cb23-31"><a href="#cb23-31"></a><span class="dv">2</span>       <span class="dv">1</span>   b    <span class="fl">1.0</span></span>
+<span id="cb23-32"><a href="#cb23-32"></a><span class="dv">3</span>       <span class="dv">1</span>   b    <span class="fl">3.0</span></span>
+<span id="cb23-33"><a href="#cb23-33"></a><span class="dv">4</span>       <span class="dv">2</span>   a    <span class="fl">0.0</span></span>
+<span id="cb23-34"><a href="#cb23-34"></a><span class="dv">5</span>       <span class="dv">2</span>   a    <span class="fl">2.0</span></span>
+<span id="cb23-35"><a href="#cb23-35"></a><span class="dv">6</span>       <span class="dv">3</span>   c    NaN</span>
+<span id="cb23-36"><a href="#cb23-36"></a><span class="dv">7</span>       <span class="dv">4</span>   a    <span class="fl">0.0</span></span>
+<span id="cb23-37"><a href="#cb23-37"></a><span class="dv">8</span>       <span class="dv">4</span>   a    <span class="fl">2.0</span></span>
+<span id="cb23-38"><a href="#cb23-38"></a><span class="dv">9</span>       <span class="dv">5</span>   b    <span class="fl">1.0</span></span>
+<span id="cb23-39"><a href="#cb23-39"></a><span class="dv">10</span>      <span class="dv">5</span>   b    <span class="fl">3.0</span></span></code></pre></div>
+<p>多对多连接产生的是行的笛卡尔积。由于左边的DataFrame有3个“b”行，右边的有2个，所以最终结果中就有6个“b”行。连接方式只影响出现在结果中的不同的键的值：</p>
+<div class="sourceCode" id="cb24"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1"></a>In [<span class="dv">50</span>]: pd.merge(df1, df2, how<span class="op">=</span><span class="st">&#39;inner&#39;</span>)</span>
+<span id="cb24-2"><a href="#cb24-2"></a>Out[<span class="dv">50</span>]: </span>
+<span id="cb24-3"><a href="#cb24-3"></a>   data1 key  data2</span>
+<span id="cb24-4"><a href="#cb24-4"></a><span class="dv">0</span>      <span class="dv">0</span>   b      <span class="dv">1</span></span>
+<span id="cb24-5"><a href="#cb24-5"></a><span class="dv">1</span>      <span class="dv">0</span>   b      <span class="dv">3</span></span>
+<span id="cb24-6"><a href="#cb24-6"></a><span class="dv">2</span>      <span class="dv">1</span>   b      <span class="dv">1</span></span>
+<span id="cb24-7"><a href="#cb24-7"></a><span class="dv">3</span>      <span class="dv">1</span>   b      <span class="dv">3</span></span>
+<span id="cb24-8"><a href="#cb24-8"></a><span class="dv">4</span>      <span class="dv">5</span>   b      <span class="dv">1</span></span>
+<span id="cb24-9"><a href="#cb24-9"></a><span class="dv">5</span>      <span class="dv">5</span>   b      <span class="dv">3</span></span>
+<span id="cb24-10"><a href="#cb24-10"></a><span class="dv">6</span>      <span class="dv">2</span>   a      <span class="dv">0</span></span>
+<span id="cb24-11"><a href="#cb24-11"></a><span class="dv">7</span>      <span class="dv">2</span>   a      <span class="dv">2</span></span>
+<span id="cb24-12"><a href="#cb24-12"></a><span class="dv">8</span>      <span class="dv">4</span>   a      <span class="dv">0</span></span>
+<span id="cb24-13"><a href="#cb24-13"></a><span class="dv">9</span>      <span class="dv">4</span>   a      <span class="dv">2</span></span></code></pre></div>
+<p>要根据多个键进行合并，传入一个由列名组成的列表即可：</p>
+<div class="sourceCode" id="cb25"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1"></a>In [<span class="dv">51</span>]: left <span class="op">=</span> pd.DataFrame({<span class="st">&#39;key1&#39;</span>: [<span class="st">&#39;foo&#39;</span>, <span class="st">&#39;foo&#39;</span>, <span class="st">&#39;bar&#39;</span>],</span>
+<span id="cb25-2"><a href="#cb25-2"></a>   ....:                      <span class="st">&#39;key2&#39;</span>: [<span class="st">&#39;one&#39;</span>, <span class="st">&#39;two&#39;</span>, <span class="st">&#39;one&#39;</span>],</span>
+<span id="cb25-3"><a href="#cb25-3"></a>   ....:                      <span class="st">&#39;lval&#39;</span>: [<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>]})</span>
+<span id="cb25-4"><a href="#cb25-4"></a></span>
+<span id="cb25-5"><a href="#cb25-5"></a>In [<span class="dv">52</span>]: right <span class="op">=</span> pd.DataFrame({<span class="st">&#39;key1&#39;</span>: [<span class="st">&#39;foo&#39;</span>, <span class="st">&#39;foo&#39;</span>, <span class="st">&#39;bar&#39;</span>, <span class="st">&#39;bar&#39;</span>],</span>
+<span id="cb25-6"><a href="#cb25-6"></a>   ....:                       <span class="st">&#39;key2&#39;</span>: [<span class="st">&#39;one&#39;</span>, <span class="st">&#39;one&#39;</span>, <span class="st">&#39;one&#39;</span>, <span class="st">&#39;two&#39;</span>],</span>
+<span id="cb25-7"><a href="#cb25-7"></a>   ....:                       <span class="st">&#39;rval&#39;</span>: [<span class="dv">4</span>, <span class="dv">5</span>, <span class="dv">6</span>, <span class="dv">7</span>]})</span>
+<span id="cb25-8"><a href="#cb25-8"></a></span>
+<span id="cb25-9"><a href="#cb25-9"></a>In [<span class="dv">53</span>]: pd.merge(left, right, on<span class="op">=</span>[<span class="st">&#39;key1&#39;</span>, <span class="st">&#39;key2&#39;</span>], how<span class="op">=</span><span class="st">&#39;outer&#39;</span>)</span>
+<span id="cb25-10"><a href="#cb25-10"></a>Out[<span class="dv">53</span>]: </span>
+<span id="cb25-11"><a href="#cb25-11"></a>  key1 key2  lval  rval</span>
+<span id="cb25-12"><a href="#cb25-12"></a><span class="dv">0</span>  foo  one   <span class="fl">1.0</span>   <span class="fl">4.0</span></span>
+<span id="cb25-13"><a href="#cb25-13"></a><span class="dv">1</span>  foo  one   <span class="fl">1.0</span>   <span class="fl">5.0</span></span>
+<span id="cb25-14"><a href="#cb25-14"></a><span class="dv">2</span>  foo  two   <span class="fl">2.0</span>   NaN</span>
+<span id="cb25-15"><a href="#cb25-15"></a><span class="dv">3</span>  bar  one   <span class="fl">3.0</span>   <span class="fl">6.0</span></span>
+<span id="cb25-16"><a href="#cb25-16"></a><span class="dv">4</span>  bar  two   NaN   <span class="fl">7.0</span></span></code></pre></div>
+<p>结果中会出现哪些键组合取决于所选的合并方式，你可以这样来理解：多个键形成一系列元组，并将其当做单个连接键（当然，实际上并不是这么回事）。</p>
+<blockquote>
+<p>注意：在进行列－列连接时，DataFrame对象中的索引会被丢弃。</p>
+</blockquote>
+<p>对于合并运算需要考虑的最后一个问题是对重复列名的处理。虽然你可以手工处理列名重叠的问题（查看前面介绍的重命名轴标签），但merge有一个更实用的suffixes选项，用于指定附加到左右两个DataFrame对象的重叠列名上的字符串：</p>
+<div class="sourceCode" id="cb26"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1"></a>In [<span class="dv">54</span>]: pd.merge(left, right, on<span class="op">=</span><span class="st">&#39;key1&#39;</span>)</span>
+<span id="cb26-2"><a href="#cb26-2"></a>Out[<span class="dv">54</span>]: </span>
+<span id="cb26-3"><a href="#cb26-3"></a>  key1 key2_x  lval key2_y  rval</span>
+<span id="cb26-4"><a href="#cb26-4"></a><span class="dv">0</span>  foo    one     <span class="dv">1</span>    one     <span class="dv">4</span></span>
+<span id="cb26-5"><a href="#cb26-5"></a><span class="dv">1</span>  foo    one     <span class="dv">1</span>    one     <span class="dv">5</span></span>
+<span id="cb26-6"><a href="#cb26-6"></a><span class="dv">2</span>  foo    two     <span class="dv">2</span>    one     <span class="dv">4</span></span>
+<span id="cb26-7"><a href="#cb26-7"></a><span class="dv">3</span>  foo    two     <span class="dv">2</span>    one     <span class="dv">5</span></span>
+<span id="cb26-8"><a href="#cb26-8"></a><span class="dv">4</span>  bar    one     <span class="dv">3</span>    one     <span class="dv">6</span></span>
+<span id="cb26-9"><a href="#cb26-9"></a><span class="dv">5</span>  bar    one     <span class="dv">3</span>    two     <span class="dv">7</span></span>
+<span id="cb26-10"><a href="#cb26-10"></a></span>
+<span id="cb26-11"><a href="#cb26-11"></a>In [<span class="dv">55</span>]: pd.merge(left, right, on<span class="op">=</span><span class="st">&#39;key1&#39;</span>, suffixes<span class="op">=</span>(<span class="st">&#39;_left&#39;</span>, <span class="st">&#39;_right&#39;</span>))</span>
+<span id="cb26-12"><a href="#cb26-12"></a>Out[<span class="dv">55</span>]: </span>
+<span id="cb26-13"><a href="#cb26-13"></a>  key1 key2_left  lval key2_right  rval</span>
+<span id="cb26-14"><a href="#cb26-14"></a><span class="dv">0</span>  foo       one     <span class="dv">1</span>        one     <span class="dv">4</span></span>
+<span id="cb26-15"><a href="#cb26-15"></a><span class="dv">1</span>  foo       one     <span class="dv">1</span>        one     <span class="dv">5</span></span>
+<span id="cb26-16"><a href="#cb26-16"></a><span class="dv">2</span>  foo       two     <span class="dv">2</span>        one     <span class="dv">4</span></span>
+<span id="cb26-17"><a href="#cb26-17"></a><span class="dv">3</span>  foo       two     <span class="dv">2</span>        one     <span class="dv">5</span></span>
+<span id="cb26-18"><a href="#cb26-18"></a><span class="dv">4</span>  bar       one     <span class="dv">3</span>        one     <span class="dv">6</span></span>
+<span id="cb26-19"><a href="#cb26-19"></a><span class="dv">5</span>  bar       one     <span class="dv">3</span>        two     <span class="dv">7</span></span></code></pre></div>
+<p>merge的参数请参见表8-2。使用DataFrame的行索引合并是下一节的主题。</p>
+<p>表8-2 merge函数的参数</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/7178691-35ca716a4f1b8475.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" /></p>
+<p><img src="http://upload-images.jianshu.io/upload_images/7178691-c86672e733ceccd9.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" /></p>
+<p>indicator 添加特殊的列_merge，它可以指明每个行的来源，它的值有left_only、right_only或both，根据每行的合并数据的来源。</p>
+<h2 id="索引上的合并">索引上的合并</h2>
+<p>有时候，DataFrame中的连接键位于其索引中。在这种情况下，你可以传入left_index=True或right_index=True（或两个都传）以说明索引应该被用作连接键：</p>
+<div class="sourceCode" id="cb27"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1"></a>In [<span class="dv">56</span>]: left1 <span class="op">=</span> pd.DataFrame({<span class="st">&#39;key&#39;</span>: [<span class="st">&#39;a&#39;</span>, <span class="st">&#39;b&#39;</span>, <span class="st">&#39;a&#39;</span>, <span class="st">&#39;a&#39;</span>, <span class="st">&#39;b&#39;</span>, <span class="st">&#39;c&#39;</span>],</span>
+<span id="cb27-2"><a href="#cb27-2"></a>   ....:                       <span class="st">&#39;value&#39;</span>: <span class="bu">range</span>(<span class="dv">6</span>)})</span>
+<span id="cb27-3"><a href="#cb27-3"></a></span>
+<span id="cb27-4"><a href="#cb27-4"></a>In [<span class="dv">57</span>]: right1 <span class="op">=</span> pd.DataFrame({<span class="st">&#39;group_val&#39;</span>: [<span class="fl">3.5</span>, <span class="dv">7</span>]}, index<span class="op">=</span>[<span class="st">&#39;a&#39;</span>, <span class="st">&#39;b&#39;</span>])</span>
+<span id="cb27-5"><a href="#cb27-5"></a></span>
+<span id="cb27-6"><a href="#cb27-6"></a>In [<span class="dv">58</span>]: left1</span>
+<span id="cb27-7"><a href="#cb27-7"></a>Out[<span class="dv">58</span>]:</span>
+<span id="cb27-8"><a href="#cb27-8"></a></span>
+<span id="cb27-9"><a href="#cb27-9"></a>  key  value</span>
+<span id="cb27-10"><a href="#cb27-10"></a><span class="dv">0</span>   a      <span class="dv">0</span></span>
+<span id="cb27-11"><a href="#cb27-11"></a><span class="dv">1</span>   b      <span class="dv">1</span></span>
+<span id="cb27-12"><a href="#cb27-12"></a><span class="dv">2</span>   a      <span class="dv">2</span></span>
+<span id="cb27-13"><a href="#cb27-13"></a><span class="dv">3</span>   a      <span class="dv">3</span></span>
+<span id="cb27-14"><a href="#cb27-14"></a><span class="dv">4</span>   b      <span class="dv">4</span></span>
+<span id="cb27-15"><a href="#cb27-15"></a><span class="dv">5</span>   c      <span class="dv">5</span></span>
+<span id="cb27-16"><a href="#cb27-16"></a></span>
+<span id="cb27-17"><a href="#cb27-17"></a>In [<span class="dv">59</span>]: right1</span>
+<span id="cb27-18"><a href="#cb27-18"></a>Out[<span class="dv">59</span>]: </span>
+<span id="cb27-19"><a href="#cb27-19"></a>   group_val</span>
+<span id="cb27-20"><a href="#cb27-20"></a>a        <span class="fl">3.5</span></span>
+<span id="cb27-21"><a href="#cb27-21"></a>b        <span class="fl">7.0</span></span>
+<span id="cb27-22"><a href="#cb27-22"></a></span>
+<span id="cb27-23"><a href="#cb27-23"></a>In [<span class="dv">60</span>]: pd.merge(left1, right1, left_on<span class="op">=</span><span class="st">&#39;key&#39;</span>, right_index<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb27-24"><a href="#cb27-24"></a>Out[<span class="dv">60</span>]: </span>
+<span id="cb27-25"><a href="#cb27-25"></a>  key  value  group_val</span>
+<span id="cb27-26"><a href="#cb27-26"></a><span class="dv">0</span>   a      <span class="dv">0</span>        <span class="fl">3.5</span></span>
+<span id="cb27-27"><a href="#cb27-27"></a><span class="dv">2</span>   a      <span class="dv">2</span>        <span class="fl">3.5</span></span>
+<span id="cb27-28"><a href="#cb27-28"></a><span class="dv">3</span>   a      <span class="dv">3</span>        <span class="fl">3.5</span></span>
+<span id="cb27-29"><a href="#cb27-29"></a><span class="dv">1</span>   b      <span class="dv">1</span>        <span class="fl">7.0</span></span>
+<span id="cb27-30"><a href="#cb27-30"></a><span class="dv">4</span>   b      <span class="dv">4</span>        <span class="fl">7.0</span></span></code></pre></div>
+<p>由于默认的merge方法是求取连接键的交集，因此你可以通过外连接的方式得到它们的并集：</p>
+<div class="sourceCode" id="cb28"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1"></a>In [<span class="dv">61</span>]: pd.merge(left1, right1, left_on<span class="op">=</span><span class="st">&#39;key&#39;</span>, right_index<span class="op">=</span><span class="va">True</span>, how<span class="op">=</span><span class="st">&#39;outer&#39;</span>)</span>
+<span id="cb28-2"><a href="#cb28-2"></a>Out[<span class="dv">61</span>]: </span>
+<span id="cb28-3"><a href="#cb28-3"></a>  key  value  group_val</span>
+<span id="cb28-4"><a href="#cb28-4"></a><span class="dv">0</span>   a      <span class="dv">0</span>        <span class="fl">3.5</span></span>
+<span id="cb28-5"><a href="#cb28-5"></a><span class="dv">2</span>   a      <span class="dv">2</span>        <span class="fl">3.5</span></span>
+<span id="cb28-6"><a href="#cb28-6"></a><span class="dv">3</span>   a      <span class="dv">3</span>        <span class="fl">3.5</span></span>
+<span id="cb28-7"><a href="#cb28-7"></a><span class="dv">1</span>   b      <span class="dv">1</span>        <span class="fl">7.0</span></span>
+<span id="cb28-8"><a href="#cb28-8"></a><span class="dv">4</span>   b      <span class="dv">4</span>        <span class="fl">7.0</span></span>
+<span id="cb28-9"><a href="#cb28-9"></a><span class="dv">5</span>   c      <span class="dv">5</span>        NaN</span></code></pre></div>
+<p>对于层次化索引的数据，事情就有点复杂了，因为索引的合并默认是多键合并：</p>
+<div class="sourceCode" id="cb29"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1"></a>In [<span class="dv">62</span>]: lefth <span class="op">=</span> pd.DataFrame({<span class="st">&#39;key1&#39;</span>: [<span class="st">&#39;Ohio&#39;</span>, <span class="st">&#39;Ohio&#39;</span>, <span class="st">&#39;Ohio&#39;</span>,</span>
+<span id="cb29-2"><a href="#cb29-2"></a>   ....:                                <span class="st">&#39;Nevada&#39;</span>, <span class="st">&#39;Nevada&#39;</span>],</span>
+<span id="cb29-3"><a href="#cb29-3"></a>   ....:                       <span class="st">&#39;key2&#39;</span>: [<span class="dv">2000</span>, <span class="dv">2001</span>, <span class="dv">2002</span>, <span class="dv">2001</span>, <span class="dv">2002</span>],</span>
+<span id="cb29-4"><a href="#cb29-4"></a>   ....:                       <span class="st">&#39;data&#39;</span>: np.arange(<span class="fl">5.</span>)})</span>
+<span id="cb29-5"><a href="#cb29-5"></a></span>
+<span id="cb29-6"><a href="#cb29-6"></a>In [<span class="dv">63</span>]: righth <span class="op">=</span> pd.DataFrame(np.arange(<span class="dv">12</span>).reshape((<span class="dv">6</span>, <span class="dv">2</span>)),</span>
+<span id="cb29-7"><a href="#cb29-7"></a>   ....:                       index<span class="op">=</span>[[<span class="st">&#39;Nevada&#39;</span>, <span class="st">&#39;Nevada&#39;</span>, <span class="st">&#39;Ohio&#39;</span>, <span class="st">&#39;Ohio&#39;</span>,</span>
+<span id="cb29-8"><a href="#cb29-8"></a>   ....:                               <span class="st">&#39;Ohio&#39;</span>, <span class="st">&#39;Ohio&#39;</span>],</span>
+<span id="cb29-9"><a href="#cb29-9"></a>   ....:                              [<span class="dv">2001</span>, <span class="dv">2000</span>, <span class="dv">2000</span>, <span class="dv">2000</span>, <span class="dv">2001</span>, <span class="dv">2002</span>]],</span>
+<span id="cb29-10"><a href="#cb29-10"></a>   ....:                       columns<span class="op">=</span>[<span class="st">&#39;event1&#39;</span>, <span class="st">&#39;event2&#39;</span>])</span>
+<span id="cb29-11"><a href="#cb29-11"></a></span>
+<span id="cb29-12"><a href="#cb29-12"></a>In [<span class="dv">64</span>]: lefth</span>
+<span id="cb29-13"><a href="#cb29-13"></a>Out[<span class="dv">64</span>]: </span>
+<span id="cb29-14"><a href="#cb29-14"></a>   data    key1  key2</span>
+<span id="cb29-15"><a href="#cb29-15"></a><span class="dv">0</span>   <span class="fl">0.0</span>    Ohio  <span class="dv">2000</span></span>
+<span id="cb29-16"><a href="#cb29-16"></a><span class="dv">1</span>   <span class="fl">1.0</span>    Ohio  <span class="dv">2001</span></span>
+<span id="cb29-17"><a href="#cb29-17"></a><span class="dv">2</span>   <span class="fl">2.0</span>    Ohio  <span class="dv">2002</span></span>
+<span id="cb29-18"><a href="#cb29-18"></a><span class="dv">3</span>   <span class="fl">3.0</span>  Nevada  <span class="dv">2001</span></span>
+<span id="cb29-19"><a href="#cb29-19"></a><span class="dv">4</span>   <span class="fl">4.0</span>  Nevada  <span class="dv">2002</span></span>
+<span id="cb29-20"><a href="#cb29-20"></a></span>
+<span id="cb29-21"><a href="#cb29-21"></a>In [<span class="dv">65</span>]: righth</span>
+<span id="cb29-22"><a href="#cb29-22"></a>Out[<span class="dv">65</span>]: </span>
+<span id="cb29-23"><a href="#cb29-23"></a>             event1  event2</span>
+<span id="cb29-24"><a href="#cb29-24"></a>Nevada <span class="dv">2001</span>       <span class="dv">0</span>       <span class="dv">1</span></span>
+<span id="cb29-25"><a href="#cb29-25"></a>       <span class="dv">2000</span>       <span class="dv">2</span>       <span class="dv">3</span></span>
+<span id="cb29-26"><a href="#cb29-26"></a>Ohio   <span class="dv">2000</span>       <span class="dv">4</span>       <span class="dv">5</span></span>
+<span id="cb29-27"><a href="#cb29-27"></a>       <span class="dv">2000</span>       <span class="dv">6</span>       <span class="dv">7</span></span>
+<span id="cb29-28"><a href="#cb29-28"></a>       <span class="dv">2001</span>       <span class="dv">8</span>       <span class="dv">9</span></span>
+<span id="cb29-29"><a href="#cb29-29"></a>       <span class="dv">2002</span>      <span class="dv">10</span>      <span class="dv">11</span></span></code></pre></div>
+<p>这种情况下，你必须以列表的形式指明用作合并键的多个列（注意用how=’outer’对重复索引值的处理）：</p>
+<div class="sourceCode" id="cb30"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1"></a>In [<span class="dv">66</span>]: pd.merge(lefth, righth, left_on<span class="op">=</span>[<span class="st">&#39;key1&#39;</span>, <span class="st">&#39;key2&#39;</span>], right_index<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb30-2"><a href="#cb30-2"></a>Out[<span class="dv">66</span>]: </span>
+<span id="cb30-3"><a href="#cb30-3"></a>   data    key1  key2  event1  event2</span>
+<span id="cb30-4"><a href="#cb30-4"></a><span class="dv">0</span>   <span class="fl">0.0</span>    Ohio  <span class="dv">2000</span>       <span class="dv">4</span>       <span class="dv">5</span></span>
+<span id="cb30-5"><a href="#cb30-5"></a><span class="dv">0</span>   <span class="fl">0.0</span>    Ohio  <span class="dv">2000</span>       <span class="dv">6</span>       <span class="dv">7</span></span>
+<span id="cb30-6"><a href="#cb30-6"></a><span class="dv">1</span>   <span class="fl">1.0</span>    Ohio  <span class="dv">2001</span>       <span class="dv">8</span>       <span class="dv">9</span></span>
+<span id="cb30-7"><a href="#cb30-7"></a><span class="dv">2</span>   <span class="fl">2.0</span>    Ohio  <span class="dv">2002</span>      <span class="dv">10</span>      <span class="dv">11</span></span>
+<span id="cb30-8"><a href="#cb30-8"></a><span class="dv">3</span>   <span class="fl">3.0</span>  Nevada  <span class="dv">2001</span>       <span class="dv">0</span>       <span class="dv">1</span></span>
+<span id="cb30-9"><a href="#cb30-9"></a></span>
+<span id="cb30-10"><a href="#cb30-10"></a>In [<span class="dv">67</span>]: pd.merge(lefth, righth, left_on<span class="op">=</span>[<span class="st">&#39;key1&#39;</span>, <span class="st">&#39;key2&#39;</span>],</span>
+<span id="cb30-11"><a href="#cb30-11"></a>   ....:          right_index<span class="op">=</span><span class="va">True</span>, how<span class="op">=</span><span class="st">&#39;outer&#39;</span>)</span>
+<span id="cb30-12"><a href="#cb30-12"></a>Out[<span class="dv">67</span>]: </span>
+<span id="cb30-13"><a href="#cb30-13"></a>   data    key1  key2  event1  event2</span>
+<span id="cb30-14"><a href="#cb30-14"></a><span class="dv">0</span>   <span class="fl">0.0</span>    Ohio  <span class="dv">2000</span>     <span class="fl">4.0</span>     <span class="fl">5.0</span></span>
+<span id="cb30-15"><a href="#cb30-15"></a><span class="dv">0</span>   <span class="fl">0.0</span>    Ohio  <span class="dv">2000</span>     <span class="fl">6.0</span>     <span class="fl">7.0</span></span>
+<span id="cb30-16"><a href="#cb30-16"></a><span class="dv">1</span>   <span class="fl">1.0</span>    Ohio  <span class="dv">2001</span>     <span class="fl">8.0</span>     <span class="fl">9.0</span></span>
+<span id="cb30-17"><a href="#cb30-17"></a><span class="dv">2</span>   <span class="fl">2.0</span>    Ohio  <span class="dv">2002</span>    <span class="fl">10.0</span>    <span class="fl">11.0</span></span>
+<span id="cb30-18"><a href="#cb30-18"></a><span class="dv">3</span>   <span class="fl">3.0</span>  Nevada  <span class="dv">2001</span>     <span class="fl">0.0</span>     <span class="fl">1.0</span></span>
+<span id="cb30-19"><a href="#cb30-19"></a><span class="dv">4</span>   <span class="fl">4.0</span>  Nevada  <span class="dv">2002</span>     NaN     NaN</span>
+<span id="cb30-20"><a href="#cb30-20"></a><span class="dv">4</span>   NaN  Nevada  <span class="dv">2000</span>     <span class="fl">2.0</span>     <span class="fl">3.0</span></span></code></pre></div>
+<p>同时使用合并双方的索引也没问题：</p>
+<div class="sourceCode" id="cb31"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb31-1"><a href="#cb31-1"></a>In [<span class="dv">68</span>]: left2 <span class="op">=</span> pd.DataFrame([[<span class="fl">1.</span>, <span class="fl">2.</span>], [<span class="fl">3.</span>, <span class="fl">4.</span>], [<span class="fl">5.</span>, <span class="fl">6.</span>]],</span>
+<span id="cb31-2"><a href="#cb31-2"></a>   ....:                      index<span class="op">=</span>[<span class="st">&#39;a&#39;</span>, <span class="st">&#39;c&#39;</span>, <span class="st">&#39;e&#39;</span>],</span>
+<span id="cb31-3"><a href="#cb31-3"></a>   ....:                      columns<span class="op">=</span>[<span class="st">&#39;Ohio&#39;</span>, <span class="st">&#39;Nevada&#39;</span>])</span>
+<span id="cb31-4"><a href="#cb31-4"></a></span>
+<span id="cb31-5"><a href="#cb31-5"></a>In [<span class="dv">69</span>]: right2 <span class="op">=</span> pd.DataFrame([[<span class="fl">7.</span>, <span class="fl">8.</span>], [<span class="fl">9.</span>, <span class="fl">10.</span>], [<span class="fl">11.</span>, <span class="fl">12.</span>], [<span class="dv">13</span>, <span class="dv">14</span>]],</span>
+<span id="cb31-6"><a href="#cb31-6"></a>   ....:                       index<span class="op">=</span>[<span class="st">&#39;b&#39;</span>, <span class="st">&#39;c&#39;</span>, <span class="st">&#39;d&#39;</span>, <span class="st">&#39;e&#39;</span>],</span>
+<span id="cb31-7"><a href="#cb31-7"></a>   ....:                       columns<span class="op">=</span>[<span class="st">&#39;Missouri&#39;</span>, <span class="st">&#39;Alabama&#39;</span>])</span>
+<span id="cb31-8"><a href="#cb31-8"></a></span>
+<span id="cb31-9"><a href="#cb31-9"></a>In [<span class="dv">70</span>]: left2</span>
+<span id="cb31-10"><a href="#cb31-10"></a>Out[<span class="dv">70</span>]: </span>
+<span id="cb31-11"><a href="#cb31-11"></a>   Ohio  Nevada</span>
+<span id="cb31-12"><a href="#cb31-12"></a>a   <span class="fl">1.0</span>     <span class="fl">2.0</span></span>
+<span id="cb31-13"><a href="#cb31-13"></a>c   <span class="fl">3.0</span>     <span class="fl">4.0</span></span>
+<span id="cb31-14"><a href="#cb31-14"></a>e   <span class="fl">5.0</span>     <span class="fl">6.0</span></span>
+<span id="cb31-15"><a href="#cb31-15"></a></span>
+<span id="cb31-16"><a href="#cb31-16"></a>In [<span class="dv">71</span>]: right2</span>
+<span id="cb31-17"><a href="#cb31-17"></a>Out[<span class="dv">71</span>]: </span>
+<span id="cb31-18"><a href="#cb31-18"></a>   Missouri  Alabama</span>
+<span id="cb31-19"><a href="#cb31-19"></a>b       <span class="fl">7.0</span>      <span class="fl">8.0</span></span>
+<span id="cb31-20"><a href="#cb31-20"></a>c       <span class="fl">9.0</span>     <span class="fl">10.0</span></span>
+<span id="cb31-21"><a href="#cb31-21"></a>d      <span class="fl">11.0</span>     <span class="fl">12.0</span></span>
+<span id="cb31-22"><a href="#cb31-22"></a>e      <span class="fl">13.0</span>     <span class="fl">14.0</span></span>
+<span id="cb31-23"><a href="#cb31-23"></a></span>
+<span id="cb31-24"><a href="#cb31-24"></a>In [<span class="dv">72</span>]: pd.merge(left2, right2, how<span class="op">=</span><span class="st">&#39;outer&#39;</span>, left_index<span class="op">=</span><span class="va">True</span>, right_index<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb31-25"><a href="#cb31-25"></a>Out[<span class="dv">72</span>]: </span>
+<span id="cb31-26"><a href="#cb31-26"></a>   Ohio  Nevada  Missouri  Alabama</span>
+<span id="cb31-27"><a href="#cb31-27"></a>a   <span class="fl">1.0</span>     <span class="fl">2.0</span>       NaN      NaN</span>
+<span id="cb31-28"><a href="#cb31-28"></a>b   NaN     NaN       <span class="fl">7.0</span>      <span class="fl">8.0</span></span>
+<span id="cb31-29"><a href="#cb31-29"></a>c   <span class="fl">3.0</span>     <span class="fl">4.0</span>       <span class="fl">9.0</span>     <span class="fl">10.0</span></span>
+<span id="cb31-30"><a href="#cb31-30"></a>d   NaN     NaN      <span class="fl">11.0</span>     <span class="fl">12.0</span></span>
+<span id="cb31-31"><a href="#cb31-31"></a>e   <span class="fl">5.0</span>     <span class="fl">6.0</span>      <span class="fl">13.0</span>     <span class="fl">14.0</span></span></code></pre></div>
+<p>DataFrame还有一个便捷的join实例方法，它能更为方便地实现按索引合并。它还可用于合并多个带有相同或相似索引的DataFrame对象，但要求没有重叠的列。在上面那个例子中，我们可以编写：</p>
+<div class="sourceCode" id="cb32"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb32-1"><a href="#cb32-1"></a>In [<span class="dv">73</span>]: left2.join(right2, how<span class="op">=</span><span class="st">&#39;outer&#39;</span>)</span>
+<span id="cb32-2"><a href="#cb32-2"></a>Out[<span class="dv">73</span>]: </span>
+<span id="cb32-3"><a href="#cb32-3"></a>   Ohio  Nevada  Missouri  Alabama</span>
+<span id="cb32-4"><a href="#cb32-4"></a>a   <span class="fl">1.0</span>     <span class="fl">2.0</span>       NaN      NaN</span>
+<span id="cb32-5"><a href="#cb32-5"></a>b   NaN     NaN       <span class="fl">7.0</span>      <span class="fl">8.0</span></span>
+<span id="cb32-6"><a href="#cb32-6"></a>c   <span class="fl">3.0</span>     <span class="fl">4.0</span>       <span class="fl">9.0</span>     <span class="fl">10.0</span></span>
+<span id="cb32-7"><a href="#cb32-7"></a>d   NaN     NaN      <span class="fl">11.0</span>     <span class="fl">12.0</span></span>
+<span id="cb32-8"><a href="#cb32-8"></a>e   <span class="fl">5.0</span>     <span class="fl">6.0</span>      <span class="fl">13.0</span>     <span class="fl">14.0</span></span></code></pre></div>
+<p>因为一些历史版本的遗留原因，DataFrame的join方法默认使用的是左连接，保留左边表的行索引。它还支持在调用的DataFrame的列上，连接传递的DataFrame索引：</p>
+<div class="sourceCode" id="cb33"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb33-1"><a href="#cb33-1"></a>In [<span class="dv">74</span>]: left1.join(right1, on<span class="op">=</span><span class="st">&#39;key&#39;</span>)</span>
+<span id="cb33-2"><a href="#cb33-2"></a>Out[<span class="dv">74</span>]: </span>
+<span id="cb33-3"><a href="#cb33-3"></a>  key  value  group_val</span>
+<span id="cb33-4"><a href="#cb33-4"></a><span class="dv">0</span>   a      <span class="dv">0</span>        <span class="fl">3.5</span></span>
+<span id="cb33-5"><a href="#cb33-5"></a><span class="dv">1</span>   b      <span class="dv">1</span>        <span class="fl">7.0</span></span>
+<span id="cb33-6"><a href="#cb33-6"></a><span class="dv">2</span>   a      <span class="dv">2</span>        <span class="fl">3.5</span></span>
+<span id="cb33-7"><a href="#cb33-7"></a><span class="dv">3</span>   a      <span class="dv">3</span>        <span class="fl">3.5</span></span>
+<span id="cb33-8"><a href="#cb33-8"></a><span class="dv">4</span>   b      <span class="dv">4</span>        <span class="fl">7.0</span></span>
+<span id="cb33-9"><a href="#cb33-9"></a><span class="dv">5</span>   c      <span class="dv">5</span>        NaN</span></code></pre></div>
+<p>最后，对于简单的索引合并，你还可以向join传入一组DataFrame，下一节会介绍更为通用的concat函数，也能实现此功能：</p>
+<div class="sourceCode" id="cb34"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb34-1"><a href="#cb34-1"></a>In [<span class="dv">75</span>]: another <span class="op">=</span> pd.DataFrame([[<span class="fl">7.</span>, <span class="fl">8.</span>], [<span class="fl">9.</span>, <span class="fl">10.</span>], [<span class="fl">11.</span>, <span class="fl">12.</span>], [<span class="fl">16.</span>, <span class="fl">17.</span>]],</span>
+<span id="cb34-2"><a href="#cb34-2"></a>   ....:                        index<span class="op">=</span>[<span class="st">&#39;a&#39;</span>, <span class="st">&#39;c&#39;</span>, <span class="st">&#39;e&#39;</span>, <span class="st">&#39;f&#39;</span>],</span>
+<span id="cb34-3"><a href="#cb34-3"></a>   ....:                        columns<span class="op">=</span>[<span class="st">&#39;New York&#39;</span>,</span>
+<span id="cb34-4"><a href="#cb34-4"></a><span class="st">&#39;Oregon&#39;</span>])</span>
+<span id="cb34-5"><a href="#cb34-5"></a></span>
+<span id="cb34-6"><a href="#cb34-6"></a>In [<span class="dv">76</span>]: another</span>
+<span id="cb34-7"><a href="#cb34-7"></a>Out[<span class="dv">76</span>]: </span>
+<span id="cb34-8"><a href="#cb34-8"></a>   New York  Oregon</span>
+<span id="cb34-9"><a href="#cb34-9"></a>a       <span class="fl">7.0</span>     <span class="fl">8.0</span></span>
+<span id="cb34-10"><a href="#cb34-10"></a>c       <span class="fl">9.0</span>    <span class="fl">10.0</span></span>
+<span id="cb34-11"><a href="#cb34-11"></a>e      <span class="fl">11.0</span>    <span class="fl">12.0</span></span>
+<span id="cb34-12"><a href="#cb34-12"></a>f      <span class="fl">16.0</span>    <span class="fl">17.0</span></span>
+<span id="cb34-13"><a href="#cb34-13"></a></span>
+<span id="cb34-14"><a href="#cb34-14"></a>In [<span class="dv">77</span>]: left2.join([right2, another])</span>
+<span id="cb34-15"><a href="#cb34-15"></a>Out[<span class="dv">77</span>]: </span>
+<span id="cb34-16"><a href="#cb34-16"></a>   Ohio  Nevada  Missouri  Alabama  New York  Oregon</span>
+<span id="cb34-17"><a href="#cb34-17"></a>a   <span class="fl">1.0</span>     <span class="fl">2.0</span>       NaN      NaN       <span class="fl">7.0</span>     <span class="fl">8.0</span></span>
+<span id="cb34-18"><a href="#cb34-18"></a>c   <span class="fl">3.0</span>     <span class="fl">4.0</span>       <span class="fl">9.0</span>     <span class="fl">10.0</span>       <span class="fl">9.0</span>    <span class="fl">10.0</span></span>
+<span id="cb34-19"><a href="#cb34-19"></a>e   <span class="fl">5.0</span>     <span class="fl">6.0</span>      <span class="fl">13.0</span>     <span class="fl">14.0</span>      <span class="fl">11.0</span>    <span class="fl">12.0</span></span>
+<span id="cb34-20"><a href="#cb34-20"></a></span>
+<span id="cb34-21"><a href="#cb34-21"></a>In [<span class="dv">78</span>]: left2.join([right2, another], how<span class="op">=</span><span class="st">&#39;outer&#39;</span>)</span>
+<span id="cb34-22"><a href="#cb34-22"></a>Out[<span class="dv">78</span>]: </span>
+<span id="cb34-23"><a href="#cb34-23"></a>   Ohio  Nevada  Missouri  Alabama  New York  Oregon</span>
+<span id="cb34-24"><a href="#cb34-24"></a>a   <span class="fl">1.0</span>     <span class="fl">2.0</span>       NaN      NaN       <span class="fl">7.0</span>     <span class="fl">8.0</span></span>
+<span id="cb34-25"><a href="#cb34-25"></a>b   NaN     NaN       <span class="fl">7.0</span>      <span class="fl">8.0</span>       NaN     NaN</span>
+<span id="cb34-26"><a href="#cb34-26"></a>c   <span class="fl">3.0</span>     <span class="fl">4.0</span>       <span class="fl">9.0</span>     <span class="fl">10.0</span>       <span class="fl">9.0</span>    <span class="fl">10.0</span></span>
+<span id="cb34-27"><a href="#cb34-27"></a>d   NaN     NaN      <span class="fl">11.0</span>     <span class="fl">12.0</span>       NaN     NaN</span>
+<span id="cb34-28"><a href="#cb34-28"></a>e   <span class="fl">5.0</span>     <span class="fl">6.0</span>      <span class="fl">13.0</span>     <span class="fl">14.0</span>      <span class="fl">11.0</span>    <span class="fl">12.0</span></span>
+<span id="cb34-29"><a href="#cb34-29"></a>f   NaN     NaN       NaN      NaN      <span class="fl">16.0</span>    <span class="fl">17.0</span></span></code></pre></div>
+<h2 id="轴向连接">轴向连接</h2>
+<p>另一种数据合并运算也被称作连接（concatenation）、绑定（binding）或堆叠（stacking）。NumPy的concatenation函数可以用NumPy数组来做：</p>
+<div class="sourceCode" id="cb35"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb35-1"><a href="#cb35-1"></a>In [<span class="dv">79</span>]: arr <span class="op">=</span> np.arange(<span class="dv">12</span>).reshape((<span class="dv">3</span>, <span class="dv">4</span>))</span>
+<span id="cb35-2"><a href="#cb35-2"></a></span>
+<span id="cb35-3"><a href="#cb35-3"></a>In [<span class="dv">80</span>]: arr</span>
+<span id="cb35-4"><a href="#cb35-4"></a>Out[<span class="dv">80</span>]: </span>
+<span id="cb35-5"><a href="#cb35-5"></a>array([[ <span class="dv">0</span>,  <span class="dv">1</span>,  <span class="dv">2</span>,  <span class="dv">3</span>],</span>
+<span id="cb35-6"><a href="#cb35-6"></a>       [ <span class="dv">4</span>,  <span class="dv">5</span>,  <span class="dv">6</span>,  <span class="dv">7</span>],</span>
+<span id="cb35-7"><a href="#cb35-7"></a>       [ <span class="dv">8</span>,  <span class="dv">9</span>, <span class="dv">10</span>, <span class="dv">11</span>]])</span>
+<span id="cb35-8"><a href="#cb35-8"></a></span>
+<span id="cb35-9"><a href="#cb35-9"></a>In [<span class="dv">81</span>]: np.concatenate([arr, arr], axis<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb35-10"><a href="#cb35-10"></a>Out[<span class="dv">81</span>]: </span>
+<span id="cb35-11"><a href="#cb35-11"></a>array([[ <span class="dv">0</span>,  <span class="dv">1</span>,  <span class="dv">2</span>,  <span class="dv">3</span>,  <span class="dv">0</span>,  <span class="dv">1</span>,  <span class="dv">2</span>,  <span class="dv">3</span>],</span>
+<span id="cb35-12"><a href="#cb35-12"></a>       [ <span class="dv">4</span>,  <span class="dv">5</span>,  <span class="dv">6</span>,  <span class="dv">7</span>,  <span class="dv">4</span>,  <span class="dv">5</span>,  <span class="dv">6</span>,  <span class="dv">7</span>],</span>
+<span id="cb35-13"><a href="#cb35-13"></a>       [ <span class="dv">8</span>,  <span class="dv">9</span>, <span class="dv">10</span>, <span class="dv">11</span>,  <span class="dv">8</span>,  <span class="dv">9</span>, <span class="dv">10</span>, <span class="dv">11</span>]])</span></code></pre></div>
+<p>对于pandas对象（如Series和DataFrame），带有标签的轴使你能够进一步推广数组的连接运算。具体点说，你还需要考虑以下这些东西：</p>
+<ul>
+<li>如果对象在其它轴上的索引不同，我们应该合并这些轴的不同元素还是只使用交集？</li>
+<li>连接的数据集是否需要在结果对象中可识别？</li>
+<li>连接轴中保存的数据是否需要保留？许多情况下，DataFrame默认的整数标签最好在连接时删掉。</li>
+</ul>
+<p>pandas的concat函数提供了一种能够解决这些问题的可靠方式。我将给出一些例子来讲解其使用方式。假设有三个没有重叠索引的Series：</p>
+<div class="sourceCode" id="cb36"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb36-1"><a href="#cb36-1"></a>In [<span class="dv">82</span>]: s1 <span class="op">=</span> pd.Series([<span class="dv">0</span>, <span class="dv">1</span>], index<span class="op">=</span>[<span class="st">&#39;a&#39;</span>, <span class="st">&#39;b&#39;</span>])</span>
+<span id="cb36-2"><a href="#cb36-2"></a></span>
+<span id="cb36-3"><a href="#cb36-3"></a>In [<span class="dv">83</span>]: s2 <span class="op">=</span> pd.Series([<span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>], index<span class="op">=</span>[<span class="st">&#39;c&#39;</span>, <span class="st">&#39;d&#39;</span>, <span class="st">&#39;e&#39;</span>])</span>
+<span id="cb36-4"><a href="#cb36-4"></a></span>
+<span id="cb36-5"><a href="#cb36-5"></a>In [<span class="dv">84</span>]: s3 <span class="op">=</span> pd.Series([<span class="dv">5</span>, <span class="dv">6</span>], index<span class="op">=</span>[<span class="st">&#39;f&#39;</span>, <span class="st">&#39;g&#39;</span>])</span></code></pre></div>
+<p>对这些对象调用concat可以将值和索引粘合在一起：</p>
+<div class="sourceCode" id="cb37"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb37-1"><a href="#cb37-1"></a>In [<span class="dv">85</span>]: pd.concat([s1, s2, s3])</span>
+<span id="cb37-2"><a href="#cb37-2"></a>Out[<span class="dv">85</span>]: </span>
+<span id="cb37-3"><a href="#cb37-3"></a>a    <span class="dv">0</span></span>
+<span id="cb37-4"><a href="#cb37-4"></a>b    <span class="dv">1</span></span>
+<span id="cb37-5"><a href="#cb37-5"></a>c    <span class="dv">2</span></span>
+<span id="cb37-6"><a href="#cb37-6"></a>d    <span class="dv">3</span></span>
+<span id="cb37-7"><a href="#cb37-7"></a>e    <span class="dv">4</span></span>
+<span id="cb37-8"><a href="#cb37-8"></a>f    <span class="dv">5</span></span>
+<span id="cb37-9"><a href="#cb37-9"></a>g    <span class="dv">6</span></span>
+<span id="cb37-10"><a href="#cb37-10"></a>dtype: int64</span></code></pre></div>
+<p>默认情况下，concat是在axis=0上工作的，最终产生一个新的Series。如果传入axis=1，则结果就会变成一个DataFrame（axis=1是列）：</p>
+<div class="sourceCode" id="cb38"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb38-1"><a href="#cb38-1"></a>In [<span class="dv">86</span>]: pd.concat([s1, s2, s3], axis<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb38-2"><a href="#cb38-2"></a>Out[<span class="dv">86</span>]: </span>
+<span id="cb38-3"><a href="#cb38-3"></a>     <span class="dv">0</span>    <span class="dv">1</span>    <span class="dv">2</span></span>
+<span id="cb38-4"><a href="#cb38-4"></a>a  <span class="fl">0.0</span>  NaN  NaN</span>
+<span id="cb38-5"><a href="#cb38-5"></a>b  <span class="fl">1.0</span>  NaN  NaN</span>
+<span id="cb38-6"><a href="#cb38-6"></a>c  NaN  <span class="fl">2.0</span>  NaN</span>
+<span id="cb38-7"><a href="#cb38-7"></a>d  NaN  <span class="fl">3.0</span>  NaN</span>
+<span id="cb38-8"><a href="#cb38-8"></a>e  NaN  <span class="fl">4.0</span>  NaN</span>
+<span id="cb38-9"><a href="#cb38-9"></a>f  NaN  NaN  <span class="fl">5.0</span></span>
+<span id="cb38-10"><a href="#cb38-10"></a>g  NaN  NaN  <span class="fl">6.0</span></span></code></pre></div>
+<p>这种情况下，另外的轴上没有重叠，从索引的有序并集（外连接）上就可以看出来。传入join=’inner’即可得到它们的交集：</p>
+<div class="sourceCode" id="cb39"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb39-1"><a href="#cb39-1"></a>In [<span class="dv">87</span>]: s4 <span class="op">=</span> pd.concat([s1, s3])</span>
+<span id="cb39-2"><a href="#cb39-2"></a></span>
+<span id="cb39-3"><a href="#cb39-3"></a>In [<span class="dv">88</span>]: s4</span>
+<span id="cb39-4"><a href="#cb39-4"></a>Out[<span class="dv">88</span>]: </span>
+<span id="cb39-5"><a href="#cb39-5"></a>a    <span class="dv">0</span></span>
+<span id="cb39-6"><a href="#cb39-6"></a>b    <span class="dv">1</span></span>
+<span id="cb39-7"><a href="#cb39-7"></a>f    <span class="dv">5</span></span>
+<span id="cb39-8"><a href="#cb39-8"></a>g    <span class="dv">6</span></span>
+<span id="cb39-9"><a href="#cb39-9"></a>dtype: int64</span>
+<span id="cb39-10"><a href="#cb39-10"></a></span>
+<span id="cb39-11"><a href="#cb39-11"></a>In [<span class="dv">89</span>]: pd.concat([s1, s4], axis<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb39-12"><a href="#cb39-12"></a>Out[<span class="dv">89</span>]: </span>
+<span id="cb39-13"><a href="#cb39-13"></a>     <span class="dv">0</span>  <span class="dv">1</span></span>
+<span id="cb39-14"><a href="#cb39-14"></a>a  <span class="fl">0.0</span>  <span class="dv">0</span></span>
+<span id="cb39-15"><a href="#cb39-15"></a>b  <span class="fl">1.0</span>  <span class="dv">1</span></span>
+<span id="cb39-16"><a href="#cb39-16"></a>f  NaN  <span class="dv">5</span></span>
+<span id="cb39-17"><a href="#cb39-17"></a>g  NaN  <span class="dv">6</span></span>
+<span id="cb39-18"><a href="#cb39-18"></a></span>
+<span id="cb39-19"><a href="#cb39-19"></a>In [<span class="dv">90</span>]: pd.concat([s1, s4], axis<span class="op">=</span><span class="dv">1</span>, join<span class="op">=</span><span class="st">&#39;inner&#39;</span>)</span>
+<span id="cb39-20"><a href="#cb39-20"></a>Out[<span class="dv">90</span>]: </span>
+<span id="cb39-21"><a href="#cb39-21"></a>   <span class="dv">0</span>  <span class="dv">1</span></span>
+<span id="cb39-22"><a href="#cb39-22"></a>a  <span class="dv">0</span>  <span class="dv">0</span></span>
+<span id="cb39-23"><a href="#cb39-23"></a>b  <span class="dv">1</span>  <span class="dv">1</span></span></code></pre></div>
+<p>在这个例子中，f和g标签消失了，是因为使用的是join=’inner’选项。</p>
+<p>你可以通过join_axes指定要在其它轴上使用的索引：</p>
+<div class="sourceCode" id="cb40"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb40-1"><a href="#cb40-1"></a>In [<span class="dv">91</span>]: pd.concat([s1, s4], axis<span class="op">=</span><span class="dv">1</span>, join_axes<span class="op">=</span>[[<span class="st">&#39;a&#39;</span>, <span class="st">&#39;c&#39;</span>, <span class="st">&#39;b&#39;</span>, <span class="st">&#39;e&#39;</span>]])</span>
+<span id="cb40-2"><a href="#cb40-2"></a>Out[<span class="dv">91</span>]: </span>
+<span id="cb40-3"><a href="#cb40-3"></a>     <span class="dv">0</span>    <span class="dv">1</span></span>
+<span id="cb40-4"><a href="#cb40-4"></a>a  <span class="fl">0.0</span>  <span class="fl">0.0</span></span>
+<span id="cb40-5"><a href="#cb40-5"></a>c  NaN  NaN</span>
+<span id="cb40-6"><a href="#cb40-6"></a>b  <span class="fl">1.0</span>  <span class="fl">1.0</span></span>
+<span id="cb40-7"><a href="#cb40-7"></a>e  NaN  NaN</span></code></pre></div>
+<p>不过有个问题，参与连接的片段在结果中区分不开。假设你想要在连接轴上创建一个层次化索引。使用keys参数即可达到这个目的：</p>
+<div class="sourceCode" id="cb41"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb41-1"><a href="#cb41-1"></a>In [<span class="dv">92</span>]: result <span class="op">=</span> pd.concat([s1, s1, s3], keys<span class="op">=</span>[<span class="st">&#39;one&#39;</span>,<span class="st">&#39;two&#39;</span>, <span class="st">&#39;three&#39;</span>])</span>
+<span id="cb41-2"><a href="#cb41-2"></a></span>
+<span id="cb41-3"><a href="#cb41-3"></a>In [<span class="dv">93</span>]: result</span>
+<span id="cb41-4"><a href="#cb41-4"></a>Out[<span class="dv">93</span>]: </span>
+<span id="cb41-5"><a href="#cb41-5"></a>one    a    <span class="dv">0</span></span>
+<span id="cb41-6"><a href="#cb41-6"></a>       b    <span class="dv">1</span></span>
+<span id="cb41-7"><a href="#cb41-7"></a>two    a    <span class="dv">0</span></span>
+<span id="cb41-8"><a href="#cb41-8"></a>       b    <span class="dv">1</span></span>
+<span id="cb41-9"><a href="#cb41-9"></a>three  f    <span class="dv">5</span></span>
+<span id="cb41-10"><a href="#cb41-10"></a>       g    <span class="dv">6</span></span>
+<span id="cb41-11"><a href="#cb41-11"></a>dtype: int64</span>
+<span id="cb41-12"><a href="#cb41-12"></a></span>
+<span id="cb41-13"><a href="#cb41-13"></a>In [<span class="dv">94</span>]: result.unstack()</span>
+<span id="cb41-14"><a href="#cb41-14"></a>Out[<span class="dv">94</span>]: </span>
+<span id="cb41-15"><a href="#cb41-15"></a>         a    b    f    g</span>
+<span id="cb41-16"><a href="#cb41-16"></a>one    <span class="fl">0.0</span>  <span class="fl">1.0</span>  NaN  NaN</span>
+<span id="cb41-17"><a href="#cb41-17"></a>two    <span class="fl">0.0</span>  <span class="fl">1.0</span>  NaN  NaN</span>
+<span id="cb41-18"><a href="#cb41-18"></a>three  NaN  NaN  <span class="fl">5.0</span>  <span class="fl">6.0</span></span></code></pre></div>
+<p>如果沿着axis=1对Series进行合并，则keys就会成为DataFrame的列头：</p>
+<div class="sourceCode" id="cb42"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb42-1"><a href="#cb42-1"></a>In [<span class="dv">95</span>]: pd.concat([s1, s2, s3], axis<span class="op">=</span><span class="dv">1</span>, keys<span class="op">=</span>[<span class="st">&#39;one&#39;</span>,<span class="st">&#39;two&#39;</span>, <span class="st">&#39;three&#39;</span>])</span>
+<span id="cb42-2"><a href="#cb42-2"></a>Out[<span class="dv">95</span>]: </span>
+<span id="cb42-3"><a href="#cb42-3"></a>   one  two  three</span>
+<span id="cb42-4"><a href="#cb42-4"></a>a  <span class="fl">0.0</span>  NaN    NaN</span>
+<span id="cb42-5"><a href="#cb42-5"></a>b  <span class="fl">1.0</span>  NaN    NaN</span>
+<span id="cb42-6"><a href="#cb42-6"></a>c  NaN  <span class="fl">2.0</span>    NaN</span>
+<span id="cb42-7"><a href="#cb42-7"></a>d  NaN  <span class="fl">3.0</span>    NaN</span>
+<span id="cb42-8"><a href="#cb42-8"></a>e  NaN  <span class="fl">4.0</span>    NaN</span>
+<span id="cb42-9"><a href="#cb42-9"></a>f  NaN  NaN    <span class="fl">5.0</span></span>
+<span id="cb42-10"><a href="#cb42-10"></a>g  NaN  NaN    <span class="fl">6.0</span></span></code></pre></div>
+<p>同样的逻辑也适用于DataFrame对象：</p>
+<div class="sourceCode" id="cb43"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb43-1"><a href="#cb43-1"></a>In [<span class="dv">96</span>]: df1 <span class="op">=</span> pd.DataFrame(np.arange(<span class="dv">6</span>).reshape(<span class="dv">3</span>, <span class="dv">2</span>), index<span class="op">=</span>[<span class="st">&#39;a&#39;</span>, <span class="st">&#39;b&#39;</span>, <span class="st">&#39;c&#39;</span>],</span>
+<span id="cb43-2"><a href="#cb43-2"></a>   ....:                    columns<span class="op">=</span>[<span class="st">&#39;one&#39;</span>, <span class="st">&#39;two&#39;</span>])</span>
+<span id="cb43-3"><a href="#cb43-3"></a></span>
+<span id="cb43-4"><a href="#cb43-4"></a>In [<span class="dv">97</span>]: df2 <span class="op">=</span> pd.DataFrame(<span class="dv">5</span> <span class="op">+</span> np.arange(<span class="dv">4</span>).reshape(<span class="dv">2</span>, <span class="dv">2</span>), index<span class="op">=</span>[<span class="st">&#39;a&#39;</span>, <span class="st">&#39;c&#39;</span>],</span>
+<span id="cb43-5"><a href="#cb43-5"></a>   ....:                    columns<span class="op">=</span>[<span class="st">&#39;three&#39;</span>, <span class="st">&#39;four&#39;</span>])</span>
+<span id="cb43-6"><a href="#cb43-6"></a></span>
+<span id="cb43-7"><a href="#cb43-7"></a>In [<span class="dv">98</span>]: df1</span>
+<span id="cb43-8"><a href="#cb43-8"></a>Out[<span class="dv">98</span>]: </span>
+<span id="cb43-9"><a href="#cb43-9"></a>   one  two</span>
+<span id="cb43-10"><a href="#cb43-10"></a>a    <span class="dv">0</span>    <span class="dv">1</span></span>
+<span id="cb43-11"><a href="#cb43-11"></a>b    <span class="dv">2</span>    <span class="dv">3</span></span>
+<span id="cb43-12"><a href="#cb43-12"></a>c    <span class="dv">4</span>    <span class="dv">5</span></span>
+<span id="cb43-13"><a href="#cb43-13"></a></span>
+<span id="cb43-14"><a href="#cb43-14"></a>In [<span class="dv">99</span>]: df2</span>
+<span id="cb43-15"><a href="#cb43-15"></a>Out[<span class="dv">99</span>]: </span>
+<span id="cb43-16"><a href="#cb43-16"></a>   three  four</span>
+<span id="cb43-17"><a href="#cb43-17"></a>a      <span class="dv">5</span>     <span class="dv">6</span></span>
+<span id="cb43-18"><a href="#cb43-18"></a>c      <span class="dv">7</span>     <span class="dv">8</span></span>
+<span id="cb43-19"><a href="#cb43-19"></a></span>
+<span id="cb43-20"><a href="#cb43-20"></a>In [<span class="dv">100</span>]: pd.concat([df1, df2], axis<span class="op">=</span><span class="dv">1</span>, keys<span class="op">=</span>[<span class="st">&#39;level1&#39;</span>, <span class="st">&#39;level2&#39;</span>])</span>
+<span id="cb43-21"><a href="#cb43-21"></a>Out[<span class="dv">100</span>]: </span>
+<span id="cb43-22"><a href="#cb43-22"></a>  level1     level2     </span>
+<span id="cb43-23"><a href="#cb43-23"></a>     one two  three four</span>
+<span id="cb43-24"><a href="#cb43-24"></a>a      <span class="dv">0</span>   <span class="dv">1</span>    <span class="fl">5.0</span>  <span class="fl">6.0</span></span>
+<span id="cb43-25"><a href="#cb43-25"></a>b      <span class="dv">2</span>   <span class="dv">3</span>    NaN  NaN</span>
+<span id="cb43-26"><a href="#cb43-26"></a>c      <span class="dv">4</span>   <span class="dv">5</span>    <span class="fl">7.0</span>  <span class="fl">8.0</span></span></code></pre></div>
+<p>如果传入的不是列表而是一个字典，则字典的键就会被当做keys选项的值：</p>
+<div class="sourceCode" id="cb44"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb44-1"><a href="#cb44-1"></a>In [<span class="dv">101</span>]: pd.concat({<span class="st">&#39;level1&#39;</span>: df1, <span class="st">&#39;level2&#39;</span>: df2}, axis<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb44-2"><a href="#cb44-2"></a></span>
+<span id="cb44-3"><a href="#cb44-3"></a>Out[<span class="dv">101</span>]: </span>
+<span id="cb44-4"><a href="#cb44-4"></a>  level1     level2     </span>
+<span id="cb44-5"><a href="#cb44-5"></a>     one two  three four</span>
+<span id="cb44-6"><a href="#cb44-6"></a>a      <span class="dv">0</span>   <span class="dv">1</span>    <span class="fl">5.0</span>  <span class="fl">6.0</span></span>
+<span id="cb44-7"><a href="#cb44-7"></a>b      <span class="dv">2</span>   <span class="dv">3</span>    NaN  NaN</span>
+<span id="cb44-8"><a href="#cb44-8"></a>c      <span class="dv">4</span>   <span class="dv">5</span>    <span class="fl">7.0</span>  <span class="fl">8.0</span></span></code></pre></div>
+<p>此外还有两个用于管理层次化索引创建方式的参数（参见表8-3）。举个例子，我们可以用names参数命名创建的轴级别：</p>
+<div class="sourceCode" id="cb45"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb45-1"><a href="#cb45-1"></a>In [<span class="dv">102</span>]: pd.concat([df1, df2], axis<span class="op">=</span><span class="dv">1</span>, keys<span class="op">=</span>[<span class="st">&#39;level1&#39;</span>, <span class="st">&#39;level2&#39;</span>],</span>
+<span id="cb45-2"><a href="#cb45-2"></a>   .....:           names<span class="op">=</span>[<span class="st">&#39;upper&#39;</span>, <span class="st">&#39;lower&#39;</span>])</span>
+<span id="cb45-3"><a href="#cb45-3"></a>Out[<span class="dv">102</span>]: </span>
+<span id="cb45-4"><a href="#cb45-4"></a>upper level1     level2     </span>
+<span id="cb45-5"><a href="#cb45-5"></a>lower    one two  three four</span>
+<span id="cb45-6"><a href="#cb45-6"></a>a          <span class="dv">0</span>   <span class="dv">1</span>    <span class="fl">5.0</span>  <span class="fl">6.0</span></span>
+<span id="cb45-7"><a href="#cb45-7"></a>b          <span class="dv">2</span>   <span class="dv">3</span>    NaN  NaN</span>
+<span id="cb45-8"><a href="#cb45-8"></a>c          <span class="dv">4</span>   <span class="dv">5</span>    <span class="fl">7.0</span>  <span class="fl">8.0</span></span></code></pre></div>
+<p>最后一个关于DataFrame的问题是，DataFrame的行索引不包含任何相关数据：</p>
+<div class="sourceCode" id="cb46"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb46-1"><a href="#cb46-1"></a>In [<span class="dv">103</span>]: df1 <span class="op">=</span> pd.DataFrame(np.random.randn(<span class="dv">3</span>, <span class="dv">4</span>), columns<span class="op">=</span>[<span class="st">&#39;a&#39;</span>, <span class="st">&#39;b&#39;</span>, <span class="st">&#39;c&#39;</span>, <span class="st">&#39;d&#39;</span>])</span>
+<span id="cb46-2"><a href="#cb46-2"></a></span>
+<span id="cb46-3"><a href="#cb46-3"></a>In [<span class="dv">104</span>]: df2 <span class="op">=</span> pd.DataFrame(np.random.randn(<span class="dv">2</span>, <span class="dv">3</span>), columns<span class="op">=</span>[<span class="st">&#39;b&#39;</span>, <span class="st">&#39;d&#39;</span>, <span class="st">&#39;a&#39;</span>])</span>
+<span id="cb46-4"><a href="#cb46-4"></a></span>
+<span id="cb46-5"><a href="#cb46-5"></a>In [<span class="dv">105</span>]: df1</span>
+<span id="cb46-6"><a href="#cb46-6"></a>Out[<span class="dv">105</span>]: </span>
+<span id="cb46-7"><a href="#cb46-7"></a>          a         b         c         d</span>
+<span id="cb46-8"><a href="#cb46-8"></a><span class="dv">0</span>  <span class="fl">1.246435</span>  <span class="fl">1.007189</span> <span class="op">-</span><span class="fl">1.296221</span>  <span class="fl">0.274992</span></span>
+<span id="cb46-9"><a href="#cb46-9"></a><span class="dv">1</span>  <span class="fl">0.228913</span>  <span class="fl">1.352917</span>  <span class="fl">0.886429</span> <span class="op">-</span><span class="fl">2.001637</span></span>
+<span id="cb46-10"><a href="#cb46-10"></a><span class="dv">2</span> <span class="op">-</span><span class="fl">0.371843</span>  <span class="fl">1.669025</span> <span class="op">-</span><span class="fl">0.438570</span> <span class="op">-</span><span class="fl">0.539741</span></span>
+<span id="cb46-11"><a href="#cb46-11"></a></span>
+<span id="cb46-12"><a href="#cb46-12"></a>In [<span class="dv">106</span>]: df2</span>
+<span id="cb46-13"><a href="#cb46-13"></a>Out[<span class="dv">106</span>]: </span>
+<span id="cb46-14"><a href="#cb46-14"></a>          b         d         a</span>
+<span id="cb46-15"><a href="#cb46-15"></a><span class="dv">0</span>  <span class="fl">0.476985</span>  <span class="fl">3.248944</span> <span class="op">-</span><span class="fl">1.021228</span></span>
+<span id="cb46-16"><a href="#cb46-16"></a><span class="dv">1</span> <span class="op">-</span><span class="fl">0.577087</span>  <span class="fl">0.124121</span>  <span class="fl">0.302614</span></span></code></pre></div>
+<p>在这种情况下，传入ignore_index=True即可：</p>
+<div class="sourceCode" id="cb47"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb47-1"><a href="#cb47-1"></a>In [<span class="dv">107</span>]: pd.concat([df1, df2], ignore_index<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb47-2"><a href="#cb47-2"></a>Out[<span class="dv">107</span>]: </span>
+<span id="cb47-3"><a href="#cb47-3"></a>          a         b         c         d</span>
+<span id="cb47-4"><a href="#cb47-4"></a><span class="dv">0</span>  <span class="fl">1.246435</span>  <span class="fl">1.007189</span> <span class="op">-</span><span class="fl">1.296221</span>  <span class="fl">0.274992</span></span>
+<span id="cb47-5"><a href="#cb47-5"></a><span class="dv">1</span>  <span class="fl">0.228913</span>  <span class="fl">1.352917</span>  <span class="fl">0.886429</span> <span class="op">-</span><span class="fl">2.001637</span></span>
+<span id="cb47-6"><a href="#cb47-6"></a><span class="dv">2</span> <span class="op">-</span><span class="fl">0.371843</span>  <span class="fl">1.669025</span> <span class="op">-</span><span class="fl">0.438570</span> <span class="op">-</span><span class="fl">0.539741</span></span>
+<span id="cb47-7"><a href="#cb47-7"></a><span class="dv">3</span> <span class="op">-</span><span class="fl">1.021228</span>  <span class="fl">0.476985</span>       NaN  <span class="fl">3.248944</span></span>
+<span id="cb47-8"><a href="#cb47-8"></a><span class="dv">4</span>  <span class="fl">0.302614</span> <span class="op">-</span><span class="fl">0.577087</span>       NaN  <span class="fl">0.124121</span></span></code></pre></div>
+<figure>
+<img src="http://upload-images.jianshu.io/upload_images/7178691-339436563b519415.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="" /><figcaption>表8-3 concat函数的参数</figcaption>
+</figure>
+<h2 id="合并重叠数据">合并重叠数据</h2>
+<p>还有一种数据组合问题不能用简单的合并（merge）或连接（concatenation）运算来处理。比如说，你可能有索引全部或部分重叠的两个数据集。举个有启发性的例子，我们使用NumPy的where函数，它表示一种等价于面向数组的if-else：</p>
+<div class="sourceCode" id="cb48"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb48-1"><a href="#cb48-1"></a>In [<span class="dv">108</span>]: a <span class="op">=</span> pd.Series([np.nan, <span class="fl">2.5</span>, np.nan, <span class="fl">3.5</span>, <span class="fl">4.5</span>, np.nan],</span>
+<span id="cb48-2"><a href="#cb48-2"></a>   .....:               index<span class="op">=</span>[<span class="st">&#39;f&#39;</span>, <span class="st">&#39;e&#39;</span>, <span class="st">&#39;d&#39;</span>, <span class="st">&#39;c&#39;</span>, <span class="st">&#39;b&#39;</span>, <span class="st">&#39;a&#39;</span>])</span>
+<span id="cb48-3"><a href="#cb48-3"></a></span>
+<span id="cb48-4"><a href="#cb48-4"></a>In [<span class="dv">109</span>]: b <span class="op">=</span> pd.Series(np.arange(<span class="bu">len</span>(a), dtype<span class="op">=</span>np.float64),</span>
+<span id="cb48-5"><a href="#cb48-5"></a>   .....:               index<span class="op">=</span>[<span class="st">&#39;f&#39;</span>, <span class="st">&#39;e&#39;</span>, <span class="st">&#39;d&#39;</span>, <span class="st">&#39;c&#39;</span>, <span class="st">&#39;b&#39;</span>, <span class="st">&#39;a&#39;</span>])</span>
+<span id="cb48-6"><a href="#cb48-6"></a></span>
+<span id="cb48-7"><a href="#cb48-7"></a>In [<span class="dv">110</span>]: b[<span class="op">-</span><span class="dv">1</span>] <span class="op">=</span> np.nan</span>
+<span id="cb48-8"><a href="#cb48-8"></a></span>
+<span id="cb48-9"><a href="#cb48-9"></a>In [<span class="dv">111</span>]: a</span>
+<span id="cb48-10"><a href="#cb48-10"></a>Out[<span class="dv">111</span>]: </span>
+<span id="cb48-11"><a href="#cb48-11"></a>f    NaN</span>
+<span id="cb48-12"><a href="#cb48-12"></a>e    <span class="fl">2.5</span></span>
+<span id="cb48-13"><a href="#cb48-13"></a>d    NaN</span>
+<span id="cb48-14"><a href="#cb48-14"></a>c    <span class="fl">3.5</span></span>
+<span id="cb48-15"><a href="#cb48-15"></a>b    <span class="fl">4.5</span></span>
+<span id="cb48-16"><a href="#cb48-16"></a>a    NaN</span>
+<span id="cb48-17"><a href="#cb48-17"></a>dtype: float64</span>
+<span id="cb48-18"><a href="#cb48-18"></a></span>
+<span id="cb48-19"><a href="#cb48-19"></a>In [<span class="dv">112</span>]: b</span>
+<span id="cb48-20"><a href="#cb48-20"></a>Out[<span class="dv">112</span>]: </span>
+<span id="cb48-21"><a href="#cb48-21"></a>f    <span class="fl">0.0</span></span>
+<span id="cb48-22"><a href="#cb48-22"></a>e    <span class="fl">1.0</span></span>
+<span id="cb48-23"><a href="#cb48-23"></a>d    <span class="fl">2.0</span></span>
+<span id="cb48-24"><a href="#cb48-24"></a>c    <span class="fl">3.0</span></span>
+<span id="cb48-25"><a href="#cb48-25"></a>b    <span class="fl">4.0</span></span>
+<span id="cb48-26"><a href="#cb48-26"></a>a    NaN</span>
+<span id="cb48-27"><a href="#cb48-27"></a>dtype: float64</span>
+<span id="cb48-28"><a href="#cb48-28"></a></span>
+<span id="cb48-29"><a href="#cb48-29"></a>In [<span class="dv">113</span>]: np.where(pd.isnull(a), b, a)</span>
+<span id="cb48-30"><a href="#cb48-30"></a>Out[<span class="dv">113</span>]: array([ <span class="fl">0.</span> ,  <span class="fl">2.5</span>,  <span class="fl">2.</span> ,  <span class="fl">3.5</span>,  <span class="fl">4.5</span>,  nan])</span></code></pre></div>
+<p>Series有一个combine_first方法，实现的也是一样的功能，还带有pandas的数据对齐：</p>
+<div class="sourceCode" id="cb49"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb49-1"><a href="#cb49-1"></a>In [<span class="dv">114</span>]: b[:<span class="op">-</span><span class="dv">2</span>].combine_first(a[<span class="dv">2</span>:])</span>
+<span id="cb49-2"><a href="#cb49-2"></a>Out[<span class="dv">114</span>]: </span>
+<span id="cb49-3"><a href="#cb49-3"></a>a    NaN</span>
+<span id="cb49-4"><a href="#cb49-4"></a>b    <span class="fl">4.5</span></span>
+<span id="cb49-5"><a href="#cb49-5"></a>c    <span class="fl">3.0</span></span>
+<span id="cb49-6"><a href="#cb49-6"></a>d    <span class="fl">2.0</span></span>
+<span id="cb49-7"><a href="#cb49-7"></a>e    <span class="fl">1.0</span></span>
+<span id="cb49-8"><a href="#cb49-8"></a>f    <span class="fl">0.0</span></span>
+<span id="cb49-9"><a href="#cb49-9"></a>dtype: float64</span></code></pre></div>
+<p>对于DataFrame，combine_first自然也会在列上做同样的事情，因此你可以将其看做：用传递对象中的数据为调用对象的缺失数据“打补丁”：</p>
+<div class="sourceCode" id="cb50"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb50-1"><a href="#cb50-1"></a>In [<span class="dv">115</span>]: df1 <span class="op">=</span> pd.DataFrame({<span class="st">&#39;a&#39;</span>: [<span class="fl">1.</span>, np.nan, <span class="fl">5.</span>, np.nan],</span>
+<span id="cb50-2"><a href="#cb50-2"></a>   .....:                     <span class="st">&#39;b&#39;</span>: [np.nan, <span class="fl">2.</span>, np.nan, <span class="fl">6.</span>],</span>
+<span id="cb50-3"><a href="#cb50-3"></a>   .....:                     <span class="st">&#39;c&#39;</span>: <span class="bu">range</span>(<span class="dv">2</span>, <span class="dv">18</span>, <span class="dv">4</span>)})</span>
+<span id="cb50-4"><a href="#cb50-4"></a></span>
+<span id="cb50-5"><a href="#cb50-5"></a>In [<span class="dv">116</span>]: df2 <span class="op">=</span> pd.DataFrame({<span class="st">&#39;a&#39;</span>: [<span class="fl">5.</span>, <span class="fl">4.</span>, np.nan, <span class="fl">3.</span>, <span class="fl">7.</span>],</span>
+<span id="cb50-6"><a href="#cb50-6"></a>   .....:                     <span class="st">&#39;b&#39;</span>: [np.nan, <span class="fl">3.</span>, <span class="fl">4.</span>, <span class="fl">6.</span>, <span class="fl">8.</span>]})</span>
+<span id="cb50-7"><a href="#cb50-7"></a></span>
+<span id="cb50-8"><a href="#cb50-8"></a>In [<span class="dv">117</span>]: df1</span>
+<span id="cb50-9"><a href="#cb50-9"></a>Out[<span class="dv">117</span>]: </span>
+<span id="cb50-10"><a href="#cb50-10"></a>     a    b   c</span>
+<span id="cb50-11"><a href="#cb50-11"></a><span class="dv">0</span>  <span class="fl">1.0</span>  NaN   <span class="dv">2</span></span>
+<span id="cb50-12"><a href="#cb50-12"></a><span class="dv">1</span>  NaN  <span class="fl">2.0</span>   <span class="dv">6</span></span>
+<span id="cb50-13"><a href="#cb50-13"></a><span class="dv">2</span>  <span class="fl">5.0</span>  NaN  <span class="dv">10</span></span>
+<span id="cb50-14"><a href="#cb50-14"></a><span class="dv">3</span>  NaN  <span class="fl">6.0</span>  <span class="dv">14</span></span>
+<span id="cb50-15"><a href="#cb50-15"></a></span>
+<span id="cb50-16"><a href="#cb50-16"></a>In [<span class="dv">118</span>]: df2</span>
+<span id="cb50-17"><a href="#cb50-17"></a>Out[<span class="dv">118</span>]: </span>
+<span id="cb50-18"><a href="#cb50-18"></a>     a    b</span>
+<span id="cb50-19"><a href="#cb50-19"></a><span class="dv">0</span>  <span class="fl">5.0</span>  NaN</span>
+<span id="cb50-20"><a href="#cb50-20"></a><span class="dv">1</span>  <span class="fl">4.0</span>  <span class="fl">3.0</span></span>
+<span id="cb50-21"><a href="#cb50-21"></a><span class="dv">2</span>  NaN  <span class="fl">4.0</span></span>
+<span id="cb50-22"><a href="#cb50-22"></a><span class="dv">3</span>  <span class="fl">3.0</span>  <span class="fl">6.0</span></span>
+<span id="cb50-23"><a href="#cb50-23"></a><span class="dv">4</span>  <span class="fl">7.0</span>  <span class="fl">8.0</span></span>
+<span id="cb50-24"><a href="#cb50-24"></a></span>
+<span id="cb50-25"><a href="#cb50-25"></a>In [<span class="dv">119</span>]: df1.combine_first(df2)</span>
+<span id="cb50-26"><a href="#cb50-26"></a>Out[<span class="dv">119</span>]: </span>
+<span id="cb50-27"><a href="#cb50-27"></a>     a    b     c</span>
+<span id="cb50-28"><a href="#cb50-28"></a><span class="dv">0</span>  <span class="fl">1.0</span>  NaN   <span class="fl">2.0</span></span>
+<span id="cb50-29"><a href="#cb50-29"></a><span class="dv">1</span>  <span class="fl">4.0</span>  <span class="fl">2.0</span>   <span class="fl">6.0</span></span>
+<span id="cb50-30"><a href="#cb50-30"></a><span class="dv">2</span>  <span class="fl">5.0</span>  <span class="fl">4.0</span>  <span class="fl">10.0</span></span>
+<span id="cb50-31"><a href="#cb50-31"></a><span class="dv">3</span>  <span class="fl">3.0</span>  <span class="fl">6.0</span>  <span class="fl">14.0</span></span>
+<span id="cb50-32"><a href="#cb50-32"></a><span class="dv">4</span>  <span class="fl">7.0</span>  <span class="fl">8.0</span>   NaN</span></code></pre></div>
+<h1 id="重塑和轴向旋转">8.3 重塑和轴向旋转</h1>
+<p>有许多用于重新排列表格型数据的基础运算。这些函数也称作重塑（reshape）或轴向旋转（pivot）运算。</p>
+<h2 id="重塑层次化索引">重塑层次化索引</h2>
+<p>层次化索引为DataFrame数据的重排任务提供了一种具有良好一致性的方式。主要功能有二：</p>
+<ul>
+<li>stack：将数据的列“旋转”为行。</li>
+<li>unstack：将数据的行“旋转”为列。</li>
+</ul>
+<p>我将通过一系列的范例来讲解这些操作。接下来看一个简单的DataFrame，其中的行列索引均为字符串数组：</p>
+<div class="sourceCode" id="cb51"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb51-1"><a href="#cb51-1"></a>In [<span class="dv">120</span>]: data <span class="op">=</span> pd.DataFrame(np.arange(<span class="dv">6</span>).reshape((<span class="dv">2</span>, <span class="dv">3</span>)),</span>
+<span id="cb51-2"><a href="#cb51-2"></a>   .....:                     index<span class="op">=</span>pd.Index([<span class="st">&#39;Ohio&#39;</span>,<span class="st">&#39;Colorado&#39;</span>], name<span class="op">=</span><span class="st">&#39;state&#39;</span>),</span>
+<span id="cb51-3"><a href="#cb51-3"></a>   .....:                     columns<span class="op">=</span>pd.Index([<span class="st">&#39;one&#39;</span>, <span class="st">&#39;two&#39;</span>, <span class="st">&#39;three&#39;</span>],</span>
+<span id="cb51-4"><a href="#cb51-4"></a>   .....:                     name<span class="op">=</span><span class="st">&#39;number&#39;</span>))</span>
+<span id="cb51-5"><a href="#cb51-5"></a></span>
+<span id="cb51-6"><a href="#cb51-6"></a>In [<span class="dv">121</span>]: data</span>
+<span id="cb51-7"><a href="#cb51-7"></a>Out[<span class="dv">121</span>]: </span>
+<span id="cb51-8"><a href="#cb51-8"></a>number    one  two  three</span>
+<span id="cb51-9"><a href="#cb51-9"></a>state                    </span>
+<span id="cb51-10"><a href="#cb51-10"></a>Ohio        <span class="dv">0</span>    <span class="dv">1</span>      <span class="dv">2</span></span>
+<span id="cb51-11"><a href="#cb51-11"></a>Colorado    <span class="dv">3</span>    <span class="dv">4</span>      <span class="dv">5</span></span></code></pre></div>
+<p>对该数据使用stack方法即可将列转换为行，得到一个Series：</p>
+<div class="sourceCode" id="cb52"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb52-1"><a href="#cb52-1"></a>In [<span class="dv">122</span>]: result <span class="op">=</span> data.stack()</span>
+<span id="cb52-2"><a href="#cb52-2"></a></span>
+<span id="cb52-3"><a href="#cb52-3"></a>In [<span class="dv">123</span>]: result</span>
+<span id="cb52-4"><a href="#cb52-4"></a>Out[<span class="dv">123</span>]: </span>
+<span id="cb52-5"><a href="#cb52-5"></a>state     number</span>
+<span id="cb52-6"><a href="#cb52-6"></a>Ohio      one       <span class="dv">0</span></span>
+<span id="cb52-7"><a href="#cb52-7"></a>          two       <span class="dv">1</span></span>
+<span id="cb52-8"><a href="#cb52-8"></a>          three     <span class="dv">2</span></span>
+<span id="cb52-9"><a href="#cb52-9"></a>Colorado  one       <span class="dv">3</span></span>
+<span id="cb52-10"><a href="#cb52-10"></a>          two       <span class="dv">4</span></span>
+<span id="cb52-11"><a href="#cb52-11"></a>          three     <span class="dv">5</span></span>
+<span id="cb52-12"><a href="#cb52-12"></a>dtype: int64</span></code></pre></div>
+<p>对于一个层次化索引的Series，你可以用unstack将其重排为一个DataFrame：</p>
+<div class="sourceCode" id="cb53"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb53-1"><a href="#cb53-1"></a>In [<span class="dv">124</span>]: result.unstack()</span>
+<span id="cb53-2"><a href="#cb53-2"></a>Out[<span class="dv">124</span>]: </span>
+<span id="cb53-3"><a href="#cb53-3"></a>number    one  two  three</span>
+<span id="cb53-4"><a href="#cb53-4"></a>state                    </span>
+<span id="cb53-5"><a href="#cb53-5"></a>Ohio        <span class="dv">0</span>    <span class="dv">1</span>      <span class="dv">2</span></span>
+<span id="cb53-6"><a href="#cb53-6"></a>Colorado    <span class="dv">3</span>    <span class="dv">4</span>      <span class="dv">5</span></span></code></pre></div>
+<p>默认情况下，unstack操作的是最内层（stack也是如此）。传入分层级别的编号或名称即可对其它级别进行unstack操作：</p>
+<div class="sourceCode" id="cb54"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb54-1"><a href="#cb54-1"></a>In [<span class="dv">125</span>]: result.unstack(<span class="dv">0</span>)</span>
+<span id="cb54-2"><a href="#cb54-2"></a>Out[<span class="dv">125</span>]: </span>
+<span id="cb54-3"><a href="#cb54-3"></a>state   Ohio  Colorado</span>
+<span id="cb54-4"><a href="#cb54-4"></a>number                </span>
+<span id="cb54-5"><a href="#cb54-5"></a>one        <span class="dv">0</span>         <span class="dv">3</span></span>
+<span id="cb54-6"><a href="#cb54-6"></a>two        <span class="dv">1</span>         <span class="dv">4</span></span>
+<span id="cb54-7"><a href="#cb54-7"></a>three      <span class="dv">2</span>         <span class="dv">5</span></span>
+<span id="cb54-8"><a href="#cb54-8"></a></span>
+<span id="cb54-9"><a href="#cb54-9"></a>In [<span class="dv">126</span>]: result.unstack(<span class="st">&#39;state&#39;</span>)</span>
+<span id="cb54-10"><a href="#cb54-10"></a>Out[<span class="dv">126</span>]: </span>
+<span id="cb54-11"><a href="#cb54-11"></a>state   Ohio  Colorado</span>
+<span id="cb54-12"><a href="#cb54-12"></a>number                </span>
+<span id="cb54-13"><a href="#cb54-13"></a>one        <span class="dv">0</span>         <span class="dv">3</span></span>
+<span id="cb54-14"><a href="#cb54-14"></a>two        <span class="dv">1</span>         <span class="dv">4</span></span>
+<span id="cb54-15"><a href="#cb54-15"></a>three      <span class="dv">2</span>         <span class="dv">5</span></span></code></pre></div>
+<p>如果不是所有的级别值都能在各分组中找到的话，则unstack操作可能会引入缺失数据：</p>
+<div class="sourceCode" id="cb55"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb55-1"><a href="#cb55-1"></a>In [<span class="dv">127</span>]: s1 <span class="op">=</span> pd.Series([<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>], index<span class="op">=</span>[<span class="st">&#39;a&#39;</span>, <span class="st">&#39;b&#39;</span>, <span class="st">&#39;c&#39;</span>, <span class="st">&#39;d&#39;</span>])</span>
+<span id="cb55-2"><a href="#cb55-2"></a></span>
+<span id="cb55-3"><a href="#cb55-3"></a>In [<span class="dv">128</span>]: s2 <span class="op">=</span> pd.Series([<span class="dv">4</span>, <span class="dv">5</span>, <span class="dv">6</span>], index<span class="op">=</span>[<span class="st">&#39;c&#39;</span>, <span class="st">&#39;d&#39;</span>, <span class="st">&#39;e&#39;</span>])</span>
+<span id="cb55-4"><a href="#cb55-4"></a></span>
+<span id="cb55-5"><a href="#cb55-5"></a>In [<span class="dv">129</span>]: data2 <span class="op">=</span> pd.concat([s1, s2], keys<span class="op">=</span>[<span class="st">&#39;one&#39;</span>, <span class="st">&#39;two&#39;</span>])</span>
+<span id="cb55-6"><a href="#cb55-6"></a></span>
+<span id="cb55-7"><a href="#cb55-7"></a>In [<span class="dv">130</span>]: data2</span>
+<span id="cb55-8"><a href="#cb55-8"></a>Out[<span class="dv">130</span>]: </span>
+<span id="cb55-9"><a href="#cb55-9"></a>one  a    <span class="dv">0</span></span>
+<span id="cb55-10"><a href="#cb55-10"></a>     b    <span class="dv">1</span></span>
+<span id="cb55-11"><a href="#cb55-11"></a>     c    <span class="dv">2</span></span>
+<span id="cb55-12"><a href="#cb55-12"></a>     d    <span class="dv">3</span></span>
+<span id="cb55-13"><a href="#cb55-13"></a>two  c    <span class="dv">4</span></span>
+<span id="cb55-14"><a href="#cb55-14"></a>     d    <span class="dv">5</span></span>
+<span id="cb55-15"><a href="#cb55-15"></a>     e    <span class="dv">6</span></span>
+<span id="cb55-16"><a href="#cb55-16"></a>dtype: int64</span>
+<span id="cb55-17"><a href="#cb55-17"></a></span>
+<span id="cb55-18"><a href="#cb55-18"></a>In [<span class="dv">131</span>]: data2.unstack()</span>
+<span id="cb55-19"><a href="#cb55-19"></a>Out[<span class="dv">131</span>]: </span>
+<span id="cb55-20"><a href="#cb55-20"></a>       a    b    c    d    e</span>
+<span id="cb55-21"><a href="#cb55-21"></a>one  <span class="fl">0.0</span>  <span class="fl">1.0</span>  <span class="fl">2.0</span>  <span class="fl">3.0</span>  NaN</span>
+<span id="cb55-22"><a href="#cb55-22"></a>two  NaN  NaN  <span class="fl">4.0</span>  <span class="fl">5.0</span>  <span class="fl">6.0</span></span></code></pre></div>
+<p>stack默认会滤除缺失数据，因此该运算是可逆的：</p>
+<div class="sourceCode" id="cb56"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb56-1"><a href="#cb56-1"></a>In [<span class="dv">132</span>]: data2.unstack()</span>
+<span id="cb56-2"><a href="#cb56-2"></a>Out[<span class="dv">132</span>]: </span>
+<span id="cb56-3"><a href="#cb56-3"></a>       a    b    c    d    e</span>
+<span id="cb56-4"><a href="#cb56-4"></a>one  <span class="fl">0.0</span>  <span class="fl">1.0</span>  <span class="fl">2.0</span>  <span class="fl">3.0</span>  NaN</span>
+<span id="cb56-5"><a href="#cb56-5"></a>two  NaN  NaN  <span class="fl">4.0</span>  <span class="fl">5.0</span>  <span class="fl">6.0</span></span>
+<span id="cb56-6"><a href="#cb56-6"></a></span>
+<span id="cb56-7"><a href="#cb56-7"></a>In [<span class="dv">133</span>]: data2.unstack().stack()</span>
+<span id="cb56-8"><a href="#cb56-8"></a>Out[<span class="dv">133</span>]: </span>
+<span id="cb56-9"><a href="#cb56-9"></a>one  a    <span class="fl">0.0</span></span>
+<span id="cb56-10"><a href="#cb56-10"></a>     b    <span class="fl">1.0</span></span>
+<span id="cb56-11"><a href="#cb56-11"></a>     c    <span class="fl">2.0</span></span>
+<span id="cb56-12"><a href="#cb56-12"></a>     d    <span class="fl">3.0</span></span>
+<span id="cb56-13"><a href="#cb56-13"></a>two  c    <span class="fl">4.0</span></span>
+<span id="cb56-14"><a href="#cb56-14"></a>     d    <span class="fl">5.0</span></span>
+<span id="cb56-15"><a href="#cb56-15"></a>     e    <span class="fl">6.0</span></span>
+<span id="cb56-16"><a href="#cb56-16"></a>dtype: float64</span>
+<span id="cb56-17"><a href="#cb56-17"></a></span>
+<span id="cb56-18"><a href="#cb56-18"></a>In [<span class="dv">134</span>]: data2.unstack().stack(dropna<span class="op">=</span><span class="va">False</span>)</span>
+<span id="cb56-19"><a href="#cb56-19"></a>Out[<span class="dv">134</span>]: </span>
+<span id="cb56-20"><a href="#cb56-20"></a>one  a    <span class="fl">0.0</span></span>
+<span id="cb56-21"><a href="#cb56-21"></a>     b    <span class="fl">1.0</span></span>
+<span id="cb56-22"><a href="#cb56-22"></a>     c    <span class="fl">2.0</span></span>
+<span id="cb56-23"><a href="#cb56-23"></a>     d    <span class="fl">3.0</span></span>
+<span id="cb56-24"><a href="#cb56-24"></a>     e    NaN</span>
+<span id="cb56-25"><a href="#cb56-25"></a>two  a    NaN</span>
+<span id="cb56-26"><a href="#cb56-26"></a>     b    NaN</span>
+<span id="cb56-27"><a href="#cb56-27"></a>     c    <span class="fl">4.0</span></span>
+<span id="cb56-28"><a href="#cb56-28"></a>     d    <span class="fl">5.0</span></span>
+<span id="cb56-29"><a href="#cb56-29"></a>     e    <span class="fl">6.0</span></span>
+<span id="cb56-30"><a href="#cb56-30"></a>dtype: float64</span></code></pre></div>
+<p>在对DataFrame进行unstack操作时，作为旋转轴的级别将会成为结果中的最低级别：</p>
+<div class="sourceCode" id="cb57"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb57-1"><a href="#cb57-1"></a>In [<span class="dv">135</span>]: df <span class="op">=</span> pd.DataFrame({<span class="st">&#39;left&#39;</span>: result, <span class="st">&#39;right&#39;</span>: result <span class="op">+</span> <span class="dv">5</span>},</span>
+<span id="cb57-2"><a href="#cb57-2"></a>   .....:                   columns<span class="op">=</span>pd.Index([<span class="st">&#39;left&#39;</span>, <span class="st">&#39;right&#39;</span>], name<span class="op">=</span><span class="st">&#39;side&#39;</span>))</span>
+<span id="cb57-3"><a href="#cb57-3"></a></span>
+<span id="cb57-4"><a href="#cb57-4"></a>In [<span class="dv">136</span>]: df</span>
+<span id="cb57-5"><a href="#cb57-5"></a>Out[<span class="dv">136</span>]: </span>
+<span id="cb57-6"><a href="#cb57-6"></a>side             left  right</span>
+<span id="cb57-7"><a href="#cb57-7"></a>state    number             </span>
+<span id="cb57-8"><a href="#cb57-8"></a>Ohio     one        <span class="dv">0</span>      <span class="dv">5</span></span>
+<span id="cb57-9"><a href="#cb57-9"></a>         two        <span class="dv">1</span>      <span class="dv">6</span></span>
+<span id="cb57-10"><a href="#cb57-10"></a>         three      <span class="dv">2</span>      <span class="dv">7</span></span>
+<span id="cb57-11"><a href="#cb57-11"></a>Colorado one        <span class="dv">3</span>      <span class="dv">8</span></span>
+<span id="cb57-12"><a href="#cb57-12"></a>         two        <span class="dv">4</span>      <span class="dv">9</span></span>
+<span id="cb57-13"><a href="#cb57-13"></a>         three      <span class="dv">5</span>     <span class="dv">10</span></span>
+<span id="cb57-14"><a href="#cb57-14"></a></span>
+<span id="cb57-15"><a href="#cb57-15"></a>In [<span class="dv">137</span>]: df.unstack(<span class="st">&#39;state&#39;</span>)</span>
+<span id="cb57-16"><a href="#cb57-16"></a>Out[<span class="dv">137</span>]: </span>
+<span id="cb57-17"><a href="#cb57-17"></a>side   left          right</span>
+<span id="cb57-18"><a href="#cb57-18"></a>state  Ohio Colorado  Ohio Colorado</span>
+<span id="cb57-19"><a href="#cb57-19"></a>number                             </span>
+<span id="cb57-20"><a href="#cb57-20"></a>one       <span class="dv">0</span>        <span class="dv">3</span>     <span class="dv">5</span>        <span class="dv">8</span></span>
+<span id="cb57-21"><a href="#cb57-21"></a>two       <span class="dv">1</span>        <span class="dv">4</span>     <span class="dv">6</span>        <span class="dv">9</span></span>
+<span id="cb57-22"><a href="#cb57-22"></a>three     <span class="dv">2</span>        <span class="dv">5</span>     <span class="dv">7</span>       <span class="dv">10</span></span></code></pre></div>
+<p>当调用stack，我们可以指明轴的名字：</p>
+<div class="sourceCode" id="cb58"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb58-1"><a href="#cb58-1"></a>In [<span class="dv">138</span>]: df.unstack(<span class="st">&#39;state&#39;</span>).stack(<span class="st">&#39;side&#39;</span>)</span>
+<span id="cb58-2"><a href="#cb58-2"></a>Out[<span class="dv">138</span>]: </span>
+<span id="cb58-3"><a href="#cb58-3"></a>state         Colorado  Ohio</span>
+<span id="cb58-4"><a href="#cb58-4"></a>number side                 </span>
+<span id="cb58-5"><a href="#cb58-5"></a>one    left          <span class="dv">3</span>     <span class="dv">0</span></span>
+<span id="cb58-6"><a href="#cb58-6"></a>       right         <span class="dv">8</span>     <span class="dv">5</span></span>
+<span id="cb58-7"><a href="#cb58-7"></a>two    left          <span class="dv">4</span>     <span class="dv">1</span></span>
+<span id="cb58-8"><a href="#cb58-8"></a>       right         <span class="dv">9</span>     <span class="dv">6</span></span>
+<span id="cb58-9"><a href="#cb58-9"></a>three  left          <span class="dv">5</span>     <span class="dv">2</span></span>
+<span id="cb58-10"><a href="#cb58-10"></a>       right        <span class="dv">10</span>     <span class="dv">7</span></span></code></pre></div>
+<h2 id="将长格式旋转为宽格式">将“长格式”旋转为“宽格式”</h2>
+<p>多个时间序列数据通常是以所谓的“长格式”（long）或“堆叠格式”（stacked）存储在数据库和CSV中的。我们先加载一些示例数据，做一些时间序列规整和数据清洗：</p>
+<div class="sourceCode" id="cb59"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb59-1"><a href="#cb59-1"></a>In [<span class="dv">139</span>]: data <span class="op">=</span> pd.read_csv(<span class="st">&#39;examples/macrodata.csv&#39;</span>)</span>
+<span id="cb59-2"><a href="#cb59-2"></a></span>
+<span id="cb59-3"><a href="#cb59-3"></a>In [<span class="dv">140</span>]: data.head()</span>
+<span id="cb59-4"><a href="#cb59-4"></a>Out[<span class="dv">140</span>]: </span>
+<span id="cb59-5"><a href="#cb59-5"></a>     year  quarter   realgdp  realcons  realinv  realgovt  realdpi    cpi  <span class="op">\</span></span>
+<span id="cb59-6"><a href="#cb59-6"></a><span class="dv">0</span>  <span class="fl">1959.0</span>      <span class="fl">1.0</span>  <span class="fl">2710.349</span>    <span class="fl">1707.4</span>  <span class="fl">286.898</span>   <span class="fl">470.045</span>   <span class="fl">1886.9</span>  <span class="fl">28.98</span>   </span>
+<span id="cb59-7"><a href="#cb59-7"></a><span class="dv">1</span>  <span class="fl">1959.0</span>      <span class="fl">2.0</span>  <span class="fl">2778.801</span>    <span class="fl">1733.7</span>  <span class="fl">310.859</span>   <span class="fl">481.301</span>   <span class="fl">1919.7</span>  <span class="fl">29.15</span>   </span>
+<span id="cb59-8"><a href="#cb59-8"></a><span class="dv">2</span>  <span class="fl">1959.0</span>      <span class="fl">3.0</span>  <span class="fl">2775.488</span>    <span class="fl">1751.8</span>  <span class="fl">289.226</span>   <span class="fl">491.260</span>   <span class="fl">1916.4</span>  <span class="fl">29.35</span>   </span>
+<span id="cb59-9"><a href="#cb59-9"></a><span class="dv">3</span>  <span class="fl">1959.0</span>      <span class="fl">4.0</span>  <span class="fl">2785.204</span>    <span class="fl">1753.7</span>  <span class="fl">299.356</span>   <span class="fl">484.052</span>   <span class="fl">1931.3</span>  <span class="fl">29.37</span>   </span>
+<span id="cb59-10"><a href="#cb59-10"></a><span class="dv">4</span>  <span class="fl">1960.0</span>      <span class="fl">1.0</span>  <span class="fl">2847.699</span>    <span class="fl">1770.5</span>  <span class="fl">331.722</span>   <span class="fl">462.199</span>   <span class="fl">1955.5</span>  <span class="fl">29.54</span>   </span>
+<span id="cb59-11"><a href="#cb59-11"></a>      m1  tbilrate  unemp      pop  infl  realint  </span>
+<span id="cb59-12"><a href="#cb59-12"></a><span class="dv">0</span>  <span class="fl">139.7</span>      <span class="fl">2.82</span>    <span class="fl">5.8</span>  <span class="fl">177.146</span>  <span class="fl">0.00</span>     <span class="fl">0.00</span></span>
+<span id="cb59-13"><a href="#cb59-13"></a><span class="dv">1</span>  <span class="fl">141.7</span>      <span class="fl">3.08</span>    <span class="fl">5.1</span>  <span class="fl">177.830</span>  <span class="fl">2.34</span>     <span class="fl">0.74</span>  </span>
+<span id="cb59-14"><a href="#cb59-14"></a><span class="dv">2</span>  <span class="fl">140.5</span>      <span class="fl">3.82</span>    <span class="fl">5.3</span>  <span class="fl">178.657</span>  <span class="fl">2.74</span>     <span class="fl">1.09</span>  </span>
+<span id="cb59-15"><a href="#cb59-15"></a><span class="dv">3</span>  <span class="fl">140.0</span>      <span class="fl">4.33</span>    <span class="fl">5.6</span>  <span class="fl">179.386</span>  <span class="fl">0.27</span>     <span class="fl">4.06</span>  </span>
+<span id="cb59-16"><a href="#cb59-16"></a><span class="dv">4</span>  <span class="fl">139.6</span>      <span class="fl">3.50</span>    <span class="fl">5.2</span>  <span class="fl">180.007</span>  <span class="fl">2.31</span>     <span class="fl">1.19</span>  </span>
+<span id="cb59-17"><a href="#cb59-17"></a></span>
+<span id="cb59-18"><a href="#cb59-18"></a>In [<span class="dv">141</span>]: periods <span class="op">=</span> pd.PeriodIndex(year<span class="op">=</span>data.year, quarter<span class="op">=</span>data.quarter,</span>
+<span id="cb59-19"><a href="#cb59-19"></a>   .....:                          name<span class="op">=</span><span class="st">&#39;date&#39;</span>)</span>
+<span id="cb59-20"><a href="#cb59-20"></a></span>
+<span id="cb59-21"><a href="#cb59-21"></a>In [<span class="dv">142</span>]: columns <span class="op">=</span> pd.Index([<span class="st">&#39;realgdp&#39;</span>, <span class="st">&#39;infl&#39;</span>, <span class="st">&#39;unemp&#39;</span>], name<span class="op">=</span><span class="st">&#39;item&#39;</span>)</span>
+<span id="cb59-22"><a href="#cb59-22"></a></span>
+<span id="cb59-23"><a href="#cb59-23"></a>In [<span class="dv">143</span>]: data <span class="op">=</span> data.reindex(columns<span class="op">=</span>columns)</span>
+<span id="cb59-24"><a href="#cb59-24"></a></span>
+<span id="cb59-25"><a href="#cb59-25"></a>In [<span class="dv">144</span>]: data.index <span class="op">=</span> periods.to_timestamp(<span class="st">&#39;D&#39;</span>, <span class="st">&#39;end&#39;</span>)</span>
+<span id="cb59-26"><a href="#cb59-26"></a></span>
+<span id="cb59-27"><a href="#cb59-27"></a>In [<span class="dv">145</span>]: ldata <span class="op">=</span> data.stack().reset_index().rename(columns<span class="op">=</span>{<span class="dv">0</span>: <span class="st">&#39;value&#39;</span>})</span></code></pre></div>
+<p>这就是多个时间序列（或者其它带有两个或多个键的可观察数据，这里，我们的键是date和item）的长格式。表中的每行代表一次观察。</p>
+<p>关系型数据库（如MySQL）中的数据经常都是这样存储的，因为固定架构（即列名和数据类型）有一个好处：随着表中数据的添加，item列中的值的种类能够增加。在前面的例子中，date和item通常就是主键（用关系型数据库的说法），不仅提供了关系完整性，而且提供了更为简单的查询支持。有的情况下，使用这样的数据会很麻烦，你可能会更喜欢DataFrame，不同的item值分别形成一列，date列中的时间戳则用作索引。DataFrame的pivot方法完全可以实现这个转换：</p>
+<div class="sourceCode" id="cb60"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb60-1"><a href="#cb60-1"></a>In [<span class="dv">147</span>]: pivoted <span class="op">=</span> ldata.pivot(<span class="st">&#39;date&#39;</span>, <span class="st">&#39;item&#39;</span>, <span class="st">&#39;value&#39;</span>)</span>
+<span id="cb60-2"><a href="#cb60-2"></a></span>
+<span id="cb60-3"><a href="#cb60-3"></a>In [<span class="dv">148</span>]: pivoted</span>
+<span id="cb60-4"><a href="#cb60-4"></a>Out[<span class="dv">148</span>]: </span>
+<span id="cb60-5"><a href="#cb60-5"></a>item        infl    realgdp  unemp</span>
+<span id="cb60-6"><a href="#cb60-6"></a>date                              </span>
+<span id="cb60-7"><a href="#cb60-7"></a><span class="dv">1959</span><span class="op">-</span>03<span class="op">-</span><span class="dv">31</span>  <span class="fl">0.00</span>   <span class="fl">2710.349</span>    <span class="fl">5.8</span></span>
+<span id="cb60-8"><a href="#cb60-8"></a><span class="dv">1959</span><span class="op">-</span>06<span class="op">-</span><span class="dv">30</span>  <span class="fl">2.34</span>   <span class="fl">2778.801</span>    <span class="fl">5.1</span></span>
+<span id="cb60-9"><a href="#cb60-9"></a><span class="dv">1959</span><span class="op">-</span>09<span class="op">-</span><span class="dv">30</span>  <span class="fl">2.74</span>   <span class="fl">2775.488</span>    <span class="fl">5.3</span></span>
+<span id="cb60-10"><a href="#cb60-10"></a><span class="dv">1959</span><span class="op">-</span><span class="dv">12</span><span class="op">-</span><span class="dv">31</span>  <span class="fl">0.27</span>   <span class="fl">2785.204</span>    <span class="fl">5.6</span></span>
+<span id="cb60-11"><a href="#cb60-11"></a><span class="dv">1960</span><span class="op">-</span>03<span class="op">-</span><span class="dv">31</span>  <span class="fl">2.31</span>   <span class="fl">2847.699</span>    <span class="fl">5.2</span></span>
+<span id="cb60-12"><a href="#cb60-12"></a><span class="dv">1960</span><span class="op">-</span>06<span class="op">-</span><span class="dv">30</span>  <span class="fl">0.14</span>   <span class="fl">2834.390</span>    <span class="fl">5.2</span></span>
+<span id="cb60-13"><a href="#cb60-13"></a><span class="dv">1960</span><span class="op">-</span>09<span class="op">-</span><span class="dv">30</span>  <span class="fl">2.70</span>   <span class="fl">2839.022</span>    <span class="fl">5.6</span></span>
+<span id="cb60-14"><a href="#cb60-14"></a><span class="dv">1960</span><span class="op">-</span><span class="dv">12</span><span class="op">-</span><span class="dv">31</span>  <span class="fl">1.21</span>   <span class="fl">2802.616</span>    <span class="fl">6.3</span></span>
+<span id="cb60-15"><a href="#cb60-15"></a><span class="dv">1961</span><span class="op">-</span>03<span class="op">-</span><span class="dv">31</span> <span class="op">-</span><span class="fl">0.40</span>   <span class="fl">2819.264</span>    <span class="fl">6.8</span></span>
+<span id="cb60-16"><a href="#cb60-16"></a><span class="dv">1961</span><span class="op">-</span>06<span class="op">-</span><span class="dv">30</span>  <span class="fl">1.47</span>   <span class="fl">2872.005</span>    <span class="fl">7.0</span></span>
+<span id="cb60-17"><a href="#cb60-17"></a>...          ...        ...    ...</span>
+<span id="cb60-18"><a href="#cb60-18"></a><span class="dv">2007</span><span class="op">-</span>06<span class="op">-</span><span class="dv">30</span>  <span class="fl">2.75</span>  <span class="fl">13203.977</span>    <span class="fl">4.5</span></span>
+<span id="cb60-19"><a href="#cb60-19"></a><span class="dv">2007</span><span class="op">-</span>09<span class="op">-</span><span class="dv">30</span>  <span class="fl">3.45</span>  <span class="fl">13321.109</span>    <span class="fl">4.7</span></span>
+<span id="cb60-20"><a href="#cb60-20"></a><span class="dv">2007</span><span class="op">-</span><span class="dv">12</span><span class="op">-</span><span class="dv">31</span>  <span class="fl">6.38</span>  <span class="fl">13391.249</span>    <span class="fl">4.8</span></span>
+<span id="cb60-21"><a href="#cb60-21"></a><span class="dv">2008</span><span class="op">-</span>03<span class="op">-</span><span class="dv">31</span>  <span class="fl">2.82</span>  <span class="fl">13366.865</span>    <span class="fl">4.9</span></span>
+<span id="cb60-22"><a href="#cb60-22"></a><span class="dv">2008</span><span class="op">-</span>06<span class="op">-</span><span class="dv">30</span>  <span class="fl">8.53</span>  <span class="fl">13415.266</span>    <span class="fl">5.4</span></span>
+<span id="cb60-23"><a href="#cb60-23"></a><span class="dv">2008</span><span class="op">-</span>09<span class="op">-</span><span class="dv">30</span> <span class="op">-</span><span class="fl">3.16</span>  <span class="fl">13324.600</span>    <span class="fl">6.0</span></span>
+<span id="cb60-24"><a href="#cb60-24"></a><span class="dv">2008</span><span class="op">-</span><span class="dv">12</span><span class="op">-</span><span class="dv">31</span> <span class="op">-</span><span class="fl">8.79</span>  <span class="fl">13141.920</span>    <span class="fl">6.9</span></span>
+<span id="cb60-25"><a href="#cb60-25"></a><span class="dv">2009</span><span class="op">-</span>03<span class="op">-</span><span class="dv">31</span>  <span class="fl">0.94</span>  <span class="fl">12925.410</span>    <span class="fl">8.1</span></span>
+<span id="cb60-26"><a href="#cb60-26"></a><span class="dv">2009</span><span class="op">-</span>06<span class="op">-</span><span class="dv">30</span>  <span class="fl">3.37</span>  <span class="fl">12901.504</span>    <span class="fl">9.2</span></span>
+<span id="cb60-27"><a href="#cb60-27"></a><span class="dv">2009</span><span class="op">-</span>09<span class="op">-</span><span class="dv">30</span>  <span class="fl">3.56</span>  <span class="fl">12990.341</span>    <span class="fl">9.6</span></span>
+<span id="cb60-28"><a href="#cb60-28"></a>[<span class="dv">203</span> rows x <span class="dv">3</span> columns]</span></code></pre></div>
+<p>前两个传递的值分别用作行和列索引，最后一个可选值则是用于填充DataFrame的数据列。假设有两个需要同时重塑的数据列：</p>
+<div class="sourceCode" id="cb61"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb61-1"><a href="#cb61-1"></a>In [<span class="dv">149</span>]: ldata[<span class="st">&#39;value2&#39;</span>] <span class="op">=</span> np.random.randn(<span class="bu">len</span>(ldata))</span>
+<span id="cb61-2"><a href="#cb61-2"></a></span>
+<span id="cb61-3"><a href="#cb61-3"></a>In [<span class="dv">150</span>]: ldata[:<span class="dv">10</span>]</span>
+<span id="cb61-4"><a href="#cb61-4"></a>Out[<span class="dv">150</span>]: </span>
+<span id="cb61-5"><a href="#cb61-5"></a>        date     item     value    value2</span>
+<span id="cb61-6"><a href="#cb61-6"></a><span class="dv">0</span> <span class="dv">1959</span><span class="op">-</span>03<span class="op">-</span><span class="dv">31</span>  realgdp  <span class="fl">2710.349</span>  <span class="fl">0.523772</span></span>
+<span id="cb61-7"><a href="#cb61-7"></a><span class="dv">1</span> <span class="dv">1959</span><span class="op">-</span>03<span class="op">-</span><span class="dv">31</span>     infl     <span class="fl">0.000</span>  <span class="fl">0.000940</span></span>
+<span id="cb61-8"><a href="#cb61-8"></a><span class="dv">2</span> <span class="dv">1959</span><span class="op">-</span>03<span class="op">-</span><span class="dv">31</span>    unemp     <span class="fl">5.800</span>  <span class="fl">1.343810</span></span>
+<span id="cb61-9"><a href="#cb61-9"></a><span class="dv">3</span> <span class="dv">1959</span><span class="op">-</span>06<span class="op">-</span><span class="dv">30</span>  realgdp  <span class="fl">2778.801</span> <span class="op">-</span><span class="fl">0.713544</span></span>
+<span id="cb61-10"><a href="#cb61-10"></a><span class="dv">4</span> <span class="dv">1959</span><span class="op">-</span>06<span class="op">-</span><span class="dv">30</span>     infl     <span class="fl">2.340</span> <span class="op">-</span><span class="fl">0.831154</span></span>
+<span id="cb61-11"><a href="#cb61-11"></a><span class="dv">5</span> <span class="dv">1959</span><span class="op">-</span>06<span class="op">-</span><span class="dv">30</span>    unemp     <span class="fl">5.100</span> <span class="op">-</span><span class="fl">2.370232</span></span>
+<span id="cb61-12"><a href="#cb61-12"></a><span class="dv">6</span> <span class="dv">1959</span><span class="op">-</span>09<span class="op">-</span><span class="dv">30</span>  realgdp  <span class="fl">2775.488</span> <span class="op">-</span><span class="fl">1.860761</span></span>
+<span id="cb61-13"><a href="#cb61-13"></a><span class="dv">7</span> <span class="dv">1959</span><span class="op">-</span>09<span class="op">-</span><span class="dv">30</span>     infl     <span class="fl">2.740</span> <span class="op">-</span><span class="fl">0.860757</span></span>
+<span id="cb61-14"><a href="#cb61-14"></a><span class="dv">8</span> <span class="dv">1959</span><span class="op">-</span>09<span class="op">-</span><span class="dv">30</span>    unemp     <span class="fl">5.300</span>  <span class="fl">0.560145</span></span>
+<span id="cb61-15"><a href="#cb61-15"></a><span class="dv">9</span> <span class="dv">1959</span><span class="op">-</span><span class="dv">12</span><span class="op">-</span><span class="dv">31</span>  realgdp  <span class="fl">2785.204</span> <span class="op">-</span><span class="fl">1.265934</span></span></code></pre></div>
+<p>如果忽略最后一个参数，得到的DataFrame就会带有层次化的列：</p>
+<div class="sourceCode" id="cb62"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb62-1"><a href="#cb62-1"></a>In [<span class="dv">151</span>]: pivoted <span class="op">=</span> ldata.pivot(<span class="st">&#39;date&#39;</span>, <span class="st">&#39;item&#39;</span>)</span>
+<span id="cb62-2"><a href="#cb62-2"></a></span>
+<span id="cb62-3"><a href="#cb62-3"></a>In [<span class="dv">152</span>]: pivoted[:<span class="dv">5</span>]</span>
+<span id="cb62-4"><a href="#cb62-4"></a>Out[<span class="dv">152</span>]: </span>
+<span id="cb62-5"><a href="#cb62-5"></a>           value                    value2                    </span>
+<span id="cb62-6"><a href="#cb62-6"></a>item        infl   realgdp unemp      infl   realgdp     unemp</span>
+<span id="cb62-7"><a href="#cb62-7"></a>date                                                          </span>
+<span id="cb62-8"><a href="#cb62-8"></a><span class="dv">1959</span><span class="op">-</span>03<span class="op">-</span><span class="dv">31</span>  <span class="fl">0.00</span>  <span class="fl">2710.349</span>   <span class="fl">5.8</span>  <span class="fl">0.000940</span>  <span class="fl">0.523772</span>  <span class="fl">1.343810</span></span>
+<span id="cb62-9"><a href="#cb62-9"></a><span class="dv">1959</span><span class="op">-</span>06<span class="op">-</span><span class="dv">30</span>  <span class="fl">2.34</span>  <span class="fl">2778.801</span>   <span class="fl">5.1</span> <span class="op">-</span><span class="fl">0.831154</span> <span class="op">-</span><span class="fl">0.713544</span> <span class="op">-</span><span class="fl">2.370232</span></span>
+<span id="cb62-10"><a href="#cb62-10"></a><span class="dv">1959</span><span class="op">-</span>09<span class="op">-</span><span class="dv">30</span>  <span class="fl">2.74</span>  <span class="fl">2775.488</span>   <span class="fl">5.3</span> <span class="op">-</span><span class="fl">0.860757</span> <span class="op">-</span><span class="fl">1.860761</span>  <span class="fl">0.560145</span></span>
+<span id="cb62-11"><a href="#cb62-11"></a><span class="dv">1959</span><span class="op">-</span><span class="dv">12</span><span class="op">-</span><span class="dv">31</span>  <span class="fl">0.27</span>  <span class="fl">2785.204</span>   <span class="fl">5.6</span>  <span class="fl">0.119827</span> <span class="op">-</span><span class="fl">1.265934</span> <span class="op">-</span><span class="fl">1.063512</span></span>
+<span id="cb62-12"><a href="#cb62-12"></a><span class="dv">1960</span><span class="op">-</span>03<span class="op">-</span><span class="dv">31</span>  <span class="fl">2.31</span>  <span class="fl">2847.699</span>   <span class="fl">5.2</span> <span class="op">-</span><span class="fl">2.359419</span>  <span class="fl">0.332883</span> <span class="op">-</span><span class="fl">0.199543</span></span>
+<span id="cb62-13"><a href="#cb62-13"></a></span>
+<span id="cb62-14"><a href="#cb62-14"></a>In [<span class="dv">153</span>]: pivoted[<span class="st">&#39;value&#39;</span>][:<span class="dv">5</span>]</span>
+<span id="cb62-15"><a href="#cb62-15"></a>Out[<span class="dv">153</span>]: </span>
+<span id="cb62-16"><a href="#cb62-16"></a>item        infl   realgdp  unemp</span>
+<span id="cb62-17"><a href="#cb62-17"></a>date                             </span>
+<span id="cb62-18"><a href="#cb62-18"></a><span class="dv">1959</span><span class="op">-</span>03<span class="op">-</span><span class="dv">31</span>  <span class="fl">0.00</span>  <span class="fl">2710.349</span>    <span class="fl">5.8</span></span>
+<span id="cb62-19"><a href="#cb62-19"></a><span class="dv">1959</span><span class="op">-</span>06<span class="op">-</span><span class="dv">30</span>  <span class="fl">2.34</span>  <span class="fl">2778.801</span>    <span class="fl">5.1</span></span>
+<span id="cb62-20"><a href="#cb62-20"></a><span class="dv">1959</span><span class="op">-</span>09<span class="op">-</span><span class="dv">30</span>  <span class="fl">2.74</span>  <span class="fl">2775.488</span>    <span class="fl">5.3</span></span>
+<span id="cb62-21"><a href="#cb62-21"></a><span class="dv">1959</span><span class="op">-</span><span class="dv">12</span><span class="op">-</span><span class="dv">31</span>  <span class="fl">0.27</span>  <span class="fl">2785.204</span>    <span class="fl">5.6</span></span>
+<span id="cb62-22"><a href="#cb62-22"></a><span class="dv">1960</span><span class="op">-</span>03<span class="op">-</span><span class="dv">31</span>  <span class="fl">2.31</span>  <span class="fl">2847.699</span>    <span class="fl">5.2</span></span></code></pre></div>
+<p>注意，pivot其实就是用set_index创建层次化索引，再用unstack重塑：</p>
+<div class="sourceCode" id="cb63"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb63-1"><a href="#cb63-1"></a>In [<span class="dv">154</span>]: unstacked <span class="op">=</span> ldata.set_index([<span class="st">&#39;date&#39;</span>, <span class="st">&#39;item&#39;</span>]).unstack(<span class="st">&#39;item&#39;</span>)</span>
+<span id="cb63-2"><a href="#cb63-2"></a></span>
+<span id="cb63-3"><a href="#cb63-3"></a>In [<span class="dv">155</span>]: unstacked[:<span class="dv">7</span>]</span>
+<span id="cb63-4"><a href="#cb63-4"></a>Out[<span class="dv">155</span>]: </span>
+<span id="cb63-5"><a href="#cb63-5"></a>           value                    value2                    </span>
+<span id="cb63-6"><a href="#cb63-6"></a>item        infl   realgdp unemp      infl   realgdp     unemp</span>
+<span id="cb63-7"><a href="#cb63-7"></a>date                                                          </span>
+<span id="cb63-8"><a href="#cb63-8"></a><span class="dv">1959</span><span class="op">-</span>03<span class="op">-</span><span class="dv">31</span>  <span class="fl">0.00</span>  <span class="fl">2710.349</span>   <span class="fl">5.8</span>  <span class="fl">0.000940</span>  <span class="fl">0.523772</span>  <span class="fl">1.343810</span></span>
+<span id="cb63-9"><a href="#cb63-9"></a><span class="dv">1959</span><span class="op">-</span>06<span class="op">-</span><span class="dv">30</span>  <span class="fl">2.34</span>  <span class="fl">2778.801</span>   <span class="fl">5.1</span> <span class="op">-</span><span class="fl">0.831154</span> <span class="op">-</span><span class="fl">0.713544</span> <span class="op">-</span><span class="fl">2.370232</span></span>
+<span id="cb63-10"><a href="#cb63-10"></a><span class="dv">1959</span><span class="op">-</span>09<span class="op">-</span><span class="dv">30</span>  <span class="fl">2.74</span>  <span class="fl">2775.488</span>   <span class="fl">5.3</span> <span class="op">-</span><span class="fl">0.860757</span> <span class="op">-</span><span class="fl">1.860761</span>  <span class="fl">0.560145</span></span>
+<span id="cb63-11"><a href="#cb63-11"></a><span class="dv">1959</span><span class="op">-</span><span class="dv">12</span><span class="op">-</span><span class="dv">31</span>  <span class="fl">0.27</span>  <span class="fl">2785.204</span>   <span class="fl">5.6</span>  <span class="fl">0.119827</span> <span class="op">-</span><span class="fl">1.265934</span> <span class="op">-</span><span class="fl">1.063512</span></span>
+<span id="cb63-12"><a href="#cb63-12"></a><span class="dv">1960</span><span class="op">-</span>03<span class="op">-</span><span class="dv">31</span>  <span class="fl">2.31</span>  <span class="fl">2847.699</span>   <span class="fl">5.2</span> <span class="op">-</span><span class="fl">2.359419</span>  <span class="fl">0.332883</span> <span class="op">-</span><span class="fl">0.199543</span></span>
+<span id="cb63-13"><a href="#cb63-13"></a><span class="dv">1960</span><span class="op">-</span>06<span class="op">-</span><span class="dv">30</span>  <span class="fl">0.14</span>  <span class="fl">2834.390</span>   <span class="fl">5.2</span> <span class="op">-</span><span class="fl">0.970736</span> <span class="op">-</span><span class="fl">1.541996</span> <span class="op">-</span><span class="fl">1.307030</span></span>
+<span id="cb63-14"><a href="#cb63-14"></a><span class="dv">1960</span><span class="op">-</span>09<span class="op">-</span><span class="dv">30</span>  <span class="fl">2.70</span>  <span class="fl">2839.022</span>   <span class="fl">5.6</span>  <span class="fl">0.377984</span>  <span class="fl">0.286350</span> <span class="op">-</span><span class="fl">0.753887</span></span></code></pre></div>
+<h2 id="将宽格式旋转为长格式">将“宽格式”旋转为“长格式”</h2>
+<p>旋转DataFrame的逆运算是pandas.melt。它不是将一列转换到多个新的DataFrame，而是合并多个列成为一个，产生一个比输入长的DataFrame。看一个例子：</p>
+<div class="sourceCode" id="cb64"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb64-1"><a href="#cb64-1"></a>In [<span class="dv">157</span>]: df <span class="op">=</span> pd.DataFrame({<span class="st">&#39;key&#39;</span>: [<span class="st">&#39;foo&#39;</span>, <span class="st">&#39;bar&#39;</span>, <span class="st">&#39;baz&#39;</span>],</span>
+<span id="cb64-2"><a href="#cb64-2"></a>   .....:                    <span class="st">&#39;A&#39;</span>: [<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>],</span>
+<span id="cb64-3"><a href="#cb64-3"></a>   .....:                    <span class="st">&#39;B&#39;</span>: [<span class="dv">4</span>, <span class="dv">5</span>, <span class="dv">6</span>],</span>
+<span id="cb64-4"><a href="#cb64-4"></a>   .....:                    <span class="st">&#39;C&#39;</span>: [<span class="dv">7</span>, <span class="dv">8</span>, <span class="dv">9</span>]})</span>
+<span id="cb64-5"><a href="#cb64-5"></a></span>
+<span id="cb64-6"><a href="#cb64-6"></a>In [<span class="dv">158</span>]: df</span>
+<span id="cb64-7"><a href="#cb64-7"></a>Out[<span class="dv">158</span>]: </span>
+<span id="cb64-8"><a href="#cb64-8"></a>   A  B  C  key</span>
+<span id="cb64-9"><a href="#cb64-9"></a><span class="dv">0</span>  <span class="dv">1</span>  <span class="dv">4</span>  <span class="dv">7</span>  foo</span>
+<span id="cb64-10"><a href="#cb64-10"></a><span class="dv">1</span>  <span class="dv">2</span>  <span class="dv">5</span>  <span class="dv">8</span>  bar</span>
+<span id="cb64-11"><a href="#cb64-11"></a><span class="dv">2</span>  <span class="dv">3</span>  <span class="dv">6</span>  <span class="dv">9</span>  baz</span></code></pre></div>
+<p>key列可能是分组指标，其它的列是数据值。当使用pandas.melt，我们必须指明哪些列是分组指标。下面使用key作为唯一的分组指标：</p>
+<div class="sourceCode" id="cb65"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb65-1"><a href="#cb65-1"></a>In [<span class="dv">159</span>]: melted <span class="op">=</span> pd.melt(df, [<span class="st">&#39;key&#39;</span>])</span>
+<span id="cb65-2"><a href="#cb65-2"></a></span>
+<span id="cb65-3"><a href="#cb65-3"></a>In [<span class="dv">160</span>]: melted</span>
+<span id="cb65-4"><a href="#cb65-4"></a>Out[<span class="dv">160</span>]: </span>
+<span id="cb65-5"><a href="#cb65-5"></a>   key variable  value</span>
+<span id="cb65-6"><a href="#cb65-6"></a><span class="dv">0</span>  foo        A      <span class="dv">1</span></span>
+<span id="cb65-7"><a href="#cb65-7"></a><span class="dv">1</span>  bar        A      <span class="dv">2</span></span>
+<span id="cb65-8"><a href="#cb65-8"></a><span class="dv">2</span>  baz        A      <span class="dv">3</span></span>
+<span id="cb65-9"><a href="#cb65-9"></a><span class="dv">3</span>  foo        B      <span class="dv">4</span></span>
+<span id="cb65-10"><a href="#cb65-10"></a><span class="dv">4</span>  bar        B      <span class="dv">5</span></span>
+<span id="cb65-11"><a href="#cb65-11"></a><span class="dv">5</span>  baz        B      <span class="dv">6</span></span>
+<span id="cb65-12"><a href="#cb65-12"></a><span class="dv">6</span>  foo        C      <span class="dv">7</span></span>
+<span id="cb65-13"><a href="#cb65-13"></a><span class="dv">7</span>  bar        C      <span class="dv">8</span></span>
+<span id="cb65-14"><a href="#cb65-14"></a><span class="dv">8</span>  baz        C      <span class="dv">9</span></span></code></pre></div>
+<p>使用pivot，可以重塑回原来的样子：</p>
+<div class="sourceCode" id="cb66"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb66-1"><a href="#cb66-1"></a>In [<span class="dv">161</span>]: reshaped <span class="op">=</span> melted.pivot(<span class="st">&#39;key&#39;</span>, <span class="st">&#39;variable&#39;</span>, <span class="st">&#39;value&#39;</span>)</span>
+<span id="cb66-2"><a href="#cb66-2"></a></span>
+<span id="cb66-3"><a href="#cb66-3"></a>In [<span class="dv">162</span>]: reshaped</span>
+<span id="cb66-4"><a href="#cb66-4"></a>Out[<span class="dv">162</span>]: </span>
+<span id="cb66-5"><a href="#cb66-5"></a>variable  A  B  C</span>
+<span id="cb66-6"><a href="#cb66-6"></a>key              </span>
+<span id="cb66-7"><a href="#cb66-7"></a>bar       <span class="dv">2</span>  <span class="dv">5</span>  <span class="dv">8</span></span>
+<span id="cb66-8"><a href="#cb66-8"></a>baz       <span class="dv">3</span>  <span class="dv">6</span>  <span class="dv">9</span></span>
+<span id="cb66-9"><a href="#cb66-9"></a>foo       <span class="dv">1</span>  <span class="dv">4</span>  <span class="dv">7</span></span></code></pre></div>
+<p>因为pivot的结果从列创建了一个索引，用作行标签，我们可以使用reset_index将数据移回列：</p>
+<div class="sourceCode" id="cb67"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb67-1"><a href="#cb67-1"></a>In [<span class="dv">163</span>]: reshaped.reset_index()</span>
+<span id="cb67-2"><a href="#cb67-2"></a>Out[<span class="dv">163</span>]: </span>
+<span id="cb67-3"><a href="#cb67-3"></a>variable  key  A  B  C</span>
+<span id="cb67-4"><a href="#cb67-4"></a><span class="dv">0</span>         bar  <span class="dv">2</span>  <span class="dv">5</span>  <span class="dv">8</span></span>
+<span id="cb67-5"><a href="#cb67-5"></a><span class="dv">1</span>         baz  <span class="dv">3</span>  <span class="dv">6</span>  <span class="dv">9</span></span>
+<span id="cb67-6"><a href="#cb67-6"></a><span class="dv">2</span>         foo  <span class="dv">1</span>  <span class="dv">4</span>  <span class="dv">7</span></span></code></pre></div>
+<p>你还可以指定列的子集，作为值的列：</p>
+<div class="sourceCode" id="cb68"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb68-1"><a href="#cb68-1"></a>In [<span class="dv">164</span>]: pd.melt(df, id_vars<span class="op">=</span>[<span class="st">&#39;key&#39;</span>], value_vars<span class="op">=</span>[<span class="st">&#39;A&#39;</span>, <span class="st">&#39;B&#39;</span>])</span>
+<span id="cb68-2"><a href="#cb68-2"></a>Out[<span class="dv">164</span>]: </span>
+<span id="cb68-3"><a href="#cb68-3"></a>   key variable  value</span>
+<span id="cb68-4"><a href="#cb68-4"></a><span class="dv">0</span>  foo        A      <span class="dv">1</span></span>
+<span id="cb68-5"><a href="#cb68-5"></a><span class="dv">1</span>  bar        A      <span class="dv">2</span></span>
+<span id="cb68-6"><a href="#cb68-6"></a><span class="dv">2</span>  baz        A      <span class="dv">3</span></span>
+<span id="cb68-7"><a href="#cb68-7"></a><span class="dv">3</span>  foo        B      <span class="dv">4</span></span>
+<span id="cb68-8"><a href="#cb68-8"></a><span class="dv">4</span>  bar        B      <span class="dv">5</span></span>
+<span id="cb68-9"><a href="#cb68-9"></a><span class="dv">5</span>  baz        B      <span class="dv">6</span></span></code></pre></div>
+<p>pandas.melt也可以不用分组指标：</p>
+<div class="sourceCode" id="cb69"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb69-1"><a href="#cb69-1"></a>In [<span class="dv">165</span>]: pd.melt(df, value_vars<span class="op">=</span>[<span class="st">&#39;A&#39;</span>, <span class="st">&#39;B&#39;</span>, <span class="st">&#39;C&#39;</span>])</span>
+<span id="cb69-2"><a href="#cb69-2"></a>Out[<span class="dv">165</span>]: </span>
+<span id="cb69-3"><a href="#cb69-3"></a>  variable  value</span>
+<span id="cb69-4"><a href="#cb69-4"></a><span class="dv">0</span>        A      <span class="dv">1</span></span>
+<span id="cb69-5"><a href="#cb69-5"></a><span class="dv">1</span>        A      <span class="dv">2</span></span>
+<span id="cb69-6"><a href="#cb69-6"></a><span class="dv">2</span>        A      <span class="dv">3</span></span>
+<span id="cb69-7"><a href="#cb69-7"></a><span class="dv">3</span>        B      <span class="dv">4</span></span>
+<span id="cb69-8"><a href="#cb69-8"></a><span class="dv">4</span>        B      <span class="dv">5</span></span>
+<span id="cb69-9"><a href="#cb69-9"></a><span class="dv">5</span>        B      <span class="dv">6</span></span>
+<span id="cb69-10"><a href="#cb69-10"></a><span class="dv">6</span>        C      <span class="dv">7</span></span>
+<span id="cb69-11"><a href="#cb69-11"></a><span class="dv">7</span>        C      <span class="dv">8</span></span>
+<span id="cb69-12"><a href="#cb69-12"></a><span class="dv">8</span>        C      <span class="dv">9</span></span>
+<span id="cb69-13"><a href="#cb69-13"></a></span>
+<span id="cb69-14"><a href="#cb69-14"></a>In [<span class="dv">166</span>]: pd.melt(df, value_vars<span class="op">=</span>[<span class="st">&#39;key&#39;</span>, <span class="st">&#39;A&#39;</span>, <span class="st">&#39;B&#39;</span>])</span>
+<span id="cb69-15"><a href="#cb69-15"></a>Out[<span class="dv">166</span>]: </span>
+<span id="cb69-16"><a href="#cb69-16"></a>  variable value</span>
+<span id="cb69-17"><a href="#cb69-17"></a><span class="dv">0</span>      key   foo</span>
+<span id="cb69-18"><a href="#cb69-18"></a><span class="dv">1</span>      key   bar</span>
+<span id="cb69-19"><a href="#cb69-19"></a><span class="dv">2</span>      key   baz</span>
+<span id="cb69-20"><a href="#cb69-20"></a><span class="dv">3</span>        A     <span class="dv">1</span></span>
+<span id="cb69-21"><a href="#cb69-21"></a><span class="dv">4</span>        A     <span class="dv">2</span></span>
+<span id="cb69-22"><a href="#cb69-22"></a><span class="dv">5</span>        A     <span class="dv">3</span></span>
+<span id="cb69-23"><a href="#cb69-23"></a><span class="dv">6</span>        B     <span class="dv">4</span></span>
+<span id="cb69-24"><a href="#cb69-24"></a><span class="dv">7</span>        B     <span class="dv">5</span></span>
+<span id="cb69-25"><a href="#cb69-25"></a><span class="dv">8</span>        B     <span class="dv">6</span></span></code></pre></div>
+<p>#8.4 总结</p>
+<p>现在你已经掌握了pandas数据导入、清洗、重塑，我们可以进一步学习matplotlib数据可视化。我们在稍后会回到pandas，学习更高级的分析。</p>

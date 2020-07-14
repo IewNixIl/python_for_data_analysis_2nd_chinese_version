@@ -1,0 +1,683 @@
+<p>本书中，我已经介绍了Python数据分析的编程基础。因为数据分析师和科学家总是在数据规整和准备上花费大量时间，这本书的重点在于掌握这些功能。</p>
+<p>开发模型选用什么库取决于应用本身。许多统计问题可以用简单方法解决，比如普通的最小二乘回归，其它问题可能需要复杂的机器学习方法。幸运的是，Python已经成为了运用这些分析方法的语言之一，因此读完此书，你可以探索许多工具。</p>
+<p>本章中，我会回顾一些pandas的特点，在你胶着于pandas数据规整和模型拟合和评分时，它们可能派上用场。然后我会简短介绍两个流行的建模工具，statsmodels和scikit-learn。这二者每个都值得再写一本书，我就不做全面的介绍，而是建议你学习两个项目的线上文档和其它基于Python的数据科学、统计和机器学习的书籍。</p>
+<h1 id="pandas与模型代码的接口">13.1 pandas与模型代码的接口</h1>
+<p>模型开发的通常工作流是使用pandas进行数据加载和清洗，然后切换到建模库进行建模。开发模型的重要一环是机器学习中的“特征工程”。它可以描述从原始数据集中提取信息的任何数据转换或分析，这些数据集可能在建模中有用。本书中学习的数据聚合和GroupBy工具常用于特征工程中。</p>
+<p>优秀的特征工程超出了本书的范围，我会尽量直白地介绍一些用于数据操作和建模切换的方法。</p>
+<p>pandas与其它分析库通常是靠NumPy的数组联系起来的。将DataFrame转换为NumPy数组，可以使用.values属性：</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1"></a>In [<span class="dv">10</span>]: <span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="cb1-2"><a href="#cb1-2"></a></span>
+<span id="cb1-3"><a href="#cb1-3"></a>In [<span class="dv">11</span>]: <span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb1-4"><a href="#cb1-4"></a></span>
+<span id="cb1-5"><a href="#cb1-5"></a>In [<span class="dv">12</span>]: data <span class="op">=</span> pd.DataFrame({</span>
+<span id="cb1-6"><a href="#cb1-6"></a>   ....:     <span class="st">&#39;x0&#39;</span>: [<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">5</span>],</span>
+<span id="cb1-7"><a href="#cb1-7"></a>   ....:     <span class="st">&#39;x1&#39;</span>: [<span class="fl">0.01</span>, <span class="op">-</span><span class="fl">0.01</span>, <span class="fl">0.25</span>, <span class="op">-</span><span class="fl">4.1</span>, <span class="fl">0.</span>],</span>
+<span id="cb1-8"><a href="#cb1-8"></a>   ....:     <span class="st">&#39;y&#39;</span>: [<span class="op">-</span><span class="fl">1.5</span>, <span class="fl">0.</span>, <span class="fl">3.6</span>, <span class="fl">1.3</span>, <span class="op">-</span><span class="fl">2.</span>]})</span>
+<span id="cb1-9"><a href="#cb1-9"></a></span>
+<span id="cb1-10"><a href="#cb1-10"></a>In [<span class="dv">13</span>]: data</span>
+<span id="cb1-11"><a href="#cb1-11"></a>Out[<span class="dv">13</span>]: </span>
+<span id="cb1-12"><a href="#cb1-12"></a>   x0    x1    y</span>
+<span id="cb1-13"><a href="#cb1-13"></a><span class="dv">0</span>   <span class="dv">1</span>  <span class="fl">0.01</span> <span class="op">-</span><span class="fl">1.5</span></span>
+<span id="cb1-14"><a href="#cb1-14"></a><span class="dv">1</span>   <span class="dv">2</span> <span class="op">-</span><span class="fl">0.01</span>  <span class="fl">0.0</span></span>
+<span id="cb1-15"><a href="#cb1-15"></a><span class="dv">2</span>   <span class="dv">3</span>  <span class="fl">0.25</span>  <span class="fl">3.6</span></span>
+<span id="cb1-16"><a href="#cb1-16"></a><span class="dv">3</span>   <span class="dv">4</span> <span class="op">-</span><span class="fl">4.10</span>  <span class="fl">1.3</span></span>
+<span id="cb1-17"><a href="#cb1-17"></a><span class="dv">4</span>   <span class="dv">5</span>  <span class="fl">0.00</span> <span class="op">-</span><span class="fl">2.0</span></span>
+<span id="cb1-18"><a href="#cb1-18"></a></span>
+<span id="cb1-19"><a href="#cb1-19"></a>In [<span class="dv">14</span>]: data.columns</span>
+<span id="cb1-20"><a href="#cb1-20"></a>Out[<span class="dv">14</span>]: Index([<span class="st">&#39;x0&#39;</span>, <span class="st">&#39;x1&#39;</span>, <span class="st">&#39;y&#39;</span>], dtype<span class="op">=</span><span class="st">&#39;object&#39;</span>)</span>
+<span id="cb1-21"><a href="#cb1-21"></a></span>
+<span id="cb1-22"><a href="#cb1-22"></a>In [<span class="dv">15</span>]: data.values</span>
+<span id="cb1-23"><a href="#cb1-23"></a>Out[<span class="dv">15</span>]: </span>
+<span id="cb1-24"><a href="#cb1-24"></a>array([[ <span class="fl">1.</span>  ,  <span class="fl">0.01</span>, <span class="op">-</span><span class="fl">1.5</span> ],</span>
+<span id="cb1-25"><a href="#cb1-25"></a>       [ <span class="fl">2.</span>  , <span class="op">-</span><span class="fl">0.01</span>,  <span class="fl">0.</span>  ],</span>
+<span id="cb1-26"><a href="#cb1-26"></a>       [ <span class="fl">3.</span>  ,  <span class="fl">0.25</span>,  <span class="fl">3.6</span> ],</span>
+<span id="cb1-27"><a href="#cb1-27"></a>       [ <span class="fl">4.</span>  , <span class="op">-</span><span class="fl">4.1</span> ,  <span class="fl">1.3</span> ],</span>
+<span id="cb1-28"><a href="#cb1-28"></a>       [ <span class="fl">5.</span>  ,  <span class="fl">0.</span>  , <span class="op">-</span><span class="fl">2.</span>  ]])</span></code></pre></div>
+<p>要转换回DataFrame，可以传递一个二维ndarray，可带有列名：</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1"></a>In [<span class="dv">16</span>]: df2 <span class="op">=</span> pd.DataFrame(data.values, columns<span class="op">=</span>[<span class="st">&#39;one&#39;</span>, <span class="st">&#39;two&#39;</span>, <span class="st">&#39;three&#39;</span>])</span>
+<span id="cb2-2"><a href="#cb2-2"></a></span>
+<span id="cb2-3"><a href="#cb2-3"></a>In [<span class="dv">17</span>]: df2</span>
+<span id="cb2-4"><a href="#cb2-4"></a>Out[<span class="dv">17</span>]: </span>
+<span id="cb2-5"><a href="#cb2-5"></a>   one   two  three</span>
+<span id="cb2-6"><a href="#cb2-6"></a><span class="dv">0</span>  <span class="fl">1.0</span>  <span class="fl">0.01</span>   <span class="op">-</span><span class="fl">1.5</span></span>
+<span id="cb2-7"><a href="#cb2-7"></a><span class="dv">1</span>  <span class="fl">2.0</span> <span class="op">-</span><span class="fl">0.01</span>    <span class="fl">0.0</span></span>
+<span id="cb2-8"><a href="#cb2-8"></a><span class="dv">2</span>  <span class="fl">3.0</span>  <span class="fl">0.25</span>    <span class="fl">3.6</span></span>
+<span id="cb2-9"><a href="#cb2-9"></a><span class="dv">3</span>  <span class="fl">4.0</span> <span class="op">-</span><span class="fl">4.10</span>    <span class="fl">1.3</span></span>
+<span id="cb2-10"><a href="#cb2-10"></a><span class="dv">4</span>  <span class="fl">5.0</span>  <span class="fl">0.00</span>   <span class="op">-</span><span class="fl">2.0</span></span></code></pre></div>
+<blockquote>
+<p>笔记：最好当数据是均匀的时候使用.values属性。例如，全是数值类型。如果数据是不均匀的，结果会是Python对象的ndarray：</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1"></a>In [<span class="dv">18</span>]: df3 <span class="op">=</span> data.copy()</span>
+<span id="cb3-2"><a href="#cb3-2"></a></span>
+<span id="cb3-3"><a href="#cb3-3"></a>In [<span class="dv">19</span>]: df3[<span class="st">&#39;strings&#39;</span>] <span class="op">=</span> [<span class="st">&#39;a&#39;</span>, <span class="st">&#39;b&#39;</span>, <span class="st">&#39;c&#39;</span>, <span class="st">&#39;d&#39;</span>, <span class="st">&#39;e&#39;</span>]</span>
+<span id="cb3-4"><a href="#cb3-4"></a></span>
+<span id="cb3-5"><a href="#cb3-5"></a>In [<span class="dv">20</span>]: df3</span>
+<span id="cb3-6"><a href="#cb3-6"></a>Out[<span class="dv">20</span>]: </span>
+<span id="cb3-7"><a href="#cb3-7"></a>  x0    x1    y strings</span>
+<span id="cb3-8"><a href="#cb3-8"></a><span class="dv">0</span>   <span class="dv">1</span>  <span class="fl">0.01</span> <span class="op">-</span><span class="fl">1.5</span>       a</span>
+<span id="cb3-9"><a href="#cb3-9"></a><span class="dv">1</span>   <span class="dv">2</span> <span class="op">-</span><span class="fl">0.01</span>  <span class="fl">0.0</span>       b</span>
+<span id="cb3-10"><a href="#cb3-10"></a><span class="dv">2</span>   <span class="dv">3</span>  <span class="fl">0.25</span>  <span class="fl">3.6</span>       c</span>
+<span id="cb3-11"><a href="#cb3-11"></a><span class="dv">3</span>   <span class="dv">4</span> <span class="op">-</span><span class="fl">4.10</span>  <span class="fl">1.3</span>       d</span>
+<span id="cb3-12"><a href="#cb3-12"></a><span class="dv">4</span>   <span class="dv">5</span>  <span class="fl">0.00</span> <span class="op">-</span><span class="fl">2.0</span>       e</span>
+<span id="cb3-13"><a href="#cb3-13"></a></span>
+<span id="cb3-14"><a href="#cb3-14"></a>In [<span class="dv">21</span>]: df3.values</span>
+<span id="cb3-15"><a href="#cb3-15"></a>Out[<span class="dv">21</span>]: </span>
+<span id="cb3-16"><a href="#cb3-16"></a>array([[<span class="dv">1</span>, <span class="fl">0.01</span>, <span class="op">-</span><span class="fl">1.5</span>, <span class="st">&#39;a&#39;</span>],</span>
+<span id="cb3-17"><a href="#cb3-17"></a>      [<span class="dv">2</span>, <span class="op">-</span><span class="fl">0.01</span>, <span class="fl">0.0</span>, <span class="st">&#39;b&#39;</span>],</span>
+<span id="cb3-18"><a href="#cb3-18"></a>      [<span class="dv">3</span>, <span class="fl">0.25</span>, <span class="fl">3.6</span>, <span class="st">&#39;c&#39;</span>],</span>
+<span id="cb3-19"><a href="#cb3-19"></a>      [<span class="dv">4</span>, <span class="op">-</span><span class="fl">4.1</span>, <span class="fl">1.3</span>, <span class="st">&#39;d&#39;</span>],</span>
+<span id="cb3-20"><a href="#cb3-20"></a>      [<span class="dv">5</span>, <span class="fl">0.0</span>, <span class="op">-</span><span class="fl">2.0</span>, <span class="st">&#39;e&#39;</span>]], dtype<span class="op">=</span><span class="bu">object</span>)</span></code></pre></div>
+</blockquote>
+<p>对于一些模型，你可能只想使用列的子集。我建议你使用loc，用values作索引：</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1"></a>In [<span class="dv">22</span>]: model_cols <span class="op">=</span> [<span class="st">&#39;x0&#39;</span>, <span class="st">&#39;x1&#39;</span>]</span>
+<span id="cb4-2"><a href="#cb4-2"></a></span>
+<span id="cb4-3"><a href="#cb4-3"></a>In [<span class="dv">23</span>]: data.loc[:, model_cols].values</span>
+<span id="cb4-4"><a href="#cb4-4"></a>Out[<span class="dv">23</span>]: </span>
+<span id="cb4-5"><a href="#cb4-5"></a>array([[ <span class="fl">1.</span>  ,  <span class="fl">0.01</span>],</span>
+<span id="cb4-6"><a href="#cb4-6"></a>       [ <span class="fl">2.</span>  , <span class="op">-</span><span class="fl">0.01</span>],</span>
+<span id="cb4-7"><a href="#cb4-7"></a>       [ <span class="fl">3.</span>  ,  <span class="fl">0.25</span>],</span>
+<span id="cb4-8"><a href="#cb4-8"></a>       [ <span class="fl">4.</span>  , <span class="op">-</span><span class="fl">4.1</span> ],</span>
+<span id="cb4-9"><a href="#cb4-9"></a>       [ <span class="fl">5.</span>  ,  <span class="fl">0.</span>  ]])</span></code></pre></div>
+<p>一些库原生支持pandas，会自动完成工作：从DataFrame转换到NumPy，将模型的参数名添加到输出表的列或Series。其它情况，你可以手工进行“元数据管理”。</p>
+<p>在第12章，我们学习了pandas的Categorical类型和pandas.get_dummies函数。假设数据集中有一个非数值列：</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1"></a>In [<span class="dv">24</span>]: data[<span class="st">&#39;category&#39;</span>] <span class="op">=</span> pd.Categorical([<span class="st">&#39;a&#39;</span>, <span class="st">&#39;b&#39;</span>, <span class="st">&#39;a&#39;</span>, <span class="st">&#39;a&#39;</span>, <span class="st">&#39;b&#39;</span>],</span>
+<span id="cb5-2"><a href="#cb5-2"></a>   ....:                                   categories<span class="op">=</span>[<span class="st">&#39;a&#39;</span>, <span class="st">&#39;b&#39;</span>])</span>
+<span id="cb5-3"><a href="#cb5-3"></a></span>
+<span id="cb5-4"><a href="#cb5-4"></a>In [<span class="dv">25</span>]: data</span>
+<span id="cb5-5"><a href="#cb5-5"></a>Out[<span class="dv">25</span>]: </span>
+<span id="cb5-6"><a href="#cb5-6"></a>   x0    x1    y category</span>
+<span id="cb5-7"><a href="#cb5-7"></a><span class="dv">0</span>   <span class="dv">1</span>  <span class="fl">0.01</span> <span class="op">-</span><span class="fl">1.5</span>        a</span>
+<span id="cb5-8"><a href="#cb5-8"></a><span class="dv">1</span>   <span class="dv">2</span> <span class="op">-</span><span class="fl">0.01</span>  <span class="fl">0.0</span>        b</span>
+<span id="cb5-9"><a href="#cb5-9"></a><span class="dv">2</span>   <span class="dv">3</span>  <span class="fl">0.25</span>  <span class="fl">3.6</span>        a</span>
+<span id="cb5-10"><a href="#cb5-10"></a><span class="dv">3</span>   <span class="dv">4</span> <span class="op">-</span><span class="fl">4.10</span>  <span class="fl">1.3</span>        a</span>
+<span id="cb5-11"><a href="#cb5-11"></a><span class="dv">4</span>   <span class="dv">5</span>  <span class="fl">0.00</span> <span class="op">-</span><span class="fl">2.0</span>        b</span></code></pre></div>
+<p>如果我们想替换category列为虚变量，我们可以创建虚变量，删除category列，然后添加到结果：</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1"></a>In [<span class="dv">26</span>]: dummies <span class="op">=</span> pd.get_dummies(data.category, prefix<span class="op">=</span><span class="st">&#39;category&#39;</span>)</span>
+<span id="cb6-2"><a href="#cb6-2"></a></span>
+<span id="cb6-3"><a href="#cb6-3"></a>In [<span class="dv">27</span>]: data_with_dummies <span class="op">=</span> data.drop(<span class="st">&#39;category&#39;</span>, axis<span class="op">=</span><span class="dv">1</span>).join(dummies)</span>
+<span id="cb6-4"><a href="#cb6-4"></a></span>
+<span id="cb6-5"><a href="#cb6-5"></a>In [<span class="dv">28</span>]: data_with_dummies</span>
+<span id="cb6-6"><a href="#cb6-6"></a>Out[<span class="dv">28</span>]: </span>
+<span id="cb6-7"><a href="#cb6-7"></a>   x0    x1    y  category_a  category_b</span>
+<span id="cb6-8"><a href="#cb6-8"></a><span class="dv">0</span>   <span class="dv">1</span>  <span class="fl">0.01</span> <span class="op">-</span><span class="fl">1.5</span>           <span class="dv">1</span>           <span class="dv">0</span></span>
+<span id="cb6-9"><a href="#cb6-9"></a><span class="dv">1</span>   <span class="dv">2</span> <span class="op">-</span><span class="fl">0.01</span>  <span class="fl">0.0</span>           <span class="dv">0</span>           <span class="dv">1</span></span>
+<span id="cb6-10"><a href="#cb6-10"></a><span class="dv">2</span>   <span class="dv">3</span>  <span class="fl">0.25</span>  <span class="fl">3.6</span>           <span class="dv">1</span>           <span class="dv">0</span></span>
+<span id="cb6-11"><a href="#cb6-11"></a><span class="dv">3</span>   <span class="dv">4</span> <span class="op">-</span><span class="fl">4.10</span>  <span class="fl">1.3</span>           <span class="dv">1</span>           <span class="dv">0</span></span>
+<span id="cb6-12"><a href="#cb6-12"></a><span class="dv">4</span>   <span class="dv">5</span>  <span class="fl">0.00</span> <span class="op">-</span><span class="fl">2.0</span>           <span class="dv">0</span>           <span class="dv">1</span></span></code></pre></div>
+<p>用虚变量拟合某些统计模型会有一些细微差别。当你不只有数字列时，使用Patsy（下一节的主题）可能更简单，更不容易出错。</p>
+<h1 id="用patsy创建模型描述">13.2 用Patsy创建模型描述</h1>
+<p>Patsy是Python的一个库，使用简短的字符串“公式语法”描述统计模型（尤其是线性模型），可能是受到了R和S统计编程语言的公式语法的启发。</p>
+<p>Patsy适合描述statsmodels的线性模型，因此我会关注于它的主要特点，让你尽快掌握。Patsy的公式是一个特殊的字符串语法，如下所示：</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1"></a>y <span class="op">~</span> x0 <span class="op">+</span> x1</span></code></pre></div>
+<p>a+b不是将a与b相加的意思，而是为模型创建的设计矩阵。patsy.dmatrices函数接收一个公式字符串和一个数据集（可以是DataFrame或数组的字典），为线性模型创建设计矩阵：</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1"></a>In [<span class="dv">29</span>]: data <span class="op">=</span> pd.DataFrame({</span>
+<span id="cb8-2"><a href="#cb8-2"></a>   ....:     <span class="st">&#39;x0&#39;</span>: [<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">5</span>],</span>
+<span id="cb8-3"><a href="#cb8-3"></a>   ....:     <span class="st">&#39;x1&#39;</span>: [<span class="fl">0.01</span>, <span class="op">-</span><span class="fl">0.01</span>, <span class="fl">0.25</span>, <span class="op">-</span><span class="fl">4.1</span>, <span class="fl">0.</span>],</span>
+<span id="cb8-4"><a href="#cb8-4"></a>   ....:     <span class="st">&#39;y&#39;</span>: [<span class="op">-</span><span class="fl">1.5</span>, <span class="fl">0.</span>, <span class="fl">3.6</span>, <span class="fl">1.3</span>, <span class="op">-</span><span class="fl">2.</span>]})</span>
+<span id="cb8-5"><a href="#cb8-5"></a></span>
+<span id="cb8-6"><a href="#cb8-6"></a>In [<span class="dv">30</span>]: data</span>
+<span id="cb8-7"><a href="#cb8-7"></a>Out[<span class="dv">30</span>]: </span>
+<span id="cb8-8"><a href="#cb8-8"></a>   x0    x1    y</span>
+<span id="cb8-9"><a href="#cb8-9"></a><span class="dv">0</span>   <span class="dv">1</span>  <span class="fl">0.01</span> <span class="op">-</span><span class="fl">1.5</span></span>
+<span id="cb8-10"><a href="#cb8-10"></a><span class="dv">1</span>   <span class="dv">2</span> <span class="op">-</span><span class="fl">0.01</span>  <span class="fl">0.0</span></span>
+<span id="cb8-11"><a href="#cb8-11"></a><span class="dv">2</span>   <span class="dv">3</span>  <span class="fl">0.25</span>  <span class="fl">3.6</span></span>
+<span id="cb8-12"><a href="#cb8-12"></a><span class="dv">3</span>   <span class="dv">4</span> <span class="op">-</span><span class="fl">4.10</span>  <span class="fl">1.3</span></span>
+<span id="cb8-13"><a href="#cb8-13"></a><span class="dv">4</span>   <span class="dv">5</span>  <span class="fl">0.00</span> <span class="op">-</span><span class="fl">2.0</span></span>
+<span id="cb8-14"><a href="#cb8-14"></a></span>
+<span id="cb8-15"><a href="#cb8-15"></a>In [<span class="dv">31</span>]: <span class="im">import</span> patsy</span>
+<span id="cb8-16"><a href="#cb8-16"></a></span>
+<span id="cb8-17"><a href="#cb8-17"></a>In [<span class="dv">32</span>]: y, X <span class="op">=</span> patsy.dmatrices(<span class="st">&#39;y ~ x0 + x1&#39;</span>, data)</span></code></pre></div>
+<p>现在有：</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1"></a>In [<span class="dv">33</span>]: y</span>
+<span id="cb9-2"><a href="#cb9-2"></a>Out[<span class="dv">33</span>]: </span>
+<span id="cb9-3"><a href="#cb9-3"></a>DesignMatrix <span class="cf">with</span> shape (<span class="dv">5</span>, <span class="dv">1</span>)</span>
+<span id="cb9-4"><a href="#cb9-4"></a>     y</span>
+<span id="cb9-5"><a href="#cb9-5"></a>  <span class="op">-</span><span class="fl">1.5</span></span>
+<span id="cb9-6"><a href="#cb9-6"></a>   <span class="fl">0.0</span></span>
+<span id="cb9-7"><a href="#cb9-7"></a>   <span class="fl">3.6</span></span>
+<span id="cb9-8"><a href="#cb9-8"></a>   <span class="fl">1.3</span></span>
+<span id="cb9-9"><a href="#cb9-9"></a>  <span class="op">-</span><span class="fl">2.0</span></span>
+<span id="cb9-10"><a href="#cb9-10"></a>  Terms:</span>
+<span id="cb9-11"><a href="#cb9-11"></a>    <span class="co">&#39;y&#39;</span> (column <span class="dv">0</span>)</span>
+<span id="cb9-12"><a href="#cb9-12"></a></span>
+<span id="cb9-13"><a href="#cb9-13"></a>In [<span class="dv">34</span>]: X</span>
+<span id="cb9-14"><a href="#cb9-14"></a>Out[<span class="dv">34</span>]: </span>
+<span id="cb9-15"><a href="#cb9-15"></a>DesignMatrix <span class="cf">with</span> shape (<span class="dv">5</span>, <span class="dv">3</span>)</span>
+<span id="cb9-16"><a href="#cb9-16"></a>  Intercept  x0     x1</span>
+<span id="cb9-17"><a href="#cb9-17"></a>          <span class="dv">1</span>   <span class="dv">1</span>   <span class="fl">0.01</span></span>
+<span id="cb9-18"><a href="#cb9-18"></a>          <span class="dv">1</span>   <span class="dv">2</span>  <span class="op">-</span><span class="fl">0.01</span></span>
+<span id="cb9-19"><a href="#cb9-19"></a>          <span class="dv">1</span>   <span class="dv">3</span>   <span class="fl">0.25</span></span>
+<span id="cb9-20"><a href="#cb9-20"></a>          <span class="dv">1</span>   <span class="dv">4</span>  <span class="op">-</span><span class="fl">4.10</span></span>
+<span id="cb9-21"><a href="#cb9-21"></a>          <span class="dv">1</span>   <span class="dv">5</span>   <span class="fl">0.00</span></span>
+<span id="cb9-22"><a href="#cb9-22"></a>  Terms:</span>
+<span id="cb9-23"><a href="#cb9-23"></a>    <span class="co">&#39;Intercept&#39;</span> (column <span class="dv">0</span>)</span>
+<span id="cb9-24"><a href="#cb9-24"></a>    <span class="co">&#39;x0&#39;</span> (column <span class="dv">1</span>)</span>
+<span id="cb9-25"><a href="#cb9-25"></a>    <span class="co">&#39;x1&#39;</span> (column <span class="dv">2</span>)</span></code></pre></div>
+<p>这些Patsy的DesignMatrix实例是NumPy的ndarray，带有附加元数据：</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1"></a>In [<span class="dv">35</span>]: np.asarray(y)</span>
+<span id="cb10-2"><a href="#cb10-2"></a>Out[<span class="dv">35</span>]: </span>
+<span id="cb10-3"><a href="#cb10-3"></a>array([[<span class="op">-</span><span class="fl">1.5</span>],</span>
+<span id="cb10-4"><a href="#cb10-4"></a>       [ <span class="fl">0.</span> ],</span>
+<span id="cb10-5"><a href="#cb10-5"></a>       [ <span class="fl">3.6</span>],</span>
+<span id="cb10-6"><a href="#cb10-6"></a>       [ <span class="fl">1.3</span>],</span>
+<span id="cb10-7"><a href="#cb10-7"></a>       [<span class="op">-</span><span class="fl">2.</span> ]])</span>
+<span id="cb10-8"><a href="#cb10-8"></a></span>
+<span id="cb10-9"><a href="#cb10-9"></a>In [<span class="dv">36</span>]: np.asarray(X)</span>
+<span id="cb10-10"><a href="#cb10-10"></a>Out[<span class="dv">36</span>]: </span>
+<span id="cb10-11"><a href="#cb10-11"></a>array([[ <span class="fl">1.</span>  ,  <span class="fl">1.</span>  ,  <span class="fl">0.01</span>],</span>
+<span id="cb10-12"><a href="#cb10-12"></a>       [ <span class="fl">1.</span>  ,  <span class="fl">2.</span>  , <span class="op">-</span><span class="fl">0.01</span>],</span>
+<span id="cb10-13"><a href="#cb10-13"></a>       [ <span class="fl">1.</span>  ,  <span class="fl">3.</span>  ,  <span class="fl">0.25</span>],</span>
+<span id="cb10-14"><a href="#cb10-14"></a>       [ <span class="fl">1.</span>  ,  <span class="fl">4.</span>  , <span class="op">-</span><span class="fl">4.1</span> ],</span>
+<span id="cb10-15"><a href="#cb10-15"></a>       [ <span class="fl">1.</span>  ,  <span class="fl">5.</span>  ,  <span class="fl">0.</span>  ]])</span></code></pre></div>
+<p>你可能想Intercept是哪里来的。这是线性模型（比如普通最小二乘回归）的惯例用法。添加 +0 到模型可以不显示intercept：</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1"></a>In [<span class="dv">37</span>]: patsy.dmatrices(<span class="st">&#39;y ~ x0 + x1 + 0&#39;</span>, data)[<span class="dv">1</span>]</span>
+<span id="cb11-2"><a href="#cb11-2"></a>Out[<span class="dv">37</span>]: </span>
+<span id="cb11-3"><a href="#cb11-3"></a>DesignMatrix <span class="cf">with</span> shape (<span class="dv">5</span>, <span class="dv">2</span>)</span>
+<span id="cb11-4"><a href="#cb11-4"></a>  x0     x1</span>
+<span id="cb11-5"><a href="#cb11-5"></a>   <span class="dv">1</span>   <span class="fl">0.01</span></span>
+<span id="cb11-6"><a href="#cb11-6"></a>   <span class="dv">2</span>  <span class="op">-</span><span class="fl">0.01</span></span>
+<span id="cb11-7"><a href="#cb11-7"></a>   <span class="dv">3</span>   <span class="fl">0.25</span></span>
+<span id="cb11-8"><a href="#cb11-8"></a>   <span class="dv">4</span>  <span class="op">-</span><span class="fl">4.10</span></span>
+<span id="cb11-9"><a href="#cb11-9"></a>   <span class="dv">5</span>   <span class="fl">0.00</span></span>
+<span id="cb11-10"><a href="#cb11-10"></a>  Terms:</span>
+<span id="cb11-11"><a href="#cb11-11"></a>    <span class="co">&#39;x0&#39;</span> (column <span class="dv">0</span>)</span>
+<span id="cb11-12"><a href="#cb11-12"></a>    <span class="co">&#39;x1&#39;</span> (column <span class="dv">1</span>)</span></code></pre></div>
+<p>Patsy对象可以直接传递到算法（比如numpy.linalg.lstsq）中，它执行普通最小二乘回归：</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1"></a>In [<span class="dv">38</span>]: coef, resid, _, _ <span class="op">=</span> np.linalg.lstsq(X, y)</span></code></pre></div>
+<p>模型的元数据保留在design_info属性中，因此你可以重新附加列名到拟合系数，以获得一个Series，例如：</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1"></a>In [<span class="dv">39</span>]: coef</span>
+<span id="cb13-2"><a href="#cb13-2"></a>Out[<span class="dv">39</span>]: </span>
+<span id="cb13-3"><a href="#cb13-3"></a>array([[ <span class="fl">0.3129</span>],</span>
+<span id="cb13-4"><a href="#cb13-4"></a>       [<span class="op">-</span><span class="fl">0.0791</span>],</span>
+<span id="cb13-5"><a href="#cb13-5"></a>       [<span class="op">-</span><span class="fl">0.2655</span>]])</span>
+<span id="cb13-6"><a href="#cb13-6"></a></span>
+<span id="cb13-7"><a href="#cb13-7"></a>In [<span class="dv">40</span>]: coef <span class="op">=</span> pd.Series(coef.squeeze(), index<span class="op">=</span>X.design_info.column_names)</span>
+<span id="cb13-8"><a href="#cb13-8"></a></span>
+<span id="cb13-9"><a href="#cb13-9"></a>In [<span class="dv">41</span>]: coef</span>
+<span id="cb13-10"><a href="#cb13-10"></a>Out[<span class="dv">41</span>]: </span>
+<span id="cb13-11"><a href="#cb13-11"></a>Intercept    <span class="fl">0.312910</span></span>
+<span id="cb13-12"><a href="#cb13-12"></a>x0          <span class="op">-</span><span class="fl">0.079106</span></span>
+<span id="cb13-13"><a href="#cb13-13"></a>x1          <span class="op">-</span><span class="fl">0.265464</span></span>
+<span id="cb13-14"><a href="#cb13-14"></a>dtype: float64</span></code></pre></div>
+<h2 id="用patsy公式进行数据转换">用Patsy公式进行数据转换</h2>
+<p>你可以将Python代码与patsy公式结合。在评估公式时，库将尝试查找在封闭作用域内使用的函数：</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1"></a>In [<span class="dv">42</span>]: y, X <span class="op">=</span> patsy.dmatrices(<span class="st">&#39;y ~ x0 + np.log(np.abs(x1) + 1)&#39;</span>, data)</span>
+<span id="cb14-2"><a href="#cb14-2"></a></span>
+<span id="cb14-3"><a href="#cb14-3"></a>In [<span class="dv">43</span>]: X</span>
+<span id="cb14-4"><a href="#cb14-4"></a>Out[<span class="dv">43</span>]: </span>
+<span id="cb14-5"><a href="#cb14-5"></a>DesignMatrix <span class="cf">with</span> shape (<span class="dv">5</span>, <span class="dv">3</span>)</span>
+<span id="cb14-6"><a href="#cb14-6"></a>  Intercept  x0  np.log(np.<span class="bu">abs</span>(x1) <span class="op">+</span> <span class="dv">1</span>)</span>
+<span id="cb14-7"><a href="#cb14-7"></a>          <span class="dv">1</span>   <span class="dv">1</span>                 <span class="fl">0.00995</span></span>
+<span id="cb14-8"><a href="#cb14-8"></a>          <span class="dv">1</span>   <span class="dv">2</span>                 <span class="fl">0.00995</span></span>
+<span id="cb14-9"><a href="#cb14-9"></a>          <span class="dv">1</span>   <span class="dv">3</span>                 <span class="fl">0.22314</span></span>
+<span id="cb14-10"><a href="#cb14-10"></a>          <span class="dv">1</span>   <span class="dv">4</span>                 <span class="fl">1.62924</span></span>
+<span id="cb14-11"><a href="#cb14-11"></a>          <span class="dv">1</span>   <span class="dv">5</span>                 <span class="fl">0.00000</span></span>
+<span id="cb14-12"><a href="#cb14-12"></a>  Terms:</span>
+<span id="cb14-13"><a href="#cb14-13"></a>    <span class="co">&#39;Intercept&#39;</span> (column <span class="dv">0</span>)</span>
+<span id="cb14-14"><a href="#cb14-14"></a>    <span class="co">&#39;x0&#39;</span> (column <span class="dv">1</span>)</span>
+<span id="cb14-15"><a href="#cb14-15"></a>    <span class="co">&#39;np.log(np.abs(x1) + 1)&#39;</span> (column <span class="dv">2</span>)</span></code></pre></div>
+<p>常见的变量转换包括标准化（平均值为0，方差为1）和中心化（减去平均值）。Patsy有内置的函数进行这样的工作：</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1"></a>In [<span class="dv">44</span>]: y, X <span class="op">=</span> patsy.dmatrices(<span class="st">&#39;y ~ standardize(x0) + center(x1)&#39;</span>, data)</span>
+<span id="cb15-2"><a href="#cb15-2"></a></span>
+<span id="cb15-3"><a href="#cb15-3"></a>In [<span class="dv">45</span>]: X</span>
+<span id="cb15-4"><a href="#cb15-4"></a>Out[<span class="dv">45</span>]: </span>
+<span id="cb15-5"><a href="#cb15-5"></a>DesignMatrix <span class="cf">with</span> shape (<span class="dv">5</span>, <span class="dv">3</span>)</span>
+<span id="cb15-6"><a href="#cb15-6"></a>  Intercept  standardize(x0)  center(x1)</span>
+<span id="cb15-7"><a href="#cb15-7"></a>          <span class="dv">1</span>         <span class="op">-</span><span class="fl">1.41421</span>        <span class="fl">0.78</span></span>
+<span id="cb15-8"><a href="#cb15-8"></a>          <span class="dv">1</span>         <span class="op">-</span><span class="fl">0.70711</span>        <span class="fl">0.76</span></span>
+<span id="cb15-9"><a href="#cb15-9"></a>          <span class="dv">1</span>          <span class="fl">0.00000</span>        <span class="fl">1.02</span></span>
+<span id="cb15-10"><a href="#cb15-10"></a>          <span class="dv">1</span>          <span class="fl">0.70711</span>       <span class="op">-</span><span class="fl">3.33</span></span>
+<span id="cb15-11"><a href="#cb15-11"></a>          <span class="dv">1</span>          <span class="fl">1.41421</span>        <span class="fl">0.77</span></span>
+<span id="cb15-12"><a href="#cb15-12"></a>  Terms:</span>
+<span id="cb15-13"><a href="#cb15-13"></a>    <span class="co">&#39;Intercept&#39;</span> (column <span class="dv">0</span>)</span>
+<span id="cb15-14"><a href="#cb15-14"></a>    <span class="co">&#39;standardize(x0)&#39;</span> (column <span class="dv">1</span>)</span>
+<span id="cb15-15"><a href="#cb15-15"></a>    <span class="co">&#39;center(x1)&#39;</span> (column <span class="dv">2</span>)</span></code></pre></div>
+<p>作为建模的一步，你可能拟合模型到一个数据集，然后用另一个数据集评估模型。另一个数据集可能是剩余的部分或是新数据。当执行中心化和标准化转变，用新数据进行预测要格外小心。因为你必须使用平均值或标准差转换新数据集，这也称作状态转换。</p>
+<p>patsy.build_design_matrices函数可以使用原始样本数据集的保存信息，来转换新数据，：</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1"></a>In [<span class="dv">46</span>]: new_data <span class="op">=</span> pd.DataFrame({</span>
+<span id="cb16-2"><a href="#cb16-2"></a>   ....:     <span class="st">&#39;x0&#39;</span>: [<span class="dv">6</span>, <span class="dv">7</span>, <span class="dv">8</span>, <span class="dv">9</span>],</span>
+<span id="cb16-3"><a href="#cb16-3"></a>   ....:     <span class="st">&#39;x1&#39;</span>: [<span class="fl">3.1</span>, <span class="op">-</span><span class="fl">0.5</span>, <span class="dv">0</span>, <span class="fl">2.3</span>],</span>
+<span id="cb16-4"><a href="#cb16-4"></a>   ....:     <span class="st">&#39;y&#39;</span>: [<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>]})</span>
+<span id="cb16-5"><a href="#cb16-5"></a></span>
+<span id="cb16-6"><a href="#cb16-6"></a>In [<span class="dv">47</span>]: new_X <span class="op">=</span> patsy.build_design_matrices([X.design_info], new_data)</span>
+<span id="cb16-7"><a href="#cb16-7"></a></span>
+<span id="cb16-8"><a href="#cb16-8"></a>In [<span class="dv">48</span>]: new_X</span>
+<span id="cb16-9"><a href="#cb16-9"></a>Out[<span class="dv">48</span>]: </span>
+<span id="cb16-10"><a href="#cb16-10"></a>[DesignMatrix <span class="cf">with</span> shape (<span class="dv">4</span>, <span class="dv">3</span>)</span>
+<span id="cb16-11"><a href="#cb16-11"></a>   Intercept  standardize(x0)  center(x1)</span>
+<span id="cb16-12"><a href="#cb16-12"></a>           <span class="dv">1</span>          <span class="fl">2.12132</span>        <span class="fl">3.87</span></span>
+<span id="cb16-13"><a href="#cb16-13"></a>           <span class="dv">1</span>          <span class="fl">2.82843</span>        <span class="fl">0.27</span></span>
+<span id="cb16-14"><a href="#cb16-14"></a>           <span class="dv">1</span>          <span class="fl">3.53553</span>        <span class="fl">0.77</span></span>
+<span id="cb16-15"><a href="#cb16-15"></a>           <span class="dv">1</span>          <span class="fl">4.24264</span>        <span class="fl">3.07</span></span>
+<span id="cb16-16"><a href="#cb16-16"></a>   Terms:</span>
+<span id="cb16-17"><a href="#cb16-17"></a>     <span class="st">&#39;Intercept&#39;</span> (column <span class="dv">0</span>)</span>
+<span id="cb16-18"><a href="#cb16-18"></a>     <span class="st">&#39;standardize(x0)&#39;</span> (column <span class="dv">1</span>)</span>
+<span id="cb16-19"><a href="#cb16-19"></a>     <span class="st">&#39;center(x1)&#39;</span> (column <span class="dv">2</span>)]</span></code></pre></div>
+<p>因为Patsy中的加号不是加法的意义，当你按照名称将数据集的列相加时，你必须用特殊I函数将它们封装起来：</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1"></a>In [<span class="dv">49</span>]: y, X <span class="op">=</span> patsy.dmatrices(<span class="st">&#39;y ~ I(x0 + x1)&#39;</span>, data)</span>
+<span id="cb17-2"><a href="#cb17-2"></a></span>
+<span id="cb17-3"><a href="#cb17-3"></a>In [<span class="dv">50</span>]: X</span>
+<span id="cb17-4"><a href="#cb17-4"></a>Out[<span class="dv">50</span>]: </span>
+<span id="cb17-5"><a href="#cb17-5"></a>DesignMatrix <span class="cf">with</span> shape (<span class="dv">5</span>, <span class="dv">2</span>)</span>
+<span id="cb17-6"><a href="#cb17-6"></a>  Intercept  I(x0 <span class="op">+</span> x1)</span>
+<span id="cb17-7"><a href="#cb17-7"></a>          <span class="dv">1</span>        <span class="fl">1.01</span></span>
+<span id="cb17-8"><a href="#cb17-8"></a>          <span class="dv">1</span>        <span class="fl">1.99</span></span>
+<span id="cb17-9"><a href="#cb17-9"></a>          <span class="dv">1</span>        <span class="fl">3.25</span></span>
+<span id="cb17-10"><a href="#cb17-10"></a>          <span class="dv">1</span>       <span class="op">-</span><span class="fl">0.10</span></span>
+<span id="cb17-11"><a href="#cb17-11"></a>          <span class="dv">1</span>        <span class="fl">5.00</span></span>
+<span id="cb17-12"><a href="#cb17-12"></a>  Terms:</span>
+<span id="cb17-13"><a href="#cb17-13"></a>    <span class="co">&#39;Intercept&#39;</span> (column <span class="dv">0</span>)</span>
+<span id="cb17-14"><a href="#cb17-14"></a>    <span class="co">&#39;I(x0 + x1)&#39;</span> (column <span class="dv">1</span>)</span></code></pre></div>
+<p>Patsy的patsy.builtins模块还有一些其它的内置转换。请查看线上文档。</p>
+<p>分类数据有一个特殊的转换类，下面进行讲解。</p>
+<h2 id="分类数据和patsy">分类数据和Patsy</h2>
+<p>非数值数据可以用多种方式转换为模型设计矩阵。完整的讲解超出了本书范围，最好和统计课一起学习。</p>
+<p>当你在Patsy公式中使用非数值数据，它们会默认转换为虚变量。如果有截距，会去掉一个，避免共线性：</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1"></a>In [<span class="dv">51</span>]: data <span class="op">=</span> pd.DataFrame({</span>
+<span id="cb18-2"><a href="#cb18-2"></a>   ....:     <span class="st">&#39;key1&#39;</span>: [<span class="st">&#39;a&#39;</span>, <span class="st">&#39;a&#39;</span>, <span class="st">&#39;b&#39;</span>, <span class="st">&#39;b&#39;</span>, <span class="st">&#39;a&#39;</span>, <span class="st">&#39;b&#39;</span>, <span class="st">&#39;a&#39;</span>, <span class="st">&#39;b&#39;</span>],</span>
+<span id="cb18-3"><a href="#cb18-3"></a>   ....:     <span class="st">&#39;key2&#39;</span>: [<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">0</span>, <span class="dv">0</span>],</span>
+<span id="cb18-4"><a href="#cb18-4"></a>   ....:     <span class="st">&#39;v1&#39;</span>: [<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">5</span>, <span class="dv">6</span>, <span class="dv">7</span>, <span class="dv">8</span>],</span>
+<span id="cb18-5"><a href="#cb18-5"></a>   ....:     <span class="st">&#39;v2&#39;</span>: [<span class="op">-</span><span class="dv">1</span>, <span class="dv">0</span>, <span class="fl">2.5</span>, <span class="op">-</span><span class="fl">0.5</span>, <span class="fl">4.0</span>, <span class="op">-</span><span class="fl">1.2</span>, <span class="fl">0.2</span>, <span class="op">-</span><span class="fl">1.7</span>]</span>
+<span id="cb18-6"><a href="#cb18-6"></a>   ....: })</span>
+<span id="cb18-7"><a href="#cb18-7"></a></span>
+<span id="cb18-8"><a href="#cb18-8"></a>In [<span class="dv">52</span>]: y, X <span class="op">=</span> patsy.dmatrices(<span class="st">&#39;v2 ~ key1&#39;</span>, data)</span>
+<span id="cb18-9"><a href="#cb18-9"></a></span>
+<span id="cb18-10"><a href="#cb18-10"></a>In [<span class="dv">53</span>]: X</span>
+<span id="cb18-11"><a href="#cb18-11"></a>Out[<span class="dv">53</span>]: </span>
+<span id="cb18-12"><a href="#cb18-12"></a>DesignMatrix <span class="cf">with</span> shape (<span class="dv">8</span>, <span class="dv">2</span>)</span>
+<span id="cb18-13"><a href="#cb18-13"></a>  Intercept  key1[T.b]</span>
+<span id="cb18-14"><a href="#cb18-14"></a>          <span class="dv">1</span>          <span class="dv">0</span></span>
+<span id="cb18-15"><a href="#cb18-15"></a>          <span class="dv">1</span>          <span class="dv">0</span></span>
+<span id="cb18-16"><a href="#cb18-16"></a>          <span class="dv">1</span>          <span class="dv">1</span></span>
+<span id="cb18-17"><a href="#cb18-17"></a>          <span class="dv">1</span>          <span class="dv">1</span></span>
+<span id="cb18-18"><a href="#cb18-18"></a>          <span class="dv">1</span>          <span class="dv">0</span></span>
+<span id="cb18-19"><a href="#cb18-19"></a>          <span class="dv">1</span>          <span class="dv">1</span></span>
+<span id="cb18-20"><a href="#cb18-20"></a>          <span class="dv">1</span>          <span class="dv">0</span></span>
+<span id="cb18-21"><a href="#cb18-21"></a>          <span class="dv">1</span>          <span class="dv">1</span></span>
+<span id="cb18-22"><a href="#cb18-22"></a>  Terms:</span>
+<span id="cb18-23"><a href="#cb18-23"></a>    <span class="co">&#39;Intercept&#39;</span> (column <span class="dv">0</span>)</span>
+<span id="cb18-24"><a href="#cb18-24"></a>    <span class="co">&#39;key1&#39;</span> (column <span class="dv">1</span>)</span></code></pre></div>
+<p>如果你从模型中忽略截距，每个分类值的列都会包括在设计矩阵的模型中：</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1"></a>In [<span class="dv">54</span>]: y, X <span class="op">=</span> patsy.dmatrices(<span class="st">&#39;v2 ~ key1 + 0&#39;</span>, data)</span>
+<span id="cb19-2"><a href="#cb19-2"></a></span>
+<span id="cb19-3"><a href="#cb19-3"></a>In [<span class="dv">55</span>]: X</span>
+<span id="cb19-4"><a href="#cb19-4"></a>Out[<span class="dv">55</span>]: </span>
+<span id="cb19-5"><a href="#cb19-5"></a>DesignMatrix <span class="cf">with</span> shape (<span class="dv">8</span>, <span class="dv">2</span>)</span>
+<span id="cb19-6"><a href="#cb19-6"></a>  key1[a]  key1[b]</span>
+<span id="cb19-7"><a href="#cb19-7"></a>        <span class="dv">1</span>        <span class="dv">0</span></span>
+<span id="cb19-8"><a href="#cb19-8"></a>        <span class="dv">1</span>        <span class="dv">0</span></span>
+<span id="cb19-9"><a href="#cb19-9"></a>        <span class="dv">0</span>        <span class="dv">1</span></span>
+<span id="cb19-10"><a href="#cb19-10"></a>        <span class="dv">0</span>        <span class="dv">1</span></span>
+<span id="cb19-11"><a href="#cb19-11"></a>        <span class="dv">1</span>        <span class="dv">0</span></span>
+<span id="cb19-12"><a href="#cb19-12"></a>        <span class="dv">0</span>        <span class="dv">1</span></span>
+<span id="cb19-13"><a href="#cb19-13"></a>        <span class="dv">1</span>        <span class="dv">0</span></span>
+<span id="cb19-14"><a href="#cb19-14"></a>        <span class="dv">0</span>        <span class="dv">1</span></span>
+<span id="cb19-15"><a href="#cb19-15"></a>  Terms:</span>
+<span id="cb19-16"><a href="#cb19-16"></a>    <span class="co">&#39;key1&#39;</span> (columns <span class="dv">0</span>:<span class="dv">2</span>)</span></code></pre></div>
+<p>使用C函数，数值列可以截取为分类量：</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1"></a>In [<span class="dv">56</span>]: y, X <span class="op">=</span> patsy.dmatrices(<span class="st">&#39;v2 ~ C(key2)&#39;</span>, data)</span>
+<span id="cb20-2"><a href="#cb20-2"></a></span>
+<span id="cb20-3"><a href="#cb20-3"></a>In [<span class="dv">57</span>]: X</span>
+<span id="cb20-4"><a href="#cb20-4"></a>Out[<span class="dv">57</span>]: </span>
+<span id="cb20-5"><a href="#cb20-5"></a>DesignMatrix <span class="cf">with</span> shape (<span class="dv">8</span>, <span class="dv">2</span>)</span>
+<span id="cb20-6"><a href="#cb20-6"></a>  Intercept  C(key2)[T<span class="fl">.1</span>]</span>
+<span id="cb20-7"><a href="#cb20-7"></a>          <span class="dv">1</span>             <span class="dv">0</span></span>
+<span id="cb20-8"><a href="#cb20-8"></a>          <span class="dv">1</span>             <span class="dv">1</span></span>
+<span id="cb20-9"><a href="#cb20-9"></a>          <span class="dv">1</span>             <span class="dv">0</span></span>
+<span id="cb20-10"><a href="#cb20-10"></a>          <span class="dv">1</span>             <span class="dv">1</span></span>
+<span id="cb20-11"><a href="#cb20-11"></a>          <span class="dv">1</span>             <span class="dv">0</span></span>
+<span id="cb20-12"><a href="#cb20-12"></a>          <span class="dv">1</span>             <span class="dv">1</span></span>
+<span id="cb20-13"><a href="#cb20-13"></a>          <span class="dv">1</span>             <span class="dv">0</span></span>
+<span id="cb20-14"><a href="#cb20-14"></a>          <span class="dv">1</span>             <span class="dv">0</span></span>
+<span id="cb20-15"><a href="#cb20-15"></a>  Terms:</span>
+<span id="cb20-16"><a href="#cb20-16"></a>    <span class="co">&#39;Intercept&#39;</span> (column <span class="dv">0</span>)</span>
+<span id="cb20-17"><a href="#cb20-17"></a>    <span class="co">&#39;C(key2)&#39;</span> (column <span class="dv">1</span>)</span></code></pre></div>
+<p>当你在模型中使用多个分类名，事情就会变复杂，因为会包括key1:key2形式的相交部分，它可以用在方差（ANOVA）模型分析中：</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1"></a>In [<span class="dv">58</span>]: data[<span class="st">&#39;key2&#39;</span>] <span class="op">=</span> data[<span class="st">&#39;key2&#39;</span>].<span class="bu">map</span>({<span class="dv">0</span>: <span class="st">&#39;zero&#39;</span>, <span class="dv">1</span>: <span class="st">&#39;one&#39;</span>})</span>
+<span id="cb21-2"><a href="#cb21-2"></a></span>
+<span id="cb21-3"><a href="#cb21-3"></a>In [<span class="dv">59</span>]: data</span>
+<span id="cb21-4"><a href="#cb21-4"></a>Out[<span class="dv">59</span>]: </span>
+<span id="cb21-5"><a href="#cb21-5"></a>  key1  key2  v1   v2</span>
+<span id="cb21-6"><a href="#cb21-6"></a><span class="dv">0</span>    a  zero   <span class="dv">1</span> <span class="op">-</span><span class="fl">1.0</span></span>
+<span id="cb21-7"><a href="#cb21-7"></a><span class="dv">1</span>    a   one   <span class="dv">2</span>  <span class="fl">0.0</span></span>
+<span id="cb21-8"><a href="#cb21-8"></a><span class="dv">2</span>    b  zero   <span class="dv">3</span>  <span class="fl">2.5</span></span>
+<span id="cb21-9"><a href="#cb21-9"></a><span class="dv">3</span>    b   one   <span class="dv">4</span> <span class="op">-</span><span class="fl">0.5</span></span>
+<span id="cb21-10"><a href="#cb21-10"></a><span class="dv">4</span>    a  zero   <span class="dv">5</span>  <span class="fl">4.0</span></span>
+<span id="cb21-11"><a href="#cb21-11"></a><span class="dv">5</span>    b   one   <span class="dv">6</span> <span class="op">-</span><span class="fl">1.2</span></span>
+<span id="cb21-12"><a href="#cb21-12"></a><span class="dv">6</span>    a  zero   <span class="dv">7</span>  <span class="fl">0.2</span></span>
+<span id="cb21-13"><a href="#cb21-13"></a><span class="dv">7</span>    b  zero   <span class="dv">8</span> <span class="op">-</span><span class="fl">1.7</span></span>
+<span id="cb21-14"><a href="#cb21-14"></a></span>
+<span id="cb21-15"><a href="#cb21-15"></a>In [<span class="dv">60</span>]: y, X <span class="op">=</span> patsy.dmatrices(<span class="st">&#39;v2 ~ key1 + key2&#39;</span>, data)</span>
+<span id="cb21-16"><a href="#cb21-16"></a></span>
+<span id="cb21-17"><a href="#cb21-17"></a>In [<span class="dv">61</span>]: X</span>
+<span id="cb21-18"><a href="#cb21-18"></a>Out[<span class="dv">61</span>]: </span>
+<span id="cb21-19"><a href="#cb21-19"></a>DesignMatrix <span class="cf">with</span> shape (<span class="dv">8</span>, <span class="dv">3</span>)</span>
+<span id="cb21-20"><a href="#cb21-20"></a>  Intercept  key1[T.b]  key2[T.zero]</span>
+<span id="cb21-21"><a href="#cb21-21"></a>          <span class="dv">1</span>          <span class="dv">0</span>             <span class="dv">1</span></span>
+<span id="cb21-22"><a href="#cb21-22"></a>          <span class="dv">1</span>          <span class="dv">0</span>             <span class="dv">0</span></span>
+<span id="cb21-23"><a href="#cb21-23"></a>          <span class="dv">1</span>          <span class="dv">1</span>             <span class="dv">1</span></span>
+<span id="cb21-24"><a href="#cb21-24"></a>          <span class="dv">1</span>          <span class="dv">1</span>             <span class="dv">0</span></span>
+<span id="cb21-25"><a href="#cb21-25"></a>          <span class="dv">1</span>          <span class="dv">0</span>             <span class="dv">1</span></span>
+<span id="cb21-26"><a href="#cb21-26"></a>          <span class="dv">1</span>          <span class="dv">1</span>             <span class="dv">0</span></span>
+<span id="cb21-27"><a href="#cb21-27"></a>          <span class="dv">1</span>          <span class="dv">0</span>             <span class="dv">1</span></span>
+<span id="cb21-28"><a href="#cb21-28"></a>          <span class="dv">1</span>          <span class="dv">1</span>             <span class="dv">1</span></span>
+<span id="cb21-29"><a href="#cb21-29"></a>  Terms:</span>
+<span id="cb21-30"><a href="#cb21-30"></a>    <span class="co">&#39;Intercept&#39;</span> (column <span class="dv">0</span>)</span>
+<span id="cb21-31"><a href="#cb21-31"></a>    <span class="co">&#39;key1&#39;</span> (column <span class="dv">1</span>)</span>
+<span id="cb21-32"><a href="#cb21-32"></a>    <span class="co">&#39;key2&#39;</span> (column <span class="dv">2</span>)</span>
+<span id="cb21-33"><a href="#cb21-33"></a></span>
+<span id="cb21-34"><a href="#cb21-34"></a>In [<span class="dv">62</span>]: y, X <span class="op">=</span> patsy.dmatrices(<span class="st">&#39;v2 ~ key1 + key2 + key1:key2&#39;</span>, data)</span>
+<span id="cb21-35"><a href="#cb21-35"></a></span>
+<span id="cb21-36"><a href="#cb21-36"></a>In [<span class="dv">63</span>]: X</span>
+<span id="cb21-37"><a href="#cb21-37"></a>Out[<span class="dv">63</span>]: </span>
+<span id="cb21-38"><a href="#cb21-38"></a>DesignMatrix <span class="cf">with</span> shape (<span class="dv">8</span>, <span class="dv">4</span>)</span>
+<span id="cb21-39"><a href="#cb21-39"></a>  Intercept  key1[T.b]  key2[T.zero]</span>
+<span id="cb21-40"><a href="#cb21-40"></a>key1[T.b]:key2[T.zero]</span>
+<span id="cb21-41"><a href="#cb21-41"></a>          <span class="dv">1</span>          <span class="dv">0</span>             <span class="dv">1</span>                       <span class="dv">0</span></span>
+<span id="cb21-42"><a href="#cb21-42"></a>          <span class="dv">1</span>          <span class="dv">0</span>             <span class="dv">0</span>                       <span class="dv">0</span></span>
+<span id="cb21-43"><a href="#cb21-43"></a>          <span class="dv">1</span>          <span class="dv">1</span>             <span class="dv">1</span>                       <span class="dv">1</span></span>
+<span id="cb21-44"><a href="#cb21-44"></a>          <span class="dv">1</span>          <span class="dv">1</span>             <span class="dv">0</span>                       <span class="dv">0</span></span>
+<span id="cb21-45"><a href="#cb21-45"></a>          <span class="dv">1</span>          <span class="dv">0</span>             <span class="dv">1</span>                       <span class="dv">0</span></span>
+<span id="cb21-46"><a href="#cb21-46"></a>          <span class="dv">1</span>          <span class="dv">1</span>             <span class="dv">0</span>                       <span class="dv">0</span></span>
+<span id="cb21-47"><a href="#cb21-47"></a>          <span class="dv">1</span>          <span class="dv">0</span>             <span class="dv">1</span>                       <span class="dv">0</span></span>
+<span id="cb21-48"><a href="#cb21-48"></a>          <span class="dv">1</span>          <span class="dv">1</span>             <span class="dv">1</span>                       <span class="dv">1</span></span>
+<span id="cb21-49"><a href="#cb21-49"></a>  Terms:</span>
+<span id="cb21-50"><a href="#cb21-50"></a>    <span class="co">&#39;Intercept&#39;</span> (column <span class="dv">0</span>)</span>
+<span id="cb21-51"><a href="#cb21-51"></a>    <span class="co">&#39;key1&#39;</span> (column <span class="dv">1</span>)</span>
+<span id="cb21-52"><a href="#cb21-52"></a>    <span class="co">&#39;key2&#39;</span> (column <span class="dv">2</span>)</span>
+<span id="cb21-53"><a href="#cb21-53"></a>    <span class="co">&#39;key1:key2&#39;</span> (column <span class="dv">3</span>)</span></code></pre></div>
+<p>Patsy提供转换分类数据的其它方法，包括以特定顺序转换。请参阅线上文档。</p>
+<h1 id="statsmodels介绍">13.3 statsmodels介绍</h1>
+<p>statsmodels是Python进行拟合多种统计模型、进行统计试验和数据探索可视化的库。Statsmodels包含许多经典的统计方法，但没有贝叶斯方法和机器学习模型。</p>
+<p>statsmodels包含的模型有：</p>
+<ul>
+<li>线性模型，广义线性模型和健壮线性模型</li>
+<li>线性混合效应模型</li>
+<li>方差（ANOVA）方法分析</li>
+<li>时间序列过程和状态空间模型</li>
+<li>广义矩估计</li>
+</ul>
+<p>下面，我会使用一些基本的statsmodels工具，探索Patsy公式和pandasDataFrame对象如何使用模型接口。</p>
+<h2 id="估计线性模型">估计线性模型</h2>
+<p>statsmodels有多种线性回归模型，包括从基本（比如普通最小二乘）到复杂（比如迭代加权最小二乘法）的。</p>
+<p>statsmodels的线性模型有两种不同的接口：基于数组和基于公式。它们可以通过API模块引入：</p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1"></a><span class="im">import</span> statsmodels.api <span class="im">as</span> sm</span>
+<span id="cb22-2"><a href="#cb22-2"></a><span class="im">import</span> statsmodels.formula.api <span class="im">as</span> smf</span></code></pre></div>
+<p>为了展示它们的使用方法，我们从一些随机数据生成一个线性模型：</p>
+<div class="sourceCode" id="cb23"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1"></a><span class="kw">def</span> dnorm(mean, variance, size<span class="op">=</span><span class="dv">1</span>):</span>
+<span id="cb23-2"><a href="#cb23-2"></a>    <span class="cf">if</span> <span class="bu">isinstance</span>(size, <span class="bu">int</span>):</span>
+<span id="cb23-3"><a href="#cb23-3"></a>        size <span class="op">=</span> size,</span>
+<span id="cb23-4"><a href="#cb23-4"></a>    <span class="cf">return</span> mean <span class="op">+</span> np.sqrt(variance) <span class="op">*</span> np.random.randn(<span class="op">*</span>size)</span>
+<span id="cb23-5"><a href="#cb23-5"></a></span>
+<span id="cb23-6"><a href="#cb23-6"></a><span class="co"># For reproducibility</span></span>
+<span id="cb23-7"><a href="#cb23-7"></a>np.random.seed(<span class="dv">12345</span>)</span>
+<span id="cb23-8"><a href="#cb23-8"></a></span>
+<span id="cb23-9"><a href="#cb23-9"></a>N <span class="op">=</span> <span class="dv">100</span></span>
+<span id="cb23-10"><a href="#cb23-10"></a>X <span class="op">=</span> np.c_[dnorm(<span class="dv">0</span>, <span class="fl">0.4</span>, size<span class="op">=</span>N),</span>
+<span id="cb23-11"><a href="#cb23-11"></a>          dnorm(<span class="dv">0</span>, <span class="fl">0.6</span>, size<span class="op">=</span>N),</span>
+<span id="cb23-12"><a href="#cb23-12"></a>          dnorm(<span class="dv">0</span>, <span class="fl">0.2</span>, size<span class="op">=</span>N)]</span>
+<span id="cb23-13"><a href="#cb23-13"></a>eps <span class="op">=</span> dnorm(<span class="dv">0</span>, <span class="fl">0.1</span>, size<span class="op">=</span>N)</span>
+<span id="cb23-14"><a href="#cb23-14"></a>beta <span class="op">=</span> [<span class="fl">0.1</span>, <span class="fl">0.3</span>, <span class="fl">0.5</span>]</span>
+<span id="cb23-15"><a href="#cb23-15"></a></span>
+<span id="cb23-16"><a href="#cb23-16"></a>y <span class="op">=</span> np.dot(X, beta) <span class="op">+</span> eps</span></code></pre></div>
+<p>这里，我使用了“真实”模型和可知参数beta。此时，dnorm可用来生成正态分布数据，带有特定均值和方差。现在有：</p>
+<div class="sourceCode" id="cb24"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1"></a>In [<span class="dv">66</span>]: X[:<span class="dv">5</span>]</span>
+<span id="cb24-2"><a href="#cb24-2"></a>Out[<span class="dv">66</span>]: </span>
+<span id="cb24-3"><a href="#cb24-3"></a>array([[<span class="op">-</span><span class="fl">0.1295</span>, <span class="op">-</span><span class="fl">1.2128</span>,  <span class="fl">0.5042</span>],</span>
+<span id="cb24-4"><a href="#cb24-4"></a>       [ <span class="fl">0.3029</span>, <span class="op">-</span><span class="fl">0.4357</span>, <span class="op">-</span><span class="fl">0.2542</span>],</span>
+<span id="cb24-5"><a href="#cb24-5"></a>       [<span class="op">-</span><span class="fl">0.3285</span>, <span class="op">-</span><span class="fl">0.0253</span>,  <span class="fl">0.1384</span>],</span>
+<span id="cb24-6"><a href="#cb24-6"></a>       [<span class="op">-</span><span class="fl">0.3515</span>, <span class="op">-</span><span class="fl">0.7196</span>, <span class="op">-</span><span class="fl">0.2582</span>],</span>
+<span id="cb24-7"><a href="#cb24-7"></a>       [ <span class="fl">1.2433</span>, <span class="op">-</span><span class="fl">0.3738</span>, <span class="op">-</span><span class="fl">0.5226</span>]])</span>
+<span id="cb24-8"><a href="#cb24-8"></a></span>
+<span id="cb24-9"><a href="#cb24-9"></a>In [<span class="dv">67</span>]: y[:<span class="dv">5</span>]</span>
+<span id="cb24-10"><a href="#cb24-10"></a>Out[<span class="dv">67</span>]: array([ <span class="fl">0.4279</span>, <span class="op">-</span><span class="fl">0.6735</span>, <span class="op">-</span><span class="fl">0.0909</span>, <span class="op">-</span><span class="fl">0.4895</span>,<span class="op">-</span><span class="fl">0.1289</span>])</span></code></pre></div>
+<p>像之前Patsy看到的，线性模型通常要拟合一个截距。sm.add_constant函数可以添加一个截距的列到现存的矩阵：</p>
+<div class="sourceCode" id="cb25"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1"></a>In [<span class="dv">68</span>]: X_model <span class="op">=</span> sm.add_constant(X)</span>
+<span id="cb25-2"><a href="#cb25-2"></a></span>
+<span id="cb25-3"><a href="#cb25-3"></a>In [<span class="dv">69</span>]: X_model[:<span class="dv">5</span>]</span>
+<span id="cb25-4"><a href="#cb25-4"></a>Out[<span class="dv">69</span>]: </span>
+<span id="cb25-5"><a href="#cb25-5"></a>array([[ <span class="fl">1.</span>    , <span class="op">-</span><span class="fl">0.1295</span>, <span class="op">-</span><span class="fl">1.2128</span>,  <span class="fl">0.5042</span>],</span>
+<span id="cb25-6"><a href="#cb25-6"></a>       [ <span class="fl">1.</span>    ,  <span class="fl">0.3029</span>, <span class="op">-</span><span class="fl">0.4357</span>, <span class="op">-</span><span class="fl">0.2542</span>],</span>
+<span id="cb25-7"><a href="#cb25-7"></a>       [ <span class="fl">1.</span>    , <span class="op">-</span><span class="fl">0.3285</span>, <span class="op">-</span><span class="fl">0.0253</span>,  <span class="fl">0.1384</span>],</span>
+<span id="cb25-8"><a href="#cb25-8"></a>       [ <span class="fl">1.</span>    , <span class="op">-</span><span class="fl">0.3515</span>, <span class="op">-</span><span class="fl">0.7196</span>, <span class="op">-</span><span class="fl">0.2582</span>],</span>
+<span id="cb25-9"><a href="#cb25-9"></a>       [ <span class="fl">1.</span>    ,  <span class="fl">1.2433</span>, <span class="op">-</span><span class="fl">0.3738</span>, <span class="op">-</span><span class="fl">0.5226</span>]])</span></code></pre></div>
+<p>sm.OLS类可以拟合一个普通最小二乘回归：</p>
+<div class="sourceCode" id="cb26"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1"></a>In [<span class="dv">70</span>]: model <span class="op">=</span> sm.OLS(y, X)</span></code></pre></div>
+<p>这个模型的fit方法返回了一个回归结果对象，它包含估计的模型参数和其它内容：</p>
+<div class="sourceCode" id="cb27"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1"></a>In [<span class="dv">71</span>]: results <span class="op">=</span> model.fit()</span>
+<span id="cb27-2"><a href="#cb27-2"></a></span>
+<span id="cb27-3"><a href="#cb27-3"></a>In [<span class="dv">72</span>]: results.params</span>
+<span id="cb27-4"><a href="#cb27-4"></a>Out[<span class="dv">72</span>]: array([ <span class="fl">0.1783</span>,  <span class="fl">0.223</span> ,  <span class="fl">0.501</span> ])</span></code></pre></div>
+<p>对结果使用summary方法可以打印模型的详细诊断结果：</p>
+<div class="sourceCode" id="cb28"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1"></a>In [<span class="dv">73</span>]: <span class="bu">print</span>(results.summary())</span>
+<span id="cb28-2"><a href="#cb28-2"></a>OLS Regression Results                            </span>
+<span id="cb28-3"><a href="#cb28-3"></a><span class="op">==============================================================================</span></span>
+<span id="cb28-4"><a href="#cb28-4"></a>Dep. Variable:                      y   R<span class="op">-</span>squared:                       <span class="fl">0.430</span></span>
+<span id="cb28-5"><a href="#cb28-5"></a>Model:                            OLS   Adj. R<span class="op">-</span>squared:                  <span class="fl">0.413</span></span>
+<span id="cb28-6"><a href="#cb28-6"></a>Method:                 Least Squares   F<span class="op">-</span>statistic:                     <span class="fl">24.42</span></span>
+<span id="cb28-7"><a href="#cb28-7"></a>Date:                Mon, <span class="dv">25</span> Sep <span class="dv">2017</span>   Prob (F<span class="op">-</span>statistic):           <span class="fl">7.44e-12</span></span>
+<span id="cb28-8"><a href="#cb28-8"></a>Time:                        <span class="dv">14</span>:06:<span class="dv">15</span>   Log<span class="op">-</span>Likelihood:                <span class="op">-</span><span class="fl">34.305</span></span>
+<span id="cb28-9"><a href="#cb28-9"></a>No. Observations:                 <span class="dv">100</span>   AIC:                             <span class="fl">74.61</span></span>
+<span id="cb28-10"><a href="#cb28-10"></a>Df Residuals:                      <span class="dv">97</span>   BIC:                             <span class="fl">82.42</span></span>
+<span id="cb28-11"><a href="#cb28-11"></a>Df Model:                           <span class="dv">3</span>                                         </span>
+<span id="cb28-12"><a href="#cb28-12"></a>Covariance Type:            nonrobust                                         </span>
+<span id="cb28-13"><a href="#cb28-13"></a><span class="op">==============================================================================</span></span>
+<span id="cb28-14"><a href="#cb28-14"></a>                 coef    std err          t      P<span class="op">&gt;|</span>t<span class="op">|</span>      [<span class="fl">0.025</span>      <span class="fl">0.975</span>]</span>
+<span id="cb28-15"><a href="#cb28-15"></a><span class="op">------------------------------------------------------------------------------</span></span>
+<span id="cb28-16"><a href="#cb28-16"></a>x1             <span class="fl">0.1783</span>      <span class="fl">0.053</span>      <span class="fl">3.364</span>      <span class="fl">0.001</span>       <span class="fl">0.073</span>       <span class="fl">0.283</span></span>
+<span id="cb28-17"><a href="#cb28-17"></a>x2             <span class="fl">0.2230</span>      <span class="fl">0.046</span>      <span class="fl">4.818</span>      <span class="fl">0.000</span>       <span class="fl">0.131</span>       <span class="fl">0.315</span></span>
+<span id="cb28-18"><a href="#cb28-18"></a>x3             <span class="fl">0.5010</span>      <span class="fl">0.080</span>      <span class="fl">6.237</span>      <span class="fl">0.000</span>       <span class="fl">0.342</span>       <span class="fl">0.660</span></span>
+<span id="cb28-19"><a href="#cb28-19"></a><span class="op">==============================================================================</span></span>
+<span id="cb28-20"><a href="#cb28-20"></a>Omnibus:                        <span class="fl">4.662</span>   Durbin<span class="op">-</span>Watson:                   <span class="fl">2.201</span></span>
+<span id="cb28-21"><a href="#cb28-21"></a>Prob(Omnibus):                  <span class="fl">0.097</span>   Jarque<span class="op">-</span>Bera (JB):                <span class="fl">4.098</span></span>
+<span id="cb28-22"><a href="#cb28-22"></a>Skew:                           <span class="fl">0.481</span>   Prob(JB):                        <span class="fl">0.129</span></span>
+<span id="cb28-23"><a href="#cb28-23"></a>Kurtosis:                       <span class="fl">3.243</span>   Cond. No.</span>
+<span id="cb28-24"><a href="#cb28-24"></a><span class="fl">1.74</span></span>
+<span id="cb28-25"><a href="#cb28-25"></a><span class="op">==============================================================================</span></span>
+<span id="cb28-26"><a href="#cb28-26"></a>Warnings:</span>
+<span id="cb28-27"><a href="#cb28-27"></a>[<span class="dv">1</span>] Standard Errors assume that the covariance matrix of the errors <span class="kw">is</span> correctly </span>
+<span id="cb28-28"><a href="#cb28-28"></a>specified.</span></code></pre></div>
+<p>这里的参数名为通用名x1, x2等等。假设所有的模型参数都在一个DataFrame中：</p>
+<div class="sourceCode" id="cb29"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1"></a>In [<span class="dv">74</span>]: data <span class="op">=</span> pd.DataFrame(X, columns<span class="op">=</span>[<span class="st">&#39;col0&#39;</span>, <span class="st">&#39;col1&#39;</span>, <span class="st">&#39;col2&#39;</span>])</span>
+<span id="cb29-2"><a href="#cb29-2"></a></span>
+<span id="cb29-3"><a href="#cb29-3"></a>In [<span class="dv">75</span>]: data[<span class="st">&#39;y&#39;</span>] <span class="op">=</span> y</span>
+<span id="cb29-4"><a href="#cb29-4"></a></span>
+<span id="cb29-5"><a href="#cb29-5"></a>In [<span class="dv">76</span>]: data[:<span class="dv">5</span>]</span>
+<span id="cb29-6"><a href="#cb29-6"></a>Out[<span class="dv">76</span>]: </span>
+<span id="cb29-7"><a href="#cb29-7"></a>       col0      col1      col2         y</span>
+<span id="cb29-8"><a href="#cb29-8"></a><span class="dv">0</span> <span class="op">-</span><span class="fl">0.129468</span> <span class="op">-</span><span class="fl">1.212753</span>  <span class="fl">0.504225</span>  <span class="fl">0.427863</span></span>
+<span id="cb29-9"><a href="#cb29-9"></a><span class="dv">1</span>  <span class="fl">0.302910</span> <span class="op">-</span><span class="fl">0.435742</span> <span class="op">-</span><span class="fl">0.254180</span> <span class="op">-</span><span class="fl">0.673480</span></span>
+<span id="cb29-10"><a href="#cb29-10"></a><span class="dv">2</span> <span class="op">-</span><span class="fl">0.328522</span> <span class="op">-</span><span class="fl">0.025302</span>  <span class="fl">0.138351</span> <span class="op">-</span><span class="fl">0.090878</span></span>
+<span id="cb29-11"><a href="#cb29-11"></a><span class="dv">3</span> <span class="op">-</span><span class="fl">0.351475</span> <span class="op">-</span><span class="fl">0.719605</span> <span class="op">-</span><span class="fl">0.258215</span> <span class="op">-</span><span class="fl">0.489494</span></span>
+<span id="cb29-12"><a href="#cb29-12"></a><span class="dv">4</span>  <span class="fl">1.243269</span> <span class="op">-</span><span class="fl">0.373799</span> <span class="op">-</span><span class="fl">0.522629</span> <span class="op">-</span><span class="fl">0.128941</span></span></code></pre></div>
+<p>现在，我们使用statsmodels的公式API和Patsy的公式字符串：</p>
+<div class="sourceCode" id="cb30"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1"></a>In [<span class="dv">77</span>]: results <span class="op">=</span> smf.ols(<span class="st">&#39;y ~ col0 + col1 + col2&#39;</span>, data<span class="op">=</span>data).fit()</span>
+<span id="cb30-2"><a href="#cb30-2"></a></span>
+<span id="cb30-3"><a href="#cb30-3"></a>In [<span class="dv">78</span>]: results.params</span>
+<span id="cb30-4"><a href="#cb30-4"></a>Out[<span class="dv">78</span>]: </span>
+<span id="cb30-5"><a href="#cb30-5"></a>Intercept    <span class="fl">0.033559</span></span>
+<span id="cb30-6"><a href="#cb30-6"></a>col0         <span class="fl">0.176149</span></span>
+<span id="cb30-7"><a href="#cb30-7"></a>col1         <span class="fl">0.224826</span></span>
+<span id="cb30-8"><a href="#cb30-8"></a>col2         <span class="fl">0.514808</span></span>
+<span id="cb30-9"><a href="#cb30-9"></a>dtype: float64</span>
+<span id="cb30-10"><a href="#cb30-10"></a></span>
+<span id="cb30-11"><a href="#cb30-11"></a>In [<span class="dv">79</span>]: results.tvalues</span>
+<span id="cb30-12"><a href="#cb30-12"></a>Out[<span class="dv">79</span>]: </span>
+<span id="cb30-13"><a href="#cb30-13"></a>Intercept    <span class="fl">0.952188</span></span>
+<span id="cb30-14"><a href="#cb30-14"></a>col0         <span class="fl">3.319754</span></span>
+<span id="cb30-15"><a href="#cb30-15"></a>col1         <span class="fl">4.850730</span></span>
+<span id="cb30-16"><a href="#cb30-16"></a>col2         <span class="fl">6.303971</span></span>
+<span id="cb30-17"><a href="#cb30-17"></a>dtype: float64</span></code></pre></div>
+<p>观察下statsmodels是如何返回Series结果的，附带有DataFrame的列名。当使用公式和pandas对象时，我们不需要使用add_constant。</p>
+<p>给出一个样本外数据，你可以根据估计的模型参数计算预测值：</p>
+<div class="sourceCode" id="cb31"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb31-1"><a href="#cb31-1"></a>In [<span class="dv">80</span>]: results.predict(data[:<span class="dv">5</span>])</span>
+<span id="cb31-2"><a href="#cb31-2"></a>Out[<span class="dv">80</span>]: </span>
+<span id="cb31-3"><a href="#cb31-3"></a><span class="dv">0</span>   <span class="op">-</span><span class="fl">0.002327</span></span>
+<span id="cb31-4"><a href="#cb31-4"></a><span class="dv">1</span>   <span class="op">-</span><span class="fl">0.141904</span></span>
+<span id="cb31-5"><a href="#cb31-5"></a><span class="dv">2</span>    <span class="fl">0.041226</span></span>
+<span id="cb31-6"><a href="#cb31-6"></a><span class="dv">3</span>   <span class="op">-</span><span class="fl">0.323070</span></span>
+<span id="cb31-7"><a href="#cb31-7"></a><span class="dv">4</span>   <span class="op">-</span><span class="fl">0.100535</span></span>
+<span id="cb31-8"><a href="#cb31-8"></a>dtype: float64</span></code></pre></div>
+<p>statsmodels的线性模型结果还有其它的分析、诊断和可视化工具。除了普通最小二乘模型，还有其它的线性模型。</p>
+<h2 id="估计时间序列过程">估计时间序列过程</h2>
+<p>statsmodels的另一模型类是进行时间序列分析，包括自回归过程、卡尔曼滤波和其它态空间模型，和多元自回归模型。</p>
+<p>用自回归结构和噪声来模拟一些时间序列数据：</p>
+<div class="sourceCode" id="cb32"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb32-1"><a href="#cb32-1"></a>init_x <span class="op">=</span> <span class="dv">4</span></span>
+<span id="cb32-2"><a href="#cb32-2"></a></span>
+<span id="cb32-3"><a href="#cb32-3"></a><span class="im">import</span> random</span>
+<span id="cb32-4"><a href="#cb32-4"></a>values <span class="op">=</span> [init_x, init_x]</span>
+<span id="cb32-5"><a href="#cb32-5"></a>N <span class="op">=</span> <span class="dv">1000</span></span>
+<span id="cb32-6"><a href="#cb32-6"></a></span>
+<span id="cb32-7"><a href="#cb32-7"></a>b0 <span class="op">=</span> <span class="fl">0.8</span></span>
+<span id="cb32-8"><a href="#cb32-8"></a>b1 <span class="op">=</span> <span class="op">-</span><span class="fl">0.4</span></span>
+<span id="cb32-9"><a href="#cb32-9"></a>noise <span class="op">=</span> dnorm(<span class="dv">0</span>, <span class="fl">0.1</span>, N)</span>
+<span id="cb32-10"><a href="#cb32-10"></a><span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(N):</span>
+<span id="cb32-11"><a href="#cb32-11"></a>    new_x <span class="op">=</span> values[<span class="op">-</span><span class="dv">1</span>] <span class="op">*</span> b0 <span class="op">+</span> values[<span class="op">-</span><span class="dv">2</span>] <span class="op">*</span> b1 <span class="op">+</span> noise[i]</span>
+<span id="cb32-12"><a href="#cb32-12"></a>    values.append(new_x)</span></code></pre></div>
+<p>这个数据有AR(2)结构（两个延迟），参数是0.8和-0.4。拟合AR模型时，你可能不知道滞后项的个数，因此可以用较多的滞后量来拟合这个模型：</p>
+<div class="sourceCode" id="cb33"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb33-1"><a href="#cb33-1"></a>In [<span class="dv">82</span>]: MAXLAGS <span class="op">=</span> <span class="dv">5</span></span>
+<span id="cb33-2"><a href="#cb33-2"></a></span>
+<span id="cb33-3"><a href="#cb33-3"></a>In [<span class="dv">83</span>]: model <span class="op">=</span> sm.tsa.AR(values)</span>
+<span id="cb33-4"><a href="#cb33-4"></a></span>
+<span id="cb33-5"><a href="#cb33-5"></a>In [<span class="dv">84</span>]: results <span class="op">=</span> model.fit(MAXLAGS)</span></code></pre></div>
+<p>结果中的估计参数首先是截距，其次是前两个参数的估计值：</p>
+<div class="sourceCode" id="cb34"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb34-1"><a href="#cb34-1"></a>In [<span class="dv">85</span>]: results.params</span>
+<span id="cb34-2"><a href="#cb34-2"></a>Out[<span class="dv">85</span>]: array([<span class="op">-</span><span class="fl">0.0062</span>,  <span class="fl">0.7845</span>, <span class="op">-</span><span class="fl">0.4085</span>, <span class="op">-</span><span class="fl">0.0136</span>,  <span class="fl">0.015</span> ,  <span class="fl">0.0143</span>])</span></code></pre></div>
+<p>更多的细节以及如何解释结果超出了本书的范围，可以通过statsmodels文档学习更多。</p>
+<h1 id="scikit-learn介绍">13.4 scikit-learn介绍</h1>
+<p>scikit-learn是一个广泛使用、用途多样的Python机器学习库。它包含多种标准监督和非监督机器学习方法和模型选择和评估、数据转换、数据加载和模型持久化工具。这些模型可以用于分类、聚合、预测和其它任务。</p>
+<p>机器学习方面的学习和应用scikit-learn和TensorFlow解决实际问题的线上和纸质资料很多。本节中，我会简要介绍scikit-learn API的风格。</p>
+<p>写作此书的时候，scikit-learn并没有和pandas深度结合，但是有些第三方包在开发中。尽管如此，pandas非常适合在模型拟合前处理数据集。</p>
+<p>举个例子，我用一个Kaggle竞赛的经典数据集，关于泰坦尼克号乘客的生还率。我们用pandas加载测试和训练数据集：</p>
+<div class="sourceCode" id="cb35"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb35-1"><a href="#cb35-1"></a>In [<span class="dv">86</span>]: train <span class="op">=</span> pd.read_csv(<span class="st">&#39;datasets/titanic/train.csv&#39;</span>)</span>
+<span id="cb35-2"><a href="#cb35-2"></a></span>
+<span id="cb35-3"><a href="#cb35-3"></a>In [<span class="dv">87</span>]: test <span class="op">=</span> pd.read_csv(<span class="st">&#39;datasets/titanic/test.csv&#39;</span>)</span>
+<span id="cb35-4"><a href="#cb35-4"></a></span>
+<span id="cb35-5"><a href="#cb35-5"></a>In [<span class="dv">88</span>]: train[:<span class="dv">4</span>]</span>
+<span id="cb35-6"><a href="#cb35-6"></a>Out[<span class="dv">88</span>]: </span>
+<span id="cb35-7"><a href="#cb35-7"></a>   PassengerId  Survived  Pclass  <span class="op">\</span></span>
+<span id="cb35-8"><a href="#cb35-8"></a><span class="dv">0</span>            <span class="dv">1</span>         <span class="dv">0</span>       <span class="dv">3</span>   </span>
+<span id="cb35-9"><a href="#cb35-9"></a><span class="dv">1</span>            <span class="dv">2</span>         <span class="dv">1</span>       <span class="dv">1</span>   </span>
+<span id="cb35-10"><a href="#cb35-10"></a><span class="dv">2</span>            <span class="dv">3</span>         <span class="dv">1</span>       <span class="dv">3</span>   </span>
+<span id="cb35-11"><a href="#cb35-11"></a><span class="dv">3</span>            <span class="dv">4</span>         <span class="dv">1</span>       <span class="dv">1</span>   </span>
+<span id="cb35-12"><a href="#cb35-12"></a>                                                Name     Sex   Age  SibSp  <span class="op">\</span></span>
+<span id="cb35-13"><a href="#cb35-13"></a><span class="dv">0</span>                            Braund, Mr. Owen Harris    male  <span class="fl">22.0</span>      <span class="dv">1</span>   </span>
+<span id="cb35-14"><a href="#cb35-14"></a><span class="dv">1</span>  Cumings, Mrs. John Bradley (Florence Briggs Th...  female  <span class="fl">38.0</span>      <span class="dv">1</span>   </span>
+<span id="cb35-15"><a href="#cb35-15"></a><span class="dv">2</span>                             Heikkinen, Miss. Laina  female  <span class="fl">26.0</span>      <span class="dv">0</span>   </span>
+<span id="cb35-16"><a href="#cb35-16"></a><span class="dv">3</span>       Futrelle, Mrs. Jacques Heath (Lily May Peel)  female  <span class="fl">35.0</span>      <span class="dv">1</span>   </span>
+<span id="cb35-17"><a href="#cb35-17"></a>   Parch            Ticket     Fare Cabin Embarked  </span>
+<span id="cb35-18"><a href="#cb35-18"></a><span class="dv">0</span>      <span class="dv">0</span>         A<span class="op">/</span><span class="dv">5</span> <span class="dv">21171</span>   <span class="fl">7.2500</span>   NaN        S  </span>
+<span id="cb35-19"><a href="#cb35-19"></a><span class="dv">1</span>      <span class="dv">0</span>          PC <span class="dv">17599</span>  <span class="fl">71.2833</span>   C85        C  </span>
+<span id="cb35-20"><a href="#cb35-20"></a><span class="dv">2</span>      <span class="dv">0</span>  STON<span class="op">/</span>O2. <span class="dv">3101282</span>   <span class="fl">7.9250</span>   NaN        S  </span>
+<span id="cb35-21"><a href="#cb35-21"></a><span class="dv">3</span>      <span class="dv">0</span>            <span class="dv">113803</span>  <span class="fl">53.1000</span>  C123        S</span></code></pre></div>
+<p>statsmodels和scikit-learn通常不能接收缺失数据，因此我们要查看列是否包含缺失值：</p>
+<div class="sourceCode" id="cb36"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb36-1"><a href="#cb36-1"></a>In [<span class="dv">89</span>]: train.isnull().<span class="bu">sum</span>()</span>
+<span id="cb36-2"><a href="#cb36-2"></a>Out[<span class="dv">89</span>]: </span>
+<span id="cb36-3"><a href="#cb36-3"></a>PassengerId      <span class="dv">0</span></span>
+<span id="cb36-4"><a href="#cb36-4"></a>Survived         <span class="dv">0</span></span>
+<span id="cb36-5"><a href="#cb36-5"></a>Pclass           <span class="dv">0</span></span>
+<span id="cb36-6"><a href="#cb36-6"></a>Name             <span class="dv">0</span></span>
+<span id="cb36-7"><a href="#cb36-7"></a>Sex              <span class="dv">0</span></span>
+<span id="cb36-8"><a href="#cb36-8"></a>Age            <span class="dv">177</span></span>
+<span id="cb36-9"><a href="#cb36-9"></a>SibSp            <span class="dv">0</span></span>
+<span id="cb36-10"><a href="#cb36-10"></a>Parch            <span class="dv">0</span></span>
+<span id="cb36-11"><a href="#cb36-11"></a>Ticket           <span class="dv">0</span></span>
+<span id="cb36-12"><a href="#cb36-12"></a>Fare             <span class="dv">0</span></span>
+<span id="cb36-13"><a href="#cb36-13"></a>Cabin          <span class="dv">687</span></span>
+<span id="cb36-14"><a href="#cb36-14"></a>Embarked         <span class="dv">2</span></span>
+<span id="cb36-15"><a href="#cb36-15"></a>dtype: int64</span>
+<span id="cb36-16"><a href="#cb36-16"></a></span>
+<span id="cb36-17"><a href="#cb36-17"></a>In [<span class="dv">90</span>]: test.isnull().<span class="bu">sum</span>()</span>
+<span id="cb36-18"><a href="#cb36-18"></a>Out[<span class="dv">90</span>]: </span>
+<span id="cb36-19"><a href="#cb36-19"></a>PassengerId      <span class="dv">0</span></span>
+<span id="cb36-20"><a href="#cb36-20"></a>Pclass           <span class="dv">0</span></span>
+<span id="cb36-21"><a href="#cb36-21"></a>Name             <span class="dv">0</span></span>
+<span id="cb36-22"><a href="#cb36-22"></a>Sex              <span class="dv">0</span></span>
+<span id="cb36-23"><a href="#cb36-23"></a>Age             <span class="dv">86</span></span>
+<span id="cb36-24"><a href="#cb36-24"></a>SibSp            <span class="dv">0</span></span>
+<span id="cb36-25"><a href="#cb36-25"></a>Parch            <span class="dv">0</span></span>
+<span id="cb36-26"><a href="#cb36-26"></a>Ticket           <span class="dv">0</span></span>
+<span id="cb36-27"><a href="#cb36-27"></a>Fare             <span class="dv">1</span></span>
+<span id="cb36-28"><a href="#cb36-28"></a>Cabin          <span class="dv">327</span></span>
+<span id="cb36-29"><a href="#cb36-29"></a>Embarked         <span class="dv">0</span></span>
+<span id="cb36-30"><a href="#cb36-30"></a>dtype: int64</span></code></pre></div>
+<p>在统计和机器学习的例子中，根据数据中的特征，一个典型的任务是预测乘客能否生还。模型现在训练数据集中拟合，然后用样本外测试数据集评估。</p>
+<p>我想用年龄作为预测值，但是它包含缺失值。缺失数据补全的方法有多种，我用的是一种简单方法，用训练数据集的中位数补全两个表的空值：</p>
+<div class="sourceCode" id="cb37"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb37-1"><a href="#cb37-1"></a>In [<span class="dv">91</span>]: impute_value <span class="op">=</span> train[<span class="st">&#39;Age&#39;</span>].median()</span>
+<span id="cb37-2"><a href="#cb37-2"></a></span>
+<span id="cb37-3"><a href="#cb37-3"></a>In [<span class="dv">92</span>]: train[<span class="st">&#39;Age&#39;</span>] <span class="op">=</span> train[<span class="st">&#39;Age&#39;</span>].fillna(impute_value)</span>
+<span id="cb37-4"><a href="#cb37-4"></a></span>
+<span id="cb37-5"><a href="#cb37-5"></a>In [<span class="dv">93</span>]: test[<span class="st">&#39;Age&#39;</span>] <span class="op">=</span> test[<span class="st">&#39;Age&#39;</span>].fillna(impute_value)</span></code></pre></div>
+<p>现在我们需要指定模型。我增加了一个列IsFemale，作为“Sex”列的编码：</p>
+<div class="sourceCode" id="cb38"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb38-1"><a href="#cb38-1"></a>In [<span class="dv">94</span>]: train[<span class="st">&#39;IsFemale&#39;</span>] <span class="op">=</span> (train[<span class="st">&#39;Sex&#39;</span>] <span class="op">==</span> <span class="st">&#39;female&#39;</span>).astype(<span class="bu">int</span>)</span>
+<span id="cb38-2"><a href="#cb38-2"></a></span>
+<span id="cb38-3"><a href="#cb38-3"></a>In [<span class="dv">95</span>]: test[<span class="st">&#39;IsFemale&#39;</span>] <span class="op">=</span> (test[<span class="st">&#39;Sex&#39;</span>] <span class="op">==</span> <span class="st">&#39;female&#39;</span>).astype(<span class="bu">int</span>)</span></code></pre></div>
+<p>然后，我们确定一些模型变量，并创建NumPy数组：</p>
+<div class="sourceCode" id="cb39"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb39-1"><a href="#cb39-1"></a>In [<span class="dv">96</span>]: predictors <span class="op">=</span> [<span class="st">&#39;Pclass&#39;</span>, <span class="st">&#39;IsFemale&#39;</span>, <span class="st">&#39;Age&#39;</span>]</span>
+<span id="cb39-2"><a href="#cb39-2"></a></span>
+<span id="cb39-3"><a href="#cb39-3"></a>In [<span class="dv">97</span>]: X_train <span class="op">=</span> train[predictors].values</span>
+<span id="cb39-4"><a href="#cb39-4"></a></span>
+<span id="cb39-5"><a href="#cb39-5"></a>In [<span class="dv">98</span>]: X_test <span class="op">=</span> test[predictors].values</span>
+<span id="cb39-6"><a href="#cb39-6"></a></span>
+<span id="cb39-7"><a href="#cb39-7"></a>In [<span class="dv">99</span>]: y_train <span class="op">=</span> train[<span class="st">&#39;Survived&#39;</span>].values</span>
+<span id="cb39-8"><a href="#cb39-8"></a></span>
+<span id="cb39-9"><a href="#cb39-9"></a>In [<span class="dv">100</span>]: X_train[:<span class="dv">5</span>]</span>
+<span id="cb39-10"><a href="#cb39-10"></a>Out[<span class="dv">100</span>]: </span>
+<span id="cb39-11"><a href="#cb39-11"></a>array([[  <span class="fl">3.</span>,   <span class="fl">0.</span>,  <span class="fl">22.</span>],</span>
+<span id="cb39-12"><a href="#cb39-12"></a>       [  <span class="fl">1.</span>,   <span class="fl">1.</span>,  <span class="fl">38.</span>],</span>
+<span id="cb39-13"><a href="#cb39-13"></a>       [  <span class="fl">3.</span>,   <span class="fl">1.</span>,  <span class="fl">26.</span>],</span>
+<span id="cb39-14"><a href="#cb39-14"></a>       [  <span class="fl">1.</span>,   <span class="fl">1.</span>,  <span class="fl">35.</span>],</span>
+<span id="cb39-15"><a href="#cb39-15"></a>       [  <span class="fl">3.</span>,   <span class="fl">0.</span>,  <span class="fl">35.</span>]])</span>
+<span id="cb39-16"><a href="#cb39-16"></a></span>
+<span id="cb39-17"><a href="#cb39-17"></a>In [<span class="dv">101</span>]: y_train[:<span class="dv">5</span>]</span>
+<span id="cb39-18"><a href="#cb39-18"></a>Out[<span class="dv">101</span>]: array([<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">0</span>])</span></code></pre></div>
+<p>我不能保证这是一个好模型，但它的特征都符合。我们用scikit-learn的LogisticRegression模型，创建一个模型实例：</p>
+<div class="sourceCode" id="cb40"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb40-1"><a href="#cb40-1"></a>In [<span class="dv">102</span>]: <span class="im">from</span> sklearn.linear_model <span class="im">import</span> LogisticRegression</span>
+<span id="cb40-2"><a href="#cb40-2"></a></span>
+<span id="cb40-3"><a href="#cb40-3"></a>In [<span class="dv">103</span>]: model <span class="op">=</span> LogisticRegression()</span></code></pre></div>
+<p>与statsmodels类似，我们可以用模型的fit方法，将它拟合到训练数据：</p>
+<div class="sourceCode" id="cb41"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb41-1"><a href="#cb41-1"></a>In [<span class="dv">104</span>]: model.fit(X_train, y_train)</span>
+<span id="cb41-2"><a href="#cb41-2"></a>Out[<span class="dv">104</span>]: </span>
+<span id="cb41-3"><a href="#cb41-3"></a>LogisticRegression(C<span class="op">=</span><span class="fl">1.0</span>, class_weight<span class="op">=</span><span class="va">None</span>, dual<span class="op">=</span><span class="va">False</span>, fit_intercept<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb41-4"><a href="#cb41-4"></a>          intercept_scaling<span class="op">=</span><span class="dv">1</span>, max_iter<span class="op">=</span><span class="dv">100</span>, multi_class<span class="op">=</span><span class="st">&#39;ovr&#39;</span>, n_jobs<span class="op">=</span><span class="dv">1</span>,</span>
+<span id="cb41-5"><a href="#cb41-5"></a>          penalty<span class="op">=</span><span class="st">&#39;l2&#39;</span>, random_state<span class="op">=</span><span class="va">None</span>, solver<span class="op">=</span><span class="st">&#39;liblinear&#39;</span>, tol<span class="op">=</span><span class="fl">0.0001</span>,</span>
+<span id="cb41-6"><a href="#cb41-6"></a>          verbose<span class="op">=</span><span class="dv">0</span>, warm_start<span class="op">=</span><span class="va">False</span>)</span></code></pre></div>
+<p>现在，我们可以用model.predict，对测试数据进行预测：</p>
+<div class="sourceCode" id="cb42"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb42-1"><a href="#cb42-1"></a>In [<span class="dv">105</span>]: y_predict <span class="op">=</span> model.predict(X_test)</span>
+<span id="cb42-2"><a href="#cb42-2"></a></span>
+<span id="cb42-3"><a href="#cb42-3"></a>In [<span class="dv">106</span>]: y_predict[:<span class="dv">10</span>]</span>
+<span id="cb42-4"><a href="#cb42-4"></a>Out[<span class="dv">106</span>]: array([<span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">0</span>])</span></code></pre></div>
+<p>如果你有测试数据集的真是值，你可以计算准确率或其它错误度量值：</p>
+<div class="sourceCode" id="cb43"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb43-1"><a href="#cb43-1"></a>(y_true <span class="op">==</span> y_predict).mean()</span></code></pre></div>
+<p>在实际中，模型训练经常有许多额外的复杂因素。许多模型有可以调节的参数，有些方法（比如交叉验证）可以用来进行参数调节，避免对训练数据过拟合。这通常可以提高预测性或对新数据的健壮性。</p>
+<p>交叉验证通过分割训练数据来模拟样本外预测。基于模型的精度得分（比如均方差），可以对模型参数进行网格搜索。有些模型，如logistic回归，有内置的交叉验证的估计类。例如，logisticregressioncv类可以用一个参数指定网格搜索对模型的正则化参数C的粒度：</p>
+<div class="sourceCode" id="cb44"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb44-1"><a href="#cb44-1"></a>In [<span class="dv">107</span>]: <span class="im">from</span> sklearn.linear_model <span class="im">import</span> LogisticRegressionCV</span>
+<span id="cb44-2"><a href="#cb44-2"></a></span>
+<span id="cb44-3"><a href="#cb44-3"></a>In [<span class="dv">108</span>]: model_cv <span class="op">=</span> LogisticRegressionCV(<span class="dv">10</span>)</span>
+<span id="cb44-4"><a href="#cb44-4"></a></span>
+<span id="cb44-5"><a href="#cb44-5"></a>In [<span class="dv">109</span>]: model_cv.fit(X_train, y_train)</span>
+<span id="cb44-6"><a href="#cb44-6"></a>Out[<span class="dv">109</span>]: </span>
+<span id="cb44-7"><a href="#cb44-7"></a>LogisticRegressionCV(Cs<span class="op">=</span><span class="dv">10</span>, class_weight<span class="op">=</span><span class="va">None</span>, cv<span class="op">=</span><span class="va">None</span>, dual<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb44-8"><a href="#cb44-8"></a>           fit_intercept<span class="op">=</span><span class="va">True</span>, intercept_scaling<span class="op">=</span><span class="fl">1.0</span>, max_iter<span class="op">=</span><span class="dv">100</span>,</span>
+<span id="cb44-9"><a href="#cb44-9"></a>           multi_class<span class="op">=</span><span class="st">&#39;ovr&#39;</span>, n_jobs<span class="op">=</span><span class="dv">1</span>, penalty<span class="op">=</span><span class="st">&#39;l2&#39;</span>, random_state<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb44-10"><a href="#cb44-10"></a>           refit<span class="op">=</span><span class="va">True</span>, scoring<span class="op">=</span><span class="va">None</span>, solver<span class="op">=</span><span class="st">&#39;lbfgs&#39;</span>, tol<span class="op">=</span><span class="fl">0.0001</span>, verbose<span class="op">=</span><span class="dv">0</span>)</span></code></pre></div>
+<p>要手动进行交叉验证，你可以使用cross_val_score帮助函数，它可以处理数据分割。例如，要交叉验证我们的带有四个不重叠训练数据的模型，可以这样做：</p>
+<div class="sourceCode" id="cb45"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb45-1"><a href="#cb45-1"></a>In [<span class="dv">110</span>]: <span class="im">from</span> sklearn.model_selection <span class="im">import</span> cross_val_score</span>
+<span id="cb45-2"><a href="#cb45-2"></a></span>
+<span id="cb45-3"><a href="#cb45-3"></a>In [<span class="dv">111</span>]: model <span class="op">=</span> LogisticRegression(C<span class="op">=</span><span class="dv">10</span>)</span>
+<span id="cb45-4"><a href="#cb45-4"></a></span>
+<span id="cb45-5"><a href="#cb45-5"></a>In [<span class="dv">112</span>]: scores <span class="op">=</span> cross_val_score(model, X_train, y_train, cv<span class="op">=</span><span class="dv">4</span>)</span>
+<span id="cb45-6"><a href="#cb45-6"></a></span>
+<span id="cb45-7"><a href="#cb45-7"></a>In [<span class="dv">113</span>]: scores</span>
+<span id="cb45-8"><a href="#cb45-8"></a>Out[<span class="dv">113</span>]: array([ <span class="fl">0.7723</span>,  <span class="fl">0.8027</span>,  <span class="fl">0.7703</span>,  <span class="fl">0.7883</span>])</span></code></pre></div>
+<p>默认的评分指标取决于模型本身，但是可以明确指定一个评分。交叉验证过的模型需要更长时间来训练，但会有更高的模型性能。</p>
+<h1 id="继续学习">13.5 继续学习</h1>
+<p>我只是介绍了一些Python建模库的表面内容，现在有越来越多的框架用于各种统计和机器学习，它们都是用Python或Python用户界面实现的。</p>
+<p>这本书的重点是数据规整，有其它的书是关注建模和数据科学工具的。其中优秀的有：</p>
+<ul>
+<li>Andreas Mueller and Sarah Guido (O’Reilly)的 《Introduction to Machine Learning with Python》</li>
+<li>Jake VanderPlas (O’Reilly)的 《Python Data Science Handbook》</li>
+<li>Joel Grus (O’Reilly) 的 《Data Science from Scratch: First Principles》</li>
+<li>Sebastian Raschka (Packt Publishing) 的《Python Machine Learning》</li>
+<li>Aurélien Géron (O’Reilly) 的《Hands-On Machine Learning with Scikit-Learn and TensorFlow》</li>
+</ul>
+<p>虽然书是学习的好资源，但是随着底层开源软件的发展，书的内容会过时。最好是不断熟悉各种统计和机器学习框架的文档，学习最新的功能和API。</p>

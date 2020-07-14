@@ -1,0 +1,1057 @@
+<p>对数据集进行分组并对各组应用一个函数（无论是聚合还是转换），通常是数据分析工作中的重要环节。在将数据集加载、融合、准备好之后，通常就是计算分组统计或生成透视表。pandas提供了一个灵活高效的gruopby功能，它使你能以一种自然的方式对数据集进行切片、切块、摘要等操作。</p>
+<p>关系型数据库和SQL（Structured Query Language，结构化查询语言）能够如此流行的原因之一就是其能够方便地对数据进行连接、过滤、转换和聚合。但是，像SQL这样的查询语言所能执行的分组运算的种类很有限。在本章中你将会看到，由于Python和pandas强大的表达能力，我们可以执行复杂得多的分组运算（利用任何可以接受pandas对象或NumPy数组的函数）。在本章中，你将会学到：</p>
+<ul>
+<li>使用一个或多个键（形式可以是函数、数组或DataFrame列名）分割pandas对象。</li>
+<li>计算分组的概述统计，比如数量、平均值或标准差，或是用户定义的函数。</li>
+<li>应用组内转换或其他运算，如规格化、线性回归、排名或选取子集等。</li>
+<li>计算透视表或交叉表。</li>
+<li>执行分位数分析以及其它统计分组分析。</li>
+</ul>
+<blockquote>
+<p>笔记：对时间序列数据的聚合（groupby的特殊用法之一）也称作重采样（resampling），本书将在第11章中单独对其进行讲解。</p>
+</blockquote>
+<h1 id="groupby机制">10.1 GroupBy机制</h1>
+<p>Hadley Wickham（许多热门R语言包的作者）创造了一个用于表示分组运算的术语“split-apply-combine”（拆分－应用－合并）。第一个阶段，pandas对象（无论是Series、DataFrame还是其他的）中的数据会根据你所提供的一个或多个键被拆分（split）为多组。拆分操作是在对象的特定轴上执行的。例如，DataFrame可以在其行（axis=0）或列（axis=1）上进行分组。然后，将一个函数应用（apply）到各个分组并产生一个新值。最后，所有这些函数的执行结果会被合并（combine）到最终的结果对象中。结果对象的形式一般取决于数据上所执行的操作。图10-1大致说明了一个简单的分组聚合过程。</p>
+<figure>
+<img src="http://upload-images.jianshu.io/upload_images/7178691-e5c671e09ecf94be.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="" /><figcaption>图10-1 分组聚合演示</figcaption>
+</figure>
+<p>分组键可以有多种形式，且类型不必相同：</p>
+<ul>
+<li>列表或数组，其长度与待分组的轴一样。</li>
+<li>表示DataFrame某个列名的值。</li>
+<li>字典或Series，给出待分组轴上的值与分组名之间的对应关系。</li>
+<li>函数，用于处理轴索引或索引中的各个标签。</li>
+</ul>
+<p>注意，后三种都只是快捷方式而已，其最终目的仍然是产生一组用于拆分对象的值。如果觉得这些东西看起来很抽象，不用担心，我将在本章中给出大量有关于此的示例。首先来看看下面这个非常简单的表格型数据集（以DataFrame的形式）：</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1"></a>In [<span class="dv">10</span>]: df <span class="op">=</span> pd.DataFrame({<span class="st">&#39;key1&#39;</span> : [<span class="st">&#39;a&#39;</span>, <span class="st">&#39;a&#39;</span>, <span class="st">&#39;b&#39;</span>, <span class="st">&#39;b&#39;</span>, <span class="st">&#39;a&#39;</span>],</span>
+<span id="cb1-2"><a href="#cb1-2"></a>   ....:                    <span class="st">&#39;key2&#39;</span> : [<span class="st">&#39;one&#39;</span>, <span class="st">&#39;two&#39;</span>, <span class="st">&#39;one&#39;</span>, <span class="st">&#39;two&#39;</span>, <span class="st">&#39;one&#39;</span>],</span>
+<span id="cb1-3"><a href="#cb1-3"></a>   ....:                    <span class="st">&#39;data1&#39;</span> : np.random.randn(<span class="dv">5</span>),</span>
+<span id="cb1-4"><a href="#cb1-4"></a>   ....:                    <span class="st">&#39;data2&#39;</span> : np.random.randn(<span class="dv">5</span>)})</span>
+<span id="cb1-5"><a href="#cb1-5"></a></span>
+<span id="cb1-6"><a href="#cb1-6"></a>In [<span class="dv">11</span>]: df</span>
+<span id="cb1-7"><a href="#cb1-7"></a>Out[<span class="dv">11</span>]: </span>
+<span id="cb1-8"><a href="#cb1-8"></a>      data1     data2 key1 key2</span>
+<span id="cb1-9"><a href="#cb1-9"></a><span class="dv">0</span> <span class="op">-</span><span class="fl">0.204708</span>  <span class="fl">1.393406</span>    a  one</span>
+<span id="cb1-10"><a href="#cb1-10"></a><span class="dv">1</span>  <span class="fl">0.478943</span>  <span class="fl">0.092908</span>    a  two</span>
+<span id="cb1-11"><a href="#cb1-11"></a><span class="dv">2</span> <span class="op">-</span><span class="fl">0.519439</span>  <span class="fl">0.281746</span>    b  one</span>
+<span id="cb1-12"><a href="#cb1-12"></a><span class="dv">3</span> <span class="op">-</span><span class="fl">0.555730</span>  <span class="fl">0.769023</span>    b  two</span>
+<span id="cb1-13"><a href="#cb1-13"></a><span class="dv">4</span>  <span class="fl">1.965781</span>  <span class="fl">1.246435</span>    a  one</span></code></pre></div>
+<p>假设你想要按key1进行分组，并计算data1列的平均值。实现该功能的方式有很多，而我们这里要用的是：访问data1，并根据key1调用groupby：</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1"></a>In [<span class="dv">12</span>]: grouped <span class="op">=</span> df[<span class="st">&#39;data1&#39;</span>].groupby(df[<span class="st">&#39;key1&#39;</span>])</span>
+<span id="cb2-2"><a href="#cb2-2"></a></span>
+<span id="cb2-3"><a href="#cb2-3"></a>In [<span class="dv">13</span>]: grouped</span>
+<span id="cb2-4"><a href="#cb2-4"></a>Out[<span class="dv">13</span>]: <span class="op">&lt;</span>pandas.core.groupby.SeriesGroupBy <span class="bu">object</span> at <span class="bn">0x7faa31537390</span><span class="op">&gt;</span></span></code></pre></div>
+<p>变量grouped是一个GroupBy对象。它实际上还没有进行任何计算，只是含有一些有关分组键df[‘key1’]的中间数据而已。换句话说，该对象已经有了接下来对各分组执行运算所需的一切信息。例如，我们可以调用GroupBy的mean方法来计算分组平均值：</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1"></a>In [<span class="dv">14</span>]: grouped.mean()</span>
+<span id="cb3-2"><a href="#cb3-2"></a>Out[<span class="dv">14</span>]: </span>
+<span id="cb3-3"><a href="#cb3-3"></a>key1</span>
+<span id="cb3-4"><a href="#cb3-4"></a>a    <span class="fl">0.746672</span></span>
+<span id="cb3-5"><a href="#cb3-5"></a>b   <span class="op">-</span><span class="fl">0.537585</span></span>
+<span id="cb3-6"><a href="#cb3-6"></a>Name: data1, dtype: float64</span></code></pre></div>
+<p>稍后我将详细讲解.mean()的调用过程。这里最重要的是，数据（Series）根据分组键进行了聚合，产生了一个新的Series，其索引为key1列中的唯一值。之所以结果中索引的名称为key1，是因为原始DataFrame的列df[‘key1’]就叫这个名字。</p>
+<p>如果我们一次传入多个数组的列表，就会得到不同的结果：</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1"></a>In [<span class="dv">15</span>]: means <span class="op">=</span> df[<span class="st">&#39;data1&#39;</span>].groupby([df[<span class="st">&#39;key1&#39;</span>], df[<span class="st">&#39;key2&#39;</span>]]).mean()</span>
+<span id="cb4-2"><a href="#cb4-2"></a></span>
+<span id="cb4-3"><a href="#cb4-3"></a>In [<span class="dv">16</span>]: means</span>
+<span id="cb4-4"><a href="#cb4-4"></a>Out[<span class="dv">16</span>]: </span>
+<span id="cb4-5"><a href="#cb4-5"></a>key1  key2</span>
+<span id="cb4-6"><a href="#cb4-6"></a>a     one     <span class="fl">0.880536</span></span>
+<span id="cb4-7"><a href="#cb4-7"></a>      two     <span class="fl">0.478943</span></span>
+<span id="cb4-8"><a href="#cb4-8"></a>b     one    <span class="op">-</span><span class="fl">0.519439</span></span>
+<span id="cb4-9"><a href="#cb4-9"></a>      two    <span class="op">-</span><span class="fl">0.555730</span></span>
+<span id="cb4-10"><a href="#cb4-10"></a>Name: data1, dtype: float64</span></code></pre></div>
+<p>这里，我通过两个键对数据进行了分组，得到的Series具有一个层次化索引（由唯一的键对组成）：</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1"></a>In [<span class="dv">17</span>]: means.unstack()</span>
+<span id="cb5-2"><a href="#cb5-2"></a>Out[<span class="dv">17</span>]: </span>
+<span id="cb5-3"><a href="#cb5-3"></a>key2       one       two</span>
+<span id="cb5-4"><a href="#cb5-4"></a>key1                    </span>
+<span id="cb5-5"><a href="#cb5-5"></a>a     <span class="fl">0.880536</span>  <span class="fl">0.478943</span></span>
+<span id="cb5-6"><a href="#cb5-6"></a>b    <span class="op">-</span><span class="fl">0.519439</span> <span class="op">-</span><span class="fl">0.555730</span></span></code></pre></div>
+<p>在这个例子中，分组键均为Series。实际上，分组键可以是任何长度适当的数组：</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1"></a>In [<span class="dv">18</span>]: states <span class="op">=</span> np.array([<span class="st">&#39;Ohio&#39;</span>, <span class="st">&#39;California&#39;</span>, <span class="st">&#39;California&#39;</span>, <span class="st">&#39;Ohio&#39;</span>, <span class="st">&#39;Ohio&#39;</span>])</span>
+<span id="cb6-2"><a href="#cb6-2"></a></span>
+<span id="cb6-3"><a href="#cb6-3"></a>In [<span class="dv">19</span>]: years <span class="op">=</span> np.array([<span class="dv">2005</span>, <span class="dv">2005</span>, <span class="dv">2006</span>, <span class="dv">2005</span>, <span class="dv">2006</span>])</span>
+<span id="cb6-4"><a href="#cb6-4"></a></span>
+<span id="cb6-5"><a href="#cb6-5"></a>In [<span class="dv">20</span>]: df[<span class="st">&#39;data1&#39;</span>].groupby([states, years]).mean()</span>
+<span id="cb6-6"><a href="#cb6-6"></a>Out[<span class="dv">20</span>]: </span>
+<span id="cb6-7"><a href="#cb6-7"></a>California  <span class="dv">2005</span>    <span class="fl">0.478943</span></span>
+<span id="cb6-8"><a href="#cb6-8"></a>            <span class="dv">2006</span>   <span class="op">-</span><span class="fl">0.519439</span></span>
+<span id="cb6-9"><a href="#cb6-9"></a>Ohio        <span class="dv">2005</span>   <span class="op">-</span><span class="fl">0.380219</span></span>
+<span id="cb6-10"><a href="#cb6-10"></a>            <span class="dv">2006</span>    <span class="fl">1.965781</span></span>
+<span id="cb6-11"><a href="#cb6-11"></a>Name: data1, dtype: float64</span></code></pre></div>
+<p>通常，分组信息就位于相同的要处理DataFrame中。这里，你还可以将列名（可以是字符串、数字或其他Python对象）用作分组键：</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1"></a>In [<span class="dv">21</span>]: df.groupby(<span class="st">&#39;key1&#39;</span>).mean()</span>
+<span id="cb7-2"><a href="#cb7-2"></a>Out[<span class="dv">21</span>]: </span>
+<span id="cb7-3"><a href="#cb7-3"></a>         data1     data2</span>
+<span id="cb7-4"><a href="#cb7-4"></a>key1</span>
+<span id="cb7-5"><a href="#cb7-5"></a>a     <span class="fl">0.746672</span>  <span class="fl">0.910916</span></span>
+<span id="cb7-6"><a href="#cb7-6"></a>b    <span class="op">-</span><span class="fl">0.537585</span>  <span class="fl">0.525384</span></span>
+<span id="cb7-7"><a href="#cb7-7"></a></span>
+<span id="cb7-8"><a href="#cb7-8"></a>In [<span class="dv">22</span>]: df.groupby([<span class="st">&#39;key1&#39;</span>, <span class="st">&#39;key2&#39;</span>]).mean()</span>
+<span id="cb7-9"><a href="#cb7-9"></a>Out[<span class="dv">22</span>]: </span>
+<span id="cb7-10"><a href="#cb7-10"></a>              data1     data2</span>
+<span id="cb7-11"><a href="#cb7-11"></a>key1 key2                    </span>
+<span id="cb7-12"><a href="#cb7-12"></a>a    one   <span class="fl">0.880536</span>  <span class="fl">1.319920</span></span>
+<span id="cb7-13"><a href="#cb7-13"></a>     two   <span class="fl">0.478943</span>  <span class="fl">0.092908</span></span>
+<span id="cb7-14"><a href="#cb7-14"></a>b    one  <span class="op">-</span><span class="fl">0.519439</span>  <span class="fl">0.281746</span></span>
+<span id="cb7-15"><a href="#cb7-15"></a>     two  <span class="op">-</span><span class="fl">0.555730</span>  <span class="fl">0.769023</span></span></code></pre></div>
+<p>你可能已经注意到了，第一个例子在执行df.groupby(‘key1’).mean()时，结果中没有key2列。这是因为df[‘key2’]不是数值数据（俗称“麻烦列”），所以被从结果中排除了。默认情况下，所有数值列都会被聚合，虽然有时可能会被过滤为一个子集，稍后就会碰到。</p>
+<p>无论你准备拿groupby做什么，都有可能会用到GroupBy的size方法，它可以返回一个含有分组大小的Series：</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1"></a>In [<span class="dv">23</span>]: df.groupby([<span class="st">&#39;key1&#39;</span>, <span class="st">&#39;key2&#39;</span>]).size()</span>
+<span id="cb8-2"><a href="#cb8-2"></a>Out[<span class="dv">23</span>]: </span>
+<span id="cb8-3"><a href="#cb8-3"></a>key1  key2</span>
+<span id="cb8-4"><a href="#cb8-4"></a>a     one     <span class="dv">2</span></span>
+<span id="cb8-5"><a href="#cb8-5"></a>      two     <span class="dv">1</span></span>
+<span id="cb8-6"><a href="#cb8-6"></a>b     one     <span class="dv">1</span></span>
+<span id="cb8-7"><a href="#cb8-7"></a>      two     <span class="dv">1</span></span>
+<span id="cb8-8"><a href="#cb8-8"></a>dtype: int64</span></code></pre></div>
+<p>注意，任何分组关键词中的缺失值，都会被从结果中除去。</p>
+<h2 id="对分组进行迭代">对分组进行迭代</h2>
+<p>GroupBy对象支持迭代，可以产生一组二元元组（由分组名和数据块组成）。看下面的例子：</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1"></a>In [<span class="dv">24</span>]: <span class="cf">for</span> name, group <span class="kw">in</span> df.groupby(<span class="st">&#39;key1&#39;</span>):</span>
+<span id="cb9-2"><a href="#cb9-2"></a>   ....:     <span class="bu">print</span>(name)</span>
+<span id="cb9-3"><a href="#cb9-3"></a>   ....:     <span class="bu">print</span>(group)</span>
+<span id="cb9-4"><a href="#cb9-4"></a>   ....:</span>
+<span id="cb9-5"><a href="#cb9-5"></a>a</span>
+<span id="cb9-6"><a href="#cb9-6"></a>      data1     data2 key1 key2</span>
+<span id="cb9-7"><a href="#cb9-7"></a><span class="dv">0</span> <span class="op">-</span><span class="fl">0.204708</span>  <span class="fl">1.393406</span>    a  one</span>
+<span id="cb9-8"><a href="#cb9-8"></a><span class="dv">1</span>  <span class="fl">0.478943</span>  <span class="fl">0.092908</span>    a  two</span>
+<span id="cb9-9"><a href="#cb9-9"></a><span class="dv">4</span>  <span class="fl">1.965781</span>  <span class="fl">1.246435</span>    a  one</span>
+<span id="cb9-10"><a href="#cb9-10"></a>b</span>
+<span id="cb9-11"><a href="#cb9-11"></a>      data1     data2 key1 key2</span>
+<span id="cb9-12"><a href="#cb9-12"></a><span class="dv">2</span> <span class="op">-</span><span class="fl">0.519439</span>  <span class="fl">0.281746</span>    b  one</span>
+<span id="cb9-13"><a href="#cb9-13"></a><span class="dv">3</span> <span class="op">-</span><span class="fl">0.555730</span>  <span class="fl">0.769023</span>    b  two</span></code></pre></div>
+<p>对于多重键的情况，元组的第一个元素将会是由键值组成的元组：</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1"></a>In [<span class="dv">25</span>]: <span class="cf">for</span> (k1, k2), group <span class="kw">in</span> df.groupby([<span class="st">&#39;key1&#39;</span>, <span class="st">&#39;key2&#39;</span>]):</span>
+<span id="cb10-2"><a href="#cb10-2"></a>   ....:     <span class="bu">print</span>((k1, k2))</span>
+<span id="cb10-3"><a href="#cb10-3"></a>   ....:     <span class="bu">print</span>(group)</span>
+<span id="cb10-4"><a href="#cb10-4"></a>   ....:</span>
+<span id="cb10-5"><a href="#cb10-5"></a>(<span class="st">&#39;a&#39;</span>, <span class="st">&#39;one&#39;</span>)</span>
+<span id="cb10-6"><a href="#cb10-6"></a>      data1     data2 key1 key2</span>
+<span id="cb10-7"><a href="#cb10-7"></a><span class="dv">0</span> <span class="op">-</span><span class="fl">0.204708</span>  <span class="fl">1.393406</span>    a  one</span>
+<span id="cb10-8"><a href="#cb10-8"></a><span class="dv">4</span>  <span class="fl">1.965781</span>  <span class="fl">1.246435</span>    a  one</span>
+<span id="cb10-9"><a href="#cb10-9"></a>(<span class="st">&#39;a&#39;</span>, <span class="st">&#39;two&#39;</span>)</span>
+<span id="cb10-10"><a href="#cb10-10"></a>      data1     data2 key1 key2</span>
+<span id="cb10-11"><a href="#cb10-11"></a><span class="dv">1</span>  <span class="fl">0.478943</span>  <span class="fl">0.092908</span>    a  two</span>
+<span id="cb10-12"><a href="#cb10-12"></a>(<span class="st">&#39;b&#39;</span>, <span class="st">&#39;one&#39;</span>)</span>
+<span id="cb10-13"><a href="#cb10-13"></a>      data1     data2 key1 key2</span>
+<span id="cb10-14"><a href="#cb10-14"></a><span class="dv">2</span> <span class="op">-</span><span class="fl">0.519439</span>  <span class="fl">0.281746</span>    b  one</span>
+<span id="cb10-15"><a href="#cb10-15"></a>(<span class="st">&#39;b&#39;</span>, <span class="st">&#39;two&#39;</span>)</span>
+<span id="cb10-16"><a href="#cb10-16"></a>     data1     data2 key1 key2</span>
+<span id="cb10-17"><a href="#cb10-17"></a><span class="dv">3</span> <span class="op">-</span><span class="fl">0.55573</span>  <span class="fl">0.769023</span>    b  two</span></code></pre></div>
+<p>当然，你可以对这些数据片段做任何操作。有一个你可能会觉得有用的运算：将这些数据片段做成一个字典：</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1"></a>In [<span class="dv">26</span>]: pieces <span class="op">=</span> <span class="bu">dict</span>(<span class="bu">list</span>(df.groupby(<span class="st">&#39;key1&#39;</span>)))</span>
+<span id="cb11-2"><a href="#cb11-2"></a></span>
+<span id="cb11-3"><a href="#cb11-3"></a>In [<span class="dv">27</span>]: pieces[<span class="st">&#39;b&#39;</span>]</span>
+<span id="cb11-4"><a href="#cb11-4"></a>Out[<span class="dv">27</span>]: </span>
+<span id="cb11-5"><a href="#cb11-5"></a>      data1     data2 key1 key2</span>
+<span id="cb11-6"><a href="#cb11-6"></a><span class="dv">2</span> <span class="op">-</span><span class="fl">0.519439</span>  <span class="fl">0.281746</span>    b  one</span>
+<span id="cb11-7"><a href="#cb11-7"></a><span class="dv">3</span> <span class="op">-</span><span class="fl">0.555730</span>  <span class="fl">0.769023</span>    b  two</span></code></pre></div>
+<p>groupby默认是在axis=0上进行分组的，通过设置也可以在其他任何轴上进行分组。拿上面例子中的df来说，我们可以根据dtype对列进行分组：</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1"></a>In [<span class="dv">28</span>]: df.dtypes</span>
+<span id="cb12-2"><a href="#cb12-2"></a>Out[<span class="dv">28</span>]: </span>
+<span id="cb12-3"><a href="#cb12-3"></a>data1    float64</span>
+<span id="cb12-4"><a href="#cb12-4"></a>data2    float64</span>
+<span id="cb12-5"><a href="#cb12-5"></a>key1      <span class="bu">object</span></span>
+<span id="cb12-6"><a href="#cb12-6"></a>key2      <span class="bu">object</span></span>
+<span id="cb12-7"><a href="#cb12-7"></a>dtype: <span class="bu">object</span></span>
+<span id="cb12-8"><a href="#cb12-8"></a></span>
+<span id="cb12-9"><a href="#cb12-9"></a>In [<span class="dv">29</span>]: grouped <span class="op">=</span> df.groupby(df.dtypes, axis<span class="op">=</span><span class="dv">1</span>)</span></code></pre></div>
+<p>可以如下打印分组：</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1"></a>In [<span class="dv">30</span>]: <span class="cf">for</span> dtype, group <span class="kw">in</span> grouped:</span>
+<span id="cb13-2"><a href="#cb13-2"></a>   ....:     <span class="bu">print</span>(dtype)</span>
+<span id="cb13-3"><a href="#cb13-3"></a>   ....:     <span class="bu">print</span>(group)</span>
+<span id="cb13-4"><a href="#cb13-4"></a>   ....:</span>
+<span id="cb13-5"><a href="#cb13-5"></a>float64</span>
+<span id="cb13-6"><a href="#cb13-6"></a>      data1     data2</span>
+<span id="cb13-7"><a href="#cb13-7"></a><span class="dv">0</span> <span class="op">-</span><span class="fl">0.204708</span>  <span class="fl">1.393406</span></span>
+<span id="cb13-8"><a href="#cb13-8"></a><span class="dv">1</span>  <span class="fl">0.478943</span>  <span class="fl">0.092908</span></span>
+<span id="cb13-9"><a href="#cb13-9"></a><span class="dv">2</span> <span class="op">-</span><span class="fl">0.519439</span>  <span class="fl">0.281746</span></span>
+<span id="cb13-10"><a href="#cb13-10"></a><span class="dv">3</span> <span class="op">-</span><span class="fl">0.555730</span>  <span class="fl">0.769023</span></span>
+<span id="cb13-11"><a href="#cb13-11"></a><span class="dv">4</span>  <span class="fl">1.965781</span>  <span class="fl">1.246435</span></span>
+<span id="cb13-12"><a href="#cb13-12"></a><span class="bu">object</span></span>
+<span id="cb13-13"><a href="#cb13-13"></a>  key1 key2</span>
+<span id="cb13-14"><a href="#cb13-14"></a><span class="dv">0</span>    a  one</span>
+<span id="cb13-15"><a href="#cb13-15"></a><span class="dv">1</span>    a  two</span>
+<span id="cb13-16"><a href="#cb13-16"></a><span class="dv">2</span>    b  one</span>
+<span id="cb13-17"><a href="#cb13-17"></a><span class="dv">3</span>    b  two</span>
+<span id="cb13-18"><a href="#cb13-18"></a><span class="dv">4</span>    a  one</span></code></pre></div>
+<h2 id="选取一列或列的子集">选取一列或列的子集</h2>
+<p>对于由DataFrame产生的GroupBy对象，如果用一个（单个字符串）或一组（字符串数组）列名对其进行索引，就能实现选取部分列进行聚合的目的。也就是说：</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1"></a>df.groupby(<span class="st">&#39;key1&#39;</span>)[<span class="st">&#39;data1&#39;</span>]</span>
+<span id="cb14-2"><a href="#cb14-2"></a>df.groupby(<span class="st">&#39;key1&#39;</span>)[[<span class="st">&#39;data2&#39;</span>]]</span></code></pre></div>
+<p>是以下代码的语法糖：</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1"></a>df[<span class="st">&#39;data1&#39;</span>].groupby(df[<span class="st">&#39;key1&#39;</span>])</span>
+<span id="cb15-2"><a href="#cb15-2"></a>df[[<span class="st">&#39;data2&#39;</span>]].groupby(df[<span class="st">&#39;key1&#39;</span>])</span></code></pre></div>
+<p>尤其对于大数据集，很可能只需要对部分列进行聚合。例如，在前面那个数据集中，如果只需计算data2列的平均值并以DataFrame形式得到结果，可以这样写：</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1"></a>In [<span class="dv">31</span>]: df.groupby([<span class="st">&#39;key1&#39;</span>, <span class="st">&#39;key2&#39;</span>])[[<span class="st">&#39;data2&#39;</span>]].mean()</span>
+<span id="cb16-2"><a href="#cb16-2"></a>Out[<span class="dv">31</span>]: </span>
+<span id="cb16-3"><a href="#cb16-3"></a>              data2</span>
+<span id="cb16-4"><a href="#cb16-4"></a>key1 key2          </span>
+<span id="cb16-5"><a href="#cb16-5"></a>a    one   <span class="fl">1.319920</span></span>
+<span id="cb16-6"><a href="#cb16-6"></a>     two   <span class="fl">0.092908</span></span>
+<span id="cb16-7"><a href="#cb16-7"></a>b    one   <span class="fl">0.281746</span></span>
+<span id="cb16-8"><a href="#cb16-8"></a>     two   <span class="fl">0.769023</span></span></code></pre></div>
+<p>这种索引操作所返回的对象是一个已分组的DataFrame（如果传入的是列表或数组）或已分组的Series（如果传入的是标量形式的单个列名）：</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1"></a>In [<span class="dv">32</span>]: s_grouped <span class="op">=</span> df.groupby([<span class="st">&#39;key1&#39;</span>, <span class="st">&#39;key2&#39;</span>])[<span class="st">&#39;data2&#39;</span>]</span>
+<span id="cb17-2"><a href="#cb17-2"></a></span>
+<span id="cb17-3"><a href="#cb17-3"></a>In [<span class="dv">33</span>]: s_grouped</span>
+<span id="cb17-4"><a href="#cb17-4"></a>Out[<span class="dv">33</span>]: <span class="op">&lt;</span>pandas.core.groupby.SeriesGroupBy <span class="bu">object</span> at <span class="bn">0x7faa30c78da0</span><span class="op">&gt;</span></span>
+<span id="cb17-5"><a href="#cb17-5"></a></span>
+<span id="cb17-6"><a href="#cb17-6"></a>In [<span class="dv">34</span>]: s_grouped.mean()</span>
+<span id="cb17-7"><a href="#cb17-7"></a>Out[<span class="dv">34</span>]: </span>
+<span id="cb17-8"><a href="#cb17-8"></a>key1  key2</span>
+<span id="cb17-9"><a href="#cb17-9"></a>a     one     <span class="fl">1.319920</span></span>
+<span id="cb17-10"><a href="#cb17-10"></a>      two     <span class="fl">0.092908</span></span>
+<span id="cb17-11"><a href="#cb17-11"></a>b     one     <span class="fl">0.281746</span></span>
+<span id="cb17-12"><a href="#cb17-12"></a>      two     <span class="fl">0.769023</span></span>
+<span id="cb17-13"><a href="#cb17-13"></a>Name: data2, dtype: float64</span></code></pre></div>
+<p>##通过字典或Series进行分组 除数组以外，分组信息还可以其他形式存在。来看另一个示例DataFrame：</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1"></a>In [<span class="dv">35</span>]: people <span class="op">=</span> pd.DataFrame(np.random.randn(<span class="dv">5</span>, <span class="dv">5</span>),</span>
+<span id="cb18-2"><a href="#cb18-2"></a>   ....:                       columns<span class="op">=</span>[<span class="st">&#39;a&#39;</span>, <span class="st">&#39;b&#39;</span>, <span class="st">&#39;c&#39;</span>, <span class="st">&#39;d&#39;</span>, <span class="st">&#39;e&#39;</span>],</span>
+<span id="cb18-3"><a href="#cb18-3"></a>   ....:                       index<span class="op">=</span>[<span class="st">&#39;Joe&#39;</span>, <span class="st">&#39;Steve&#39;</span>, <span class="st">&#39;Wes&#39;</span>, <span class="st">&#39;Jim&#39;</span>, <span class="st">&#39;Travis&#39;</span>])</span>
+<span id="cb18-4"><a href="#cb18-4"></a></span>
+<span id="cb18-5"><a href="#cb18-5"></a>In [<span class="dv">36</span>]: people.iloc[<span class="dv">2</span>:<span class="dv">3</span>, [<span class="dv">1</span>, <span class="dv">2</span>]] <span class="op">=</span> np.nan <span class="co"># Add a few NA values</span></span>
+<span id="cb18-6"><a href="#cb18-6"></a></span>
+<span id="cb18-7"><a href="#cb18-7"></a>In [<span class="dv">37</span>]: people</span>
+<span id="cb18-8"><a href="#cb18-8"></a>Out[<span class="dv">37</span>]: </span>
+<span id="cb18-9"><a href="#cb18-9"></a>               a         b         c         d         e</span>
+<span id="cb18-10"><a href="#cb18-10"></a>Joe     <span class="fl">1.007189</span> <span class="op">-</span><span class="fl">1.296221</span>  <span class="fl">0.274992</span>  <span class="fl">0.228913</span>  <span class="fl">1.352917</span></span>
+<span id="cb18-11"><a href="#cb18-11"></a>Steve   <span class="fl">0.886429</span> <span class="op">-</span><span class="fl">2.001637</span> <span class="op">-</span><span class="fl">0.371843</span>  <span class="fl">1.669025</span> <span class="op">-</span><span class="fl">0.438570</span></span>
+<span id="cb18-12"><a href="#cb18-12"></a>Wes    <span class="op">-</span><span class="fl">0.539741</span>       NaN       NaN <span class="op">-</span><span class="fl">1.021228</span> <span class="op">-</span><span class="fl">0.577087</span></span>
+<span id="cb18-13"><a href="#cb18-13"></a>Jim     <span class="fl">0.124121</span>  <span class="fl">0.302614</span>  <span class="fl">0.523772</span>  <span class="fl">0.000940</span>  <span class="fl">1.343810</span></span>
+<span id="cb18-14"><a href="#cb18-14"></a>Travis <span class="op">-</span><span class="fl">0.713544</span> <span class="op">-</span><span class="fl">0.831154</span> <span class="op">-</span><span class="fl">2.370232</span> <span class="op">-</span><span class="fl">1.860761</span> <span class="op">-</span><span class="fl">0.860757</span></span></code></pre></div>
+<p>现在，假设已知列的分组关系，并希望根据分组计算列的和：</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1"></a>In [<span class="dv">38</span>]: mapping <span class="op">=</span> {<span class="st">&#39;a&#39;</span>: <span class="st">&#39;red&#39;</span>, <span class="st">&#39;b&#39;</span>: <span class="st">&#39;red&#39;</span>, <span class="st">&#39;c&#39;</span>: <span class="st">&#39;blue&#39;</span>,</span>
+<span id="cb19-2"><a href="#cb19-2"></a>   ....:            <span class="st">&#39;d&#39;</span>: <span class="st">&#39;blue&#39;</span>, <span class="st">&#39;e&#39;</span>: <span class="st">&#39;red&#39;</span>, <span class="st">&#39;f&#39;</span> : <span class="st">&#39;orange&#39;</span>}</span></code></pre></div>
+<p>现在，你可以将这个字典传给groupby，来构造数组，但我们可以直接传递字典（我包含了键“f”来强调，存在未使用的分组键是可以的）：</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1"></a>In [<span class="dv">39</span>]: by_column <span class="op">=</span> people.groupby(mapping, axis<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb20-2"><a href="#cb20-2"></a></span>
+<span id="cb20-3"><a href="#cb20-3"></a>In [<span class="dv">40</span>]: by_column.<span class="bu">sum</span>()</span>
+<span id="cb20-4"><a href="#cb20-4"></a>Out[<span class="dv">40</span>]: </span>
+<span id="cb20-5"><a href="#cb20-5"></a>            blue       red</span>
+<span id="cb20-6"><a href="#cb20-6"></a>Joe     <span class="fl">0.503905</span>  <span class="fl">1.063885</span></span>
+<span id="cb20-7"><a href="#cb20-7"></a>Steve   <span class="fl">1.297183</span> <span class="op">-</span><span class="fl">1.553778</span></span>
+<span id="cb20-8"><a href="#cb20-8"></a>Wes    <span class="op">-</span><span class="fl">1.021228</span> <span class="op">-</span><span class="fl">1.116829</span></span>
+<span id="cb20-9"><a href="#cb20-9"></a>Jim     <span class="fl">0.524712</span>  <span class="fl">1.770545</span></span>
+<span id="cb20-10"><a href="#cb20-10"></a>Travis <span class="op">-</span><span class="fl">4.230992</span> <span class="op">-</span><span class="fl">2.405455</span></span></code></pre></div>
+<p>Series也有同样的功能，它可以被看做一个固定大小的映射：</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1"></a>In [<span class="dv">41</span>]: map_series <span class="op">=</span> pd.Series(mapping)</span>
+<span id="cb21-2"><a href="#cb21-2"></a></span>
+<span id="cb21-3"><a href="#cb21-3"></a>In [<span class="dv">42</span>]: map_series</span>
+<span id="cb21-4"><a href="#cb21-4"></a>Out[<span class="dv">42</span>]: </span>
+<span id="cb21-5"><a href="#cb21-5"></a>a       red</span>
+<span id="cb21-6"><a href="#cb21-6"></a>b       red</span>
+<span id="cb21-7"><a href="#cb21-7"></a>c      blue</span>
+<span id="cb21-8"><a href="#cb21-8"></a>d      blue</span>
+<span id="cb21-9"><a href="#cb21-9"></a>e       red</span>
+<span id="cb21-10"><a href="#cb21-10"></a>f    orange</span>
+<span id="cb21-11"><a href="#cb21-11"></a>dtype: <span class="bu">object</span></span>
+<span id="cb21-12"><a href="#cb21-12"></a></span>
+<span id="cb21-13"><a href="#cb21-13"></a>In [<span class="dv">43</span>]: people.groupby(map_series, axis<span class="op">=</span><span class="dv">1</span>).count()</span>
+<span id="cb21-14"><a href="#cb21-14"></a>Out[<span class="dv">43</span>]: </span>
+<span id="cb21-15"><a href="#cb21-15"></a>        blue  red</span>
+<span id="cb21-16"><a href="#cb21-16"></a>Joe        <span class="dv">2</span>    <span class="dv">3</span></span>
+<span id="cb21-17"><a href="#cb21-17"></a>Steve      <span class="dv">2</span>    <span class="dv">3</span></span>
+<span id="cb21-18"><a href="#cb21-18"></a>Wes        <span class="dv">1</span>    <span class="dv">2</span></span>
+<span id="cb21-19"><a href="#cb21-19"></a>Jim        <span class="dv">2</span>    <span class="dv">3</span></span>
+<span id="cb21-20"><a href="#cb21-20"></a>Travis     <span class="dv">2</span>    <span class="dv">3</span></span></code></pre></div>
+<p>##通过函数进行分组 比起使用字典或Series，使用Python函数是一种更原生的方法定义分组映射。任何被当做分组键的函数都会在各个索引值上被调用一次，其返回值就会被用作分组名称。具体点说，以上一小节的示例DataFrame为例，其索引值为人的名字。你可以计算一个字符串长度的数组，更简单的方法是传入len函数：</p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1"></a>In [<span class="dv">44</span>]: people.groupby(<span class="bu">len</span>).<span class="bu">sum</span>()</span>
+<span id="cb22-2"><a href="#cb22-2"></a>Out[<span class="dv">44</span>]: </span>
+<span id="cb22-3"><a href="#cb22-3"></a>          a         b         c         d         e</span>
+<span id="cb22-4"><a href="#cb22-4"></a><span class="dv">3</span>  <span class="fl">0.591569</span> <span class="op">-</span><span class="fl">0.993608</span>  <span class="fl">0.798764</span> <span class="op">-</span><span class="fl">0.791374</span>  <span class="fl">2.119639</span></span>
+<span id="cb22-5"><a href="#cb22-5"></a><span class="dv">5</span>  <span class="fl">0.886429</span> <span class="op">-</span><span class="fl">2.001637</span> <span class="op">-</span><span class="fl">0.371843</span>  <span class="fl">1.669025</span> <span class="op">-</span><span class="fl">0.438570</span></span>
+<span id="cb22-6"><a href="#cb22-6"></a><span class="dv">6</span> <span class="op">-</span><span class="fl">0.713544</span> <span class="op">-</span><span class="fl">0.831154</span> <span class="op">-</span><span class="fl">2.370232</span> <span class="op">-</span><span class="fl">1.860761</span> <span class="op">-</span><span class="fl">0.860757</span></span></code></pre></div>
+<p>将函数跟数组、列表、字典、Series混合使用也不是问题，因为任何东西在内部都会被转换为数组：</p>
+<div class="sourceCode" id="cb23"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1"></a>In [<span class="dv">45</span>]: key_list <span class="op">=</span> [<span class="st">&#39;one&#39;</span>, <span class="st">&#39;one&#39;</span>, <span class="st">&#39;one&#39;</span>, <span class="st">&#39;two&#39;</span>, <span class="st">&#39;two&#39;</span>]</span>
+<span id="cb23-2"><a href="#cb23-2"></a></span>
+<span id="cb23-3"><a href="#cb23-3"></a>In [<span class="dv">46</span>]: people.groupby([<span class="bu">len</span>, key_list]).<span class="bu">min</span>()</span>
+<span id="cb23-4"><a href="#cb23-4"></a>Out[<span class="dv">46</span>]: </span>
+<span id="cb23-5"><a href="#cb23-5"></a>              a         b         c         d         e</span>
+<span id="cb23-6"><a href="#cb23-6"></a><span class="dv">3</span> one <span class="op">-</span><span class="fl">0.539741</span> <span class="op">-</span><span class="fl">1.296221</span>  <span class="fl">0.274992</span> <span class="op">-</span><span class="fl">1.021228</span> <span class="op">-</span><span class="fl">0.577087</span></span>
+<span id="cb23-7"><a href="#cb23-7"></a>  two  <span class="fl">0.124121</span>  <span class="fl">0.302614</span>  <span class="fl">0.523772</span>  <span class="fl">0.000940</span>  <span class="fl">1.343810</span></span>
+<span id="cb23-8"><a href="#cb23-8"></a><span class="dv">5</span> one  <span class="fl">0.886429</span> <span class="op">-</span><span class="fl">2.001637</span> <span class="op">-</span><span class="fl">0.371843</span>  <span class="fl">1.669025</span> <span class="op">-</span><span class="fl">0.438570</span></span>
+<span id="cb23-9"><a href="#cb23-9"></a><span class="dv">6</span> two <span class="op">-</span><span class="fl">0.713544</span> <span class="op">-</span><span class="fl">0.831154</span> <span class="op">-</span><span class="fl">2.370232</span> <span class="op">-</span><span class="fl">1.860761</span> <span class="op">-</span><span class="fl">0.860757</span></span></code></pre></div>
+<h2 id="根据索引级别分组">根据索引级别分组</h2>
+<p>层次化索引数据集最方便的地方就在于它能够根据轴索引的一个级别进行聚合：</p>
+<div class="sourceCode" id="cb24"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1"></a>In [<span class="dv">47</span>]: columns <span class="op">=</span> pd.MultiIndex.from_arrays([[<span class="st">&#39;US&#39;</span>, <span class="st">&#39;US&#39;</span>, <span class="st">&#39;US&#39;</span>, <span class="st">&#39;JP&#39;</span>, <span class="st">&#39;JP&#39;</span>],</span>
+<span id="cb24-2"><a href="#cb24-2"></a>   ....:                                     [<span class="dv">1</span>, <span class="dv">3</span>, <span class="dv">5</span>, <span class="dv">1</span>, <span class="dv">3</span>]],</span>
+<span id="cb24-3"><a href="#cb24-3"></a>   ....:                                     names<span class="op">=</span>[<span class="st">&#39;cty&#39;</span>, <span class="st">&#39;tenor&#39;</span>])</span>
+<span id="cb24-4"><a href="#cb24-4"></a></span>
+<span id="cb24-5"><a href="#cb24-5"></a>In [<span class="dv">48</span>]: hier_df <span class="op">=</span> pd.DataFrame(np.random.randn(<span class="dv">4</span>, <span class="dv">5</span>), columns<span class="op">=</span>columns)</span>
+<span id="cb24-6"><a href="#cb24-6"></a></span>
+<span id="cb24-7"><a href="#cb24-7"></a>In [<span class="dv">49</span>]: hier_df</span>
+<span id="cb24-8"><a href="#cb24-8"></a>Out[<span class="dv">49</span>]: </span>
+<span id="cb24-9"><a href="#cb24-9"></a>cty          US                            JP          </span>
+<span id="cb24-10"><a href="#cb24-10"></a>tenor         <span class="dv">1</span>         <span class="dv">3</span>         <span class="dv">5</span>         <span class="dv">1</span>         <span class="dv">3</span></span>
+<span id="cb24-11"><a href="#cb24-11"></a><span class="dv">0</span>      <span class="fl">0.560145</span> <span class="op">-</span><span class="fl">1.265934</span>  <span class="fl">0.119827</span> <span class="op">-</span><span class="fl">1.063512</span>  <span class="fl">0.332883</span></span>
+<span id="cb24-12"><a href="#cb24-12"></a><span class="dv">1</span>     <span class="op">-</span><span class="fl">2.359419</span> <span class="op">-</span><span class="fl">0.199543</span> <span class="op">-</span><span class="fl">1.541996</span> <span class="op">-</span><span class="fl">0.970736</span> <span class="op">-</span><span class="fl">1.307030</span></span>
+<span id="cb24-13"><a href="#cb24-13"></a><span class="dv">2</span>      <span class="fl">0.286350</span>  <span class="fl">0.377984</span> <span class="op">-</span><span class="fl">0.753887</span>  <span class="fl">0.331286</span>  <span class="fl">1.349742</span></span>
+<span id="cb24-14"><a href="#cb24-14"></a><span class="dv">3</span>      <span class="fl">0.069877</span>  <span class="fl">0.246674</span> <span class="op">-</span><span class="fl">0.011862</span>  <span class="fl">1.004812</span>  <span class="fl">1.327195</span></span></code></pre></div>
+<p>要根据级别分组，使用level关键字传递级别序号或名字：</p>
+<div class="sourceCode" id="cb25"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1"></a>In [<span class="dv">50</span>]: hier_df.groupby(level<span class="op">=</span><span class="st">&#39;cty&#39;</span>, axis<span class="op">=</span><span class="dv">1</span>).count()</span>
+<span id="cb25-2"><a href="#cb25-2"></a>Out[<span class="dv">50</span>]: </span>
+<span id="cb25-3"><a href="#cb25-3"></a>cty  JP  US</span>
+<span id="cb25-4"><a href="#cb25-4"></a><span class="dv">0</span>     <span class="dv">2</span>   <span class="dv">3</span></span>
+<span id="cb25-5"><a href="#cb25-5"></a><span class="dv">1</span>     <span class="dv">2</span>   <span class="dv">3</span></span>
+<span id="cb25-6"><a href="#cb25-6"></a><span class="dv">2</span>     <span class="dv">2</span>   <span class="dv">3</span></span>
+<span id="cb25-7"><a href="#cb25-7"></a><span class="dv">3</span>     <span class="dv">2</span>   <span class="dv">3</span></span></code></pre></div>
+<h1 id="数据聚合">10.2 数据聚合</h1>
+<p>聚合指的是任何能够从数组产生标量值的数据转换过程。之前的例子已经用过一些，比如mean、count、min以及sum等。你可能想知道在GroupBy对象上调用mean()时究竟发生了什么。许多常见的聚合运算（如表10-1所示）都有进行优化。然而，除了这些方法，你还可以使用其它的。</p>
+<figure>
+<img src="http://upload-images.jianshu.io/upload_images/7178691-ba8de524e08b1b6f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="" /><figcaption>表10-1 经过优化的groupby方法</figcaption>
+</figure>
+<p>你可以使用自己发明的聚合运算，还可以调用分组对象上已经定义好的任何方法。例如，quantile可以计算Series或DataFrame列的样本分位数。</p>
+<p>虽然quantile并没有明确地实现于GroupBy，但它是一个Series方法，所以这里是能用的。实际上，GroupBy会高效地对Series进行切片，然后对各片调用piece.quantile(0.9)，最后将这些结果组装成最终结果：</p>
+<div class="sourceCode" id="cb26"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1"></a>In [<span class="dv">51</span>]: df</span>
+<span id="cb26-2"><a href="#cb26-2"></a>Out[<span class="dv">51</span>]: </span>
+<span id="cb26-3"><a href="#cb26-3"></a>      data1     data2 key1 key2</span>
+<span id="cb26-4"><a href="#cb26-4"></a><span class="dv">0</span> <span class="op">-</span><span class="fl">0.204708</span>  <span class="fl">1.393406</span>    a  one</span>
+<span id="cb26-5"><a href="#cb26-5"></a><span class="dv">1</span>  <span class="fl">0.478943</span>  <span class="fl">0.092908</span>    a  two</span>
+<span id="cb26-6"><a href="#cb26-6"></a><span class="dv">2</span> <span class="op">-</span><span class="fl">0.519439</span>  <span class="fl">0.281746</span>    b  one</span>
+<span id="cb26-7"><a href="#cb26-7"></a><span class="dv">3</span> <span class="op">-</span><span class="fl">0.555730</span>  <span class="fl">0.769023</span>    b  two</span>
+<span id="cb26-8"><a href="#cb26-8"></a><span class="dv">4</span>  <span class="fl">1.965781</span>  <span class="fl">1.246435</span>    a  one</span>
+<span id="cb26-9"><a href="#cb26-9"></a></span>
+<span id="cb26-10"><a href="#cb26-10"></a>In [<span class="dv">52</span>]: grouped <span class="op">=</span> df.groupby(<span class="st">&#39;key1&#39;</span>)</span>
+<span id="cb26-11"><a href="#cb26-11"></a></span>
+<span id="cb26-12"><a href="#cb26-12"></a>In [<span class="dv">53</span>]: grouped[<span class="st">&#39;data1&#39;</span>].quantile(<span class="fl">0.9</span>)</span>
+<span id="cb26-13"><a href="#cb26-13"></a>Out[<span class="dv">53</span>]: </span>
+<span id="cb26-14"><a href="#cb26-14"></a>key1</span>
+<span id="cb26-15"><a href="#cb26-15"></a>a    <span class="fl">1.668413</span></span>
+<span id="cb26-16"><a href="#cb26-16"></a>b   <span class="op">-</span><span class="fl">0.523068</span></span>
+<span id="cb26-17"><a href="#cb26-17"></a>Name: data1, dtype: float64</span></code></pre></div>
+<p>如果要使用你自己的聚合函数，只需将其传入aggregate或agg方法即可：</p>
+<div class="sourceCode" id="cb27"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1"></a>In [<span class="dv">54</span>]: <span class="kw">def</span> peak_to_peak(arr):</span>
+<span id="cb27-2"><a href="#cb27-2"></a>   ....:     <span class="cf">return</span> arr.<span class="bu">max</span>() <span class="op">-</span> arr.<span class="bu">min</span>()</span>
+<span id="cb27-3"><a href="#cb27-3"></a>In [<span class="dv">55</span>]: grouped.agg(peak_to_peak)</span>
+<span id="cb27-4"><a href="#cb27-4"></a>Out[<span class="dv">55</span>]: </span>
+<span id="cb27-5"><a href="#cb27-5"></a>         data1     data2</span>
+<span id="cb27-6"><a href="#cb27-6"></a>key1                    </span>
+<span id="cb27-7"><a href="#cb27-7"></a>a     <span class="fl">2.170488</span>  <span class="fl">1.300498</span></span>
+<span id="cb27-8"><a href="#cb27-8"></a>b     <span class="fl">0.036292</span>  <span class="fl">0.487276</span></span></code></pre></div>
+<p>你可能注意到注意，有些方法（如describe）也是可以用在这里的，即使严格来讲，它们并非聚合运算：</p>
+<div class="sourceCode" id="cb28"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1"></a>In [<span class="dv">56</span>]: grouped.describe()</span>
+<span id="cb28-2"><a href="#cb28-2"></a>Out[<span class="dv">56</span>]: </span>
+<span id="cb28-3"><a href="#cb28-3"></a>     data1                                                              <span class="op">\</span></span>
+<span id="cb28-4"><a href="#cb28-4"></a>     count      mean       std       <span class="bu">min</span>       <span class="dv">25</span><span class="op">%</span>       <span class="dv">50</span><span class="op">%</span>       <span class="dv">75</span><span class="op">%</span>   </span>
+<span id="cb28-5"><a href="#cb28-5"></a>key1                                                                     </span>
+<span id="cb28-6"><a href="#cb28-6"></a>a      <span class="fl">3.0</span>  <span class="fl">0.746672</span>  <span class="fl">1.109736</span> <span class="op">-</span><span class="fl">0.204708</span>  <span class="fl">0.137118</span>  <span class="fl">0.478943</span>  <span class="fl">1.222362</span>   </span>
+<span id="cb28-7"><a href="#cb28-7"></a>b      <span class="fl">2.0</span> <span class="op">-</span><span class="fl">0.537585</span>  <span class="fl">0.025662</span> <span class="op">-</span><span class="fl">0.555730</span> <span class="op">-</span><span class="fl">0.546657</span> <span class="op">-</span><span class="fl">0.537585</span> <span class="op">-</span><span class="fl">0.528512</span>   </span>
+<span id="cb28-8"><a href="#cb28-8"></a>               data2                                                    <span class="op">\</span></span>
+<span id="cb28-9"><a href="#cb28-9"></a><span class="bu">max</span> count      mean       std       <span class="bu">min</span>       <span class="dv">25</span><span class="op">%</span>       <span class="dv">50</span><span class="op">%</span>   </span>
+<span id="cb28-10"><a href="#cb28-10"></a>key1                                                                     </span>
+<span id="cb28-11"><a href="#cb28-11"></a>a     <span class="fl">1.965781</span>   <span class="fl">3.0</span>  <span class="fl">0.910916</span>  <span class="fl">0.712217</span>  <span class="fl">0.092908</span>  <span class="fl">0.669671</span>  <span class="fl">1.246435</span>   </span>
+<span id="cb28-12"><a href="#cb28-12"></a>b    <span class="op">-</span><span class="fl">0.519439</span>   <span class="fl">2.0</span>  <span class="fl">0.525384</span>  <span class="fl">0.344556</span>  <span class="fl">0.281746</span>  <span class="fl">0.403565</span>  <span class="fl">0.525384</span>   </span>
+<span id="cb28-13"><a href="#cb28-13"></a>                          </span>
+<span id="cb28-14"><a href="#cb28-14"></a>           <span class="dv">75</span><span class="op">%</span>       <span class="bu">max</span>  </span>
+<span id="cb28-15"><a href="#cb28-15"></a>key1                      </span>
+<span id="cb28-16"><a href="#cb28-16"></a>a     <span class="fl">1.319920</span>  <span class="fl">1.393406</span>  </span>
+<span id="cb28-17"><a href="#cb28-17"></a>b     <span class="fl">0.647203</span>  <span class="fl">0.769023</span></span></code></pre></div>
+<p>在后面的10.3节，我将详细说明这到底是怎么回事。</p>
+<blockquote>
+<p>笔记：自定义聚合函数要比表10-1中那些经过优化的函数慢得多。这是因为在构造中间分组数据块时存在非常大的开销（函数调用、数据重排等）。</p>
+</blockquote>
+<h2 id="面向列的多函数应用">面向列的多函数应用</h2>
+<p>回到前面小费的例子。使用read_csv导入数据之后，我们添加了一个小费百分比的列tip_pct：</p>
+<div class="sourceCode" id="cb29"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1"></a>In [<span class="dv">57</span>]: tips <span class="op">=</span> pd.read_csv(<span class="st">&#39;examples/tips.csv&#39;</span>)</span>
+<span id="cb29-2"><a href="#cb29-2"></a></span>
+<span id="cb29-3"><a href="#cb29-3"></a><span class="co"># Add tip percentage of total bill</span></span>
+<span id="cb29-4"><a href="#cb29-4"></a>In [<span class="dv">58</span>]: tips[<span class="st">&#39;tip_pct&#39;</span>] <span class="op">=</span> tips[<span class="st">&#39;tip&#39;</span>] <span class="op">/</span> tips[<span class="st">&#39;total_bill&#39;</span>]</span>
+<span id="cb29-5"><a href="#cb29-5"></a></span>
+<span id="cb29-6"><a href="#cb29-6"></a>In [<span class="dv">59</span>]: tips[:<span class="dv">6</span>]</span>
+<span id="cb29-7"><a href="#cb29-7"></a>Out[<span class="dv">59</span>]: </span>
+<span id="cb29-8"><a href="#cb29-8"></a>   total_bill   tip smoker  day    time  size   tip_pct</span>
+<span id="cb29-9"><a href="#cb29-9"></a><span class="dv">0</span>       <span class="fl">16.99</span>  <span class="fl">1.01</span>     No  Sun  Dinner     <span class="dv">2</span>  <span class="fl">0.059447</span></span>
+<span id="cb29-10"><a href="#cb29-10"></a><span class="dv">1</span>       <span class="fl">10.34</span>  <span class="fl">1.66</span>     No  Sun  Dinner     <span class="dv">3</span>  <span class="fl">0.160542</span></span>
+<span id="cb29-11"><a href="#cb29-11"></a><span class="dv">2</span>       <span class="fl">21.01</span>  <span class="fl">3.50</span>     No  Sun  Dinner     <span class="dv">3</span>  <span class="fl">0.166587</span></span>
+<span id="cb29-12"><a href="#cb29-12"></a><span class="dv">3</span>       <span class="fl">23.68</span>  <span class="fl">3.31</span>     No  Sun  Dinner     <span class="dv">2</span>  <span class="fl">0.139780</span></span>
+<span id="cb29-13"><a href="#cb29-13"></a><span class="dv">4</span>       <span class="fl">24.59</span>  <span class="fl">3.61</span>     No  Sun  Dinner     <span class="dv">4</span>  <span class="fl">0.146808</span></span>
+<span id="cb29-14"><a href="#cb29-14"></a><span class="dv">5</span>       <span class="fl">25.29</span>  <span class="fl">4.71</span>     No  Sun  Dinner     <span class="dv">4</span>  <span class="fl">0.186240</span></span></code></pre></div>
+<p>你已经看到，对Series或DataFrame列的聚合运算其实就是使用aggregate（使用自定义函数）或调用诸如mean、std之类的方法。然而，你可能希望对不同的列使用不同的聚合函数，或一次应用多个函数。其实这也好办，我将通过一些示例来进行讲解。首先，我根据天和smoker对tips进行分组：</p>
+<div class="sourceCode" id="cb30"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1"></a>In [<span class="dv">60</span>]: grouped <span class="op">=</span> tips.groupby([<span class="st">&#39;day&#39;</span>, <span class="st">&#39;smoker&#39;</span>])</span></code></pre></div>
+<p>注意，对于表10-1中的那些描述统计，可以将函数名以字符串的形式传入：</p>
+<div class="sourceCode" id="cb31"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb31-1"><a href="#cb31-1"></a>In [<span class="dv">61</span>]: grouped_pct <span class="op">=</span> grouped[<span class="st">&#39;tip_pct&#39;</span>]</span>
+<span id="cb31-2"><a href="#cb31-2"></a></span>
+<span id="cb31-3"><a href="#cb31-3"></a>In [<span class="dv">62</span>]: grouped_pct.agg(<span class="st">&#39;mean&#39;</span>)</span>
+<span id="cb31-4"><a href="#cb31-4"></a>Out[<span class="dv">62</span>]: </span>
+<span id="cb31-5"><a href="#cb31-5"></a>day   smoker</span>
+<span id="cb31-6"><a href="#cb31-6"></a>Fri   No        <span class="fl">0.151650</span></span>
+<span id="cb31-7"><a href="#cb31-7"></a>      Yes       <span class="fl">0.174783</span></span>
+<span id="cb31-8"><a href="#cb31-8"></a>Sat   No        <span class="fl">0.158048</span></span>
+<span id="cb31-9"><a href="#cb31-9"></a>      Yes       <span class="fl">0.147906</span></span>
+<span id="cb31-10"><a href="#cb31-10"></a>Sun   No        <span class="fl">0.160113</span></span>
+<span id="cb31-11"><a href="#cb31-11"></a>      Yes       <span class="fl">0.187250</span></span>
+<span id="cb31-12"><a href="#cb31-12"></a>Thur  No        <span class="fl">0.160298</span></span>
+<span id="cb31-13"><a href="#cb31-13"></a>      Yes       <span class="fl">0.163863</span></span>
+<span id="cb31-14"><a href="#cb31-14"></a>Name: tip_pct, dtype: float64</span></code></pre></div>
+<p>如果传入一组函数或函数名，得到的DataFrame的列就会以相应的函数命名：</p>
+<div class="sourceCode" id="cb32"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb32-1"><a href="#cb32-1"></a>In [<span class="dv">63</span>]: grouped_pct.agg([<span class="st">&#39;mean&#39;</span>, <span class="st">&#39;std&#39;</span>, peak_to_peak])</span>
+<span id="cb32-2"><a href="#cb32-2"></a>Out[<span class="dv">63</span>]: </span>
+<span id="cb32-3"><a href="#cb32-3"></a>                 mean       std  peak_to_peak</span>
+<span id="cb32-4"><a href="#cb32-4"></a>day  smoker                                  </span>
+<span id="cb32-5"><a href="#cb32-5"></a>Fri  No      <span class="fl">0.151650</span>  <span class="fl">0.028123</span>      <span class="fl">0.067349</span></span>
+<span id="cb32-6"><a href="#cb32-6"></a>     Yes     <span class="fl">0.174783</span>  <span class="fl">0.051293</span>      <span class="fl">0.159925</span></span>
+<span id="cb32-7"><a href="#cb32-7"></a>Sat  No      <span class="fl">0.158048</span>  <span class="fl">0.039767</span>      <span class="fl">0.235193</span></span>
+<span id="cb32-8"><a href="#cb32-8"></a>     Yes     <span class="fl">0.147906</span>  <span class="fl">0.061375</span>      <span class="fl">0.290095</span></span>
+<span id="cb32-9"><a href="#cb32-9"></a>Sun  No      <span class="fl">0.160113</span>  <span class="fl">0.042347</span>      <span class="fl">0.193226</span></span>
+<span id="cb32-10"><a href="#cb32-10"></a>     Yes     <span class="fl">0.187250</span>  <span class="fl">0.154134</span>      <span class="fl">0.644685</span></span>
+<span id="cb32-11"><a href="#cb32-11"></a>Thur No      <span class="fl">0.160298</span>  <span class="fl">0.038774</span>      <span class="fl">0.193350</span></span>
+<span id="cb32-12"><a href="#cb32-12"></a>     Yes     <span class="fl">0.163863</span>  <span class="fl">0.039389</span>      <span class="fl">0.151240</span></span></code></pre></div>
+<p>这里，我们传递了一组聚合函数进行聚合，独立对数据分组进行评估。</p>
+<p>你并非一定要接受GroupBy自动给出的那些列名，特别是lambda函数，它们的名称是’<lambda>’，这样的辨识度就很低了（通过函数的__name__属性看看就知道了）。因此，如果传入的是一个由(name,function)元组组成的列表，则各元组的第一个元素就会被用作DataFrame的列名（可以将这种二元元组列表看做一个有序映射）：</p>
+<div class="sourceCode" id="cb33"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb33-1"><a href="#cb33-1"></a>In [<span class="dv">64</span>]: grouped_pct.agg([(<span class="st">&#39;foo&#39;</span>, <span class="st">&#39;mean&#39;</span>), (<span class="st">&#39;bar&#39;</span>, np.std)])</span>
+<span id="cb33-2"><a href="#cb33-2"></a>Out[<span class="dv">64</span>]: </span>
+<span id="cb33-3"><a href="#cb33-3"></a>                  foo       bar</span>
+<span id="cb33-4"><a href="#cb33-4"></a>day  smoker                    </span>
+<span id="cb33-5"><a href="#cb33-5"></a>Fri  No      <span class="fl">0.151650</span>  <span class="fl">0.028123</span></span>
+<span id="cb33-6"><a href="#cb33-6"></a>     Yes     <span class="fl">0.174783</span>  <span class="fl">0.051293</span></span>
+<span id="cb33-7"><a href="#cb33-7"></a>Sat  No      <span class="fl">0.158048</span>  <span class="fl">0.039767</span></span>
+<span id="cb33-8"><a href="#cb33-8"></a>     Yes     <span class="fl">0.147906</span>  <span class="fl">0.061375</span></span>
+<span id="cb33-9"><a href="#cb33-9"></a>Sun  No      <span class="fl">0.160113</span>  <span class="fl">0.042347</span></span>
+<span id="cb33-10"><a href="#cb33-10"></a>     Yes     <span class="fl">0.187250</span>  <span class="fl">0.154134</span></span>
+<span id="cb33-11"><a href="#cb33-11"></a>Thur No      <span class="fl">0.160298</span>  <span class="fl">0.038774</span></span>
+<span id="cb33-12"><a href="#cb33-12"></a>     Yes     <span class="fl">0.163863</span>  <span class="fl">0.039389</span></span></code></pre></div>
+<p>对于DataFrame，你还有更多选择，你可以定义一组应用于全部列的一组函数，或不同的列应用不同的函数。假设我们想要对tip_pct和total_bill列计算三个统计信息：</p>
+<div class="sourceCode" id="cb34"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb34-1"><a href="#cb34-1"></a>In [<span class="dv">65</span>]: functions <span class="op">=</span> [<span class="st">&#39;count&#39;</span>, <span class="st">&#39;mean&#39;</span>, <span class="st">&#39;max&#39;</span>]</span>
+<span id="cb34-2"><a href="#cb34-2"></a></span>
+<span id="cb34-3"><a href="#cb34-3"></a>In [<span class="dv">66</span>]: result <span class="op">=</span> grouped[<span class="st">&#39;tip_pct&#39;</span>, <span class="st">&#39;total_bill&#39;</span>].agg(functions)</span>
+<span id="cb34-4"><a href="#cb34-4"></a></span>
+<span id="cb34-5"><a href="#cb34-5"></a>In [<span class="dv">67</span>]: result</span>
+<span id="cb34-6"><a href="#cb34-6"></a>Out[<span class="dv">67</span>]: </span>
+<span id="cb34-7"><a href="#cb34-7"></a>            tip_pct                     total_bill                  </span>
+<span id="cb34-8"><a href="#cb34-8"></a>              count      mean       <span class="bu">max</span>      count       mean    <span class="bu">max</span></span>
+<span id="cb34-9"><a href="#cb34-9"></a>day  smoker                                                         </span>
+<span id="cb34-10"><a href="#cb34-10"></a>Fri  No           <span class="dv">4</span>  <span class="fl">0.151650</span>  <span class="fl">0.187735</span>          <span class="dv">4</span>  <span class="fl">18.420000</span>  <span class="fl">22.75</span></span>
+<span id="cb34-11"><a href="#cb34-11"></a>     Yes         <span class="dv">15</span>  <span class="fl">0.174783</span>  <span class="fl">0.263480</span>         <span class="dv">15</span>  <span class="fl">16.813333</span>  <span class="fl">40.17</span></span>
+<span id="cb34-12"><a href="#cb34-12"></a>Sat  No          <span class="dv">45</span>  <span class="fl">0.158048</span>  <span class="fl">0.291990</span>         <span class="dv">45</span>  <span class="fl">19.661778</span>  <span class="fl">48.33</span></span>
+<span id="cb34-13"><a href="#cb34-13"></a>     Yes         <span class="dv">42</span>  <span class="fl">0.147906</span>  <span class="fl">0.325733</span>         <span class="dv">42</span>  <span class="fl">21.276667</span>  <span class="fl">50.81</span></span>
+<span id="cb34-14"><a href="#cb34-14"></a>Sun  No          <span class="dv">57</span>  <span class="fl">0.160113</span>  <span class="fl">0.252672</span>         <span class="dv">57</span>  <span class="fl">20.506667</span>  <span class="fl">48.17</span></span>
+<span id="cb34-15"><a href="#cb34-15"></a>     Yes         <span class="dv">19</span>  <span class="fl">0.187250</span>  <span class="fl">0.710345</span>         <span class="dv">19</span>  <span class="fl">24.120000</span>  <span class="fl">45.35</span></span>
+<span id="cb34-16"><a href="#cb34-16"></a>Thur No          <span class="dv">45</span>  <span class="fl">0.160298</span>  <span class="fl">0.266312</span>         <span class="dv">45</span>  <span class="fl">17.113111</span>  <span class="fl">41.19</span></span>
+<span id="cb34-17"><a href="#cb34-17"></a>     Yes         <span class="dv">17</span>  <span class="fl">0.163863</span>  <span class="fl">0.241255</span>         <span class="dv">17</span>  <span class="fl">19.190588</span>  <span class="fl">43.11</span></span></code></pre></div>
+<p>如你所见，结果DataFrame拥有层次化的列，这相当于分别对各列进行聚合，然后用concat将结果组装到一起，使用列名用作keys参数：</p>
+<div class="sourceCode" id="cb35"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb35-1"><a href="#cb35-1"></a>In [<span class="dv">68</span>]: result[<span class="st">&#39;tip_pct&#39;</span>]</span>
+<span id="cb35-2"><a href="#cb35-2"></a>Out[<span class="dv">68</span>]: </span>
+<span id="cb35-3"><a href="#cb35-3"></a>             count      mean       <span class="bu">max</span></span>
+<span id="cb35-4"><a href="#cb35-4"></a>day  smoker                           </span>
+<span id="cb35-5"><a href="#cb35-5"></a>Fri  No          <span class="dv">4</span>  <span class="fl">0.151650</span>  <span class="fl">0.187735</span></span>
+<span id="cb35-6"><a href="#cb35-6"></a>     Yes        <span class="dv">15</span>  <span class="fl">0.174783</span>  <span class="fl">0.263480</span></span>
+<span id="cb35-7"><a href="#cb35-7"></a>Sat  No         <span class="dv">45</span>  <span class="fl">0.158048</span>  <span class="fl">0.291990</span></span>
+<span id="cb35-8"><a href="#cb35-8"></a>     Yes        <span class="dv">42</span>  <span class="fl">0.147906</span>  <span class="fl">0.325733</span></span>
+<span id="cb35-9"><a href="#cb35-9"></a>Sun  No         <span class="dv">57</span>  <span class="fl">0.160113</span>  <span class="fl">0.252672</span></span>
+<span id="cb35-10"><a href="#cb35-10"></a>     Yes        <span class="dv">19</span>  <span class="fl">0.187250</span>  <span class="fl">0.710345</span></span>
+<span id="cb35-11"><a href="#cb35-11"></a>Thur No         <span class="dv">45</span>  <span class="fl">0.160298</span>  <span class="fl">0.266312</span></span>
+<span id="cb35-12"><a href="#cb35-12"></a>     Yes        <span class="dv">17</span>  <span class="fl">0.163863</span>  <span class="fl">0.241255</span></span></code></pre></div>
+<p>跟前面一样，这里也可以传入带有自定义名称的一组元组：</p>
+<div class="sourceCode" id="cb36"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb36-1"><a href="#cb36-1"></a>In [<span class="dv">69</span>]: ftuples <span class="op">=</span> [(<span class="st">&#39;Durchschnitt&#39;</span>, <span class="st">&#39;mean&#39;</span>),(<span class="st">&#39;Abweichung&#39;</span>, np.var)]</span>
+<span id="cb36-2"><a href="#cb36-2"></a></span>
+<span id="cb36-3"><a href="#cb36-3"></a>In [<span class="dv">70</span>]: grouped[<span class="st">&#39;tip_pct&#39;</span>, <span class="st">&#39;total_bill&#39;</span>].agg(ftuples)</span>
+<span id="cb36-4"><a href="#cb36-4"></a>Out[<span class="dv">70</span>]: </span>
+<span id="cb36-5"><a href="#cb36-5"></a>                 tip_pct              total_bill            </span>
+<span id="cb36-6"><a href="#cb36-6"></a>            Durchschnitt Abweichung Durchschnitt  Abweichung</span>
+<span id="cb36-7"><a href="#cb36-7"></a>day  smoker                                                 </span>
+<span id="cb36-8"><a href="#cb36-8"></a>Fri  No         <span class="fl">0.151650</span>   <span class="fl">0.000791</span>    <span class="fl">18.420000</span>   <span class="fl">25.596333</span></span>
+<span id="cb36-9"><a href="#cb36-9"></a>     Yes        <span class="fl">0.174783</span>   <span class="fl">0.002631</span>    <span class="fl">16.813333</span>   <span class="fl">82.562438</span></span>
+<span id="cb36-10"><a href="#cb36-10"></a>Sat  No         <span class="fl">0.158048</span>   <span class="fl">0.001581</span>    <span class="fl">19.661778</span>   <span class="fl">79.908965</span></span>
+<span id="cb36-11"><a href="#cb36-11"></a>     Yes        <span class="fl">0.147906</span>   <span class="fl">0.003767</span>    <span class="fl">21.276667</span>  <span class="fl">101.387535</span></span>
+<span id="cb36-12"><a href="#cb36-12"></a>Sun  No         <span class="fl">0.160113</span>   <span class="fl">0.001793</span>    <span class="fl">20.506667</span>   <span class="fl">66.099980</span></span>
+<span id="cb36-13"><a href="#cb36-13"></a>     Yes        <span class="fl">0.187250</span>   <span class="fl">0.023757</span>    <span class="fl">24.120000</span>  <span class="fl">109.046044</span></span>
+<span id="cb36-14"><a href="#cb36-14"></a>Thur No         <span class="fl">0.160298</span>   <span class="fl">0.001503</span>    <span class="fl">17.113111</span>   <span class="fl">59.625081</span></span>
+<span id="cb36-15"><a href="#cb36-15"></a>     Yes        <span class="fl">0.163863</span>   <span class="fl">0.001551</span>    <span class="fl">19.190588</span>   <span class="fl">69.808518</span></span></code></pre></div>
+<p>现在，假设你想要对一个列或不同的列应用不同的函数。具体的办法是向agg传入一个从列名映射到函数的字典：</p>
+<div class="sourceCode" id="cb37"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb37-1"><a href="#cb37-1"></a>In [<span class="dv">71</span>]: grouped.agg({<span class="st">&#39;tip&#39;</span> : np.<span class="bu">max</span>, <span class="st">&#39;size&#39;</span> : <span class="st">&#39;sum&#39;</span>})</span>
+<span id="cb37-2"><a href="#cb37-2"></a>Out[<span class="dv">71</span>]: </span>
+<span id="cb37-3"><a href="#cb37-3"></a>               tip  size</span>
+<span id="cb37-4"><a href="#cb37-4"></a>day  smoker             </span>
+<span id="cb37-5"><a href="#cb37-5"></a>Fri  No       <span class="fl">3.50</span>     <span class="dv">9</span></span>
+<span id="cb37-6"><a href="#cb37-6"></a>     Yes      <span class="fl">4.73</span>    <span class="dv">31</span></span>
+<span id="cb37-7"><a href="#cb37-7"></a>Sat  No       <span class="fl">9.00</span>   <span class="dv">115</span></span>
+<span id="cb37-8"><a href="#cb37-8"></a>     Yes     <span class="fl">10.00</span>   <span class="dv">104</span></span>
+<span id="cb37-9"><a href="#cb37-9"></a>Sun  No       <span class="fl">6.00</span>   <span class="dv">167</span></span>
+<span id="cb37-10"><a href="#cb37-10"></a>     Yes      <span class="fl">6.50</span>    <span class="dv">49</span></span>
+<span id="cb37-11"><a href="#cb37-11"></a>Thur No       <span class="fl">6.70</span>   <span class="dv">112</span></span>
+<span id="cb37-12"><a href="#cb37-12"></a>     Yes      <span class="fl">5.00</span>    <span class="dv">40</span></span>
+<span id="cb37-13"><a href="#cb37-13"></a></span>
+<span id="cb37-14"><a href="#cb37-14"></a>In [<span class="dv">72</span>]: grouped.agg({<span class="st">&#39;tip_pct&#39;</span> : [<span class="st">&#39;min&#39;</span>, <span class="st">&#39;max&#39;</span>, <span class="st">&#39;mean&#39;</span>, <span class="st">&#39;std&#39;</span>],</span>
+<span id="cb37-15"><a href="#cb37-15"></a>   ....:              <span class="st">&#39;size&#39;</span> : <span class="st">&#39;sum&#39;</span>})</span>
+<span id="cb37-16"><a href="#cb37-16"></a>Out[<span class="dv">72</span>]: </span>
+<span id="cb37-17"><a href="#cb37-17"></a>              tip_pct                               size</span>
+<span id="cb37-18"><a href="#cb37-18"></a>                  <span class="bu">min</span>       <span class="bu">max</span>      mean       std  <span class="bu">sum</span></span>
+<span id="cb37-19"><a href="#cb37-19"></a>day  smoker                                             </span>
+<span id="cb37-20"><a href="#cb37-20"></a>Fri  No      <span class="fl">0.120385</span>  <span class="fl">0.187735</span>  <span class="fl">0.151650</span>  <span class="fl">0.028123</span>    <span class="dv">9</span></span>
+<span id="cb37-21"><a href="#cb37-21"></a>     Yes     <span class="fl">0.103555</span>  <span class="fl">0.263480</span>  <span class="fl">0.174783</span>  <span class="fl">0.051293</span>   <span class="dv">31</span></span>
+<span id="cb37-22"><a href="#cb37-22"></a>Sat  No      <span class="fl">0.056797</span>  <span class="fl">0.291990</span>  <span class="fl">0.158048</span>  <span class="fl">0.039767</span>  <span class="dv">115</span></span>
+<span id="cb37-23"><a href="#cb37-23"></a>     Yes     <span class="fl">0.035638</span>  <span class="fl">0.325733</span>  <span class="fl">0.147906</span>  <span class="fl">0.061375</span>  <span class="dv">104</span></span>
+<span id="cb37-24"><a href="#cb37-24"></a>Sun  No      <span class="fl">0.059447</span>  <span class="fl">0.252672</span>  <span class="fl">0.160113</span>  <span class="fl">0.042347</span>  <span class="dv">167</span></span>
+<span id="cb37-25"><a href="#cb37-25"></a>     Yes     <span class="fl">0.065660</span>  <span class="fl">0.710345</span>  <span class="fl">0.187250</span>  <span class="fl">0.154134</span>   <span class="dv">49</span></span>
+<span id="cb37-26"><a href="#cb37-26"></a>Thur No      <span class="fl">0.072961</span>  <span class="fl">0.266312</span>  <span class="fl">0.160298</span>  <span class="fl">0.038774</span>  <span class="dv">112</span></span>
+<span id="cb37-27"><a href="#cb37-27"></a>     Yes     <span class="fl">0.090014</span>  <span class="fl">0.241255</span>  <span class="fl">0.163863</span>  <span class="fl">0.039389</span>   <span class="dv">40</span></span></code></pre></div>
+<p>只有将多个函数应用到至少一列时，DataFrame才会拥有层次化的列。</p>
+<h2 id="以没有行索引的形式返回聚合数据">以“没有行索引”的形式返回聚合数据</h2>
+<p>到目前为止，所有示例中的聚合数据都有由唯一的分组键组成的索引（可能还是层次化的）。由于并不总是需要如此，所以你可以向groupby传入as_index=False以禁用该功能：</p>
+<div class="sourceCode" id="cb38"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb38-1"><a href="#cb38-1"></a>In [<span class="dv">73</span>]: tips.groupby([<span class="st">&#39;day&#39;</span>, <span class="st">&#39;smoker&#39;</span>], as_index<span class="op">=</span><span class="va">False</span>).mean()</span>
+<span id="cb38-2"><a href="#cb38-2"></a>Out[<span class="dv">73</span>]: </span>
+<span id="cb38-3"><a href="#cb38-3"></a>    day smoker  total_bill       tip      size   tip_pct</span>
+<span id="cb38-4"><a href="#cb38-4"></a><span class="dv">0</span>   Fri     No   <span class="fl">18.420000</span>  <span class="fl">2.812500</span>  <span class="fl">2.250000</span>  <span class="fl">0.151650</span></span>
+<span id="cb38-5"><a href="#cb38-5"></a><span class="dv">1</span>   Fri    Yes   <span class="fl">16.813333</span>  <span class="fl">2.714000</span>  <span class="fl">2.066667</span>  <span class="fl">0.174783</span></span>
+<span id="cb38-6"><a href="#cb38-6"></a><span class="dv">2</span>   Sat     No   <span class="fl">19.661778</span>  <span class="fl">3.102889</span>  <span class="fl">2.555556</span>  <span class="fl">0.158048</span></span>
+<span id="cb38-7"><a href="#cb38-7"></a><span class="dv">3</span>   Sat    Yes   <span class="fl">21.276667</span>  <span class="fl">2.875476</span>  <span class="fl">2.476190</span>  <span class="fl">0.147906</span></span>
+<span id="cb38-8"><a href="#cb38-8"></a><span class="dv">4</span>   Sun     No   <span class="fl">20.506667</span>  <span class="fl">3.167895</span>  <span class="fl">2.929825</span>  <span class="fl">0.160113</span></span>
+<span id="cb38-9"><a href="#cb38-9"></a><span class="dv">5</span>   Sun    Yes   <span class="fl">24.120000</span>  <span class="fl">3.516842</span>  <span class="fl">2.578947</span>  <span class="fl">0.187250</span></span>
+<span id="cb38-10"><a href="#cb38-10"></a><span class="dv">6</span>  Thur     No   <span class="fl">17.113111</span>  <span class="fl">2.673778</span>  <span class="fl">2.488889</span>  <span class="fl">0.160298</span></span>
+<span id="cb38-11"><a href="#cb38-11"></a><span class="dv">7</span>  Thur    Yes   <span class="fl">19.190588</span>  <span class="fl">3.030000</span>  <span class="fl">2.352941</span>  <span class="fl">0.163863</span></span></code></pre></div>
+<p>当然，对结果调用reset_index也能得到这种形式的结果。使用as_index=False方法可以避免一些不必要的计算。</p>
+<h1 id="apply一般性的拆分应用合并">10.3 apply：一般性的“拆分－应用－合并”</h1>
+<p>最通用的GroupBy方法是apply，本节剩余部分将重点讲解它。如图10-2所示，apply会将待处理的对象拆分成多个片段，然后对各片段调用传入的函数，最后尝试将各片段组合到一起。</p>
+<figure>
+<img src="http://upload-images.jianshu.io/upload_images/7178691-7e8bb217f599b4ae.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="" /><figcaption>图10-2 分组聚合示例</figcaption>
+</figure>
+<p>回到之前那个小费数据集，假设你想要根据分组选出最高的5个tip_pct值。首先，编写一个选取指定列具有最大值的行的函数：</p>
+<div class="sourceCode" id="cb39"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb39-1"><a href="#cb39-1"></a>In [<span class="dv">74</span>]: <span class="kw">def</span> top(df, n<span class="op">=</span><span class="dv">5</span>, column<span class="op">=</span><span class="st">&#39;tip_pct&#39;</span>):</span>
+<span id="cb39-2"><a href="#cb39-2"></a>   ....:     <span class="cf">return</span> df.sort_values(by<span class="op">=</span>column)[<span class="op">-</span>n:]</span>
+<span id="cb39-3"><a href="#cb39-3"></a></span>
+<span id="cb39-4"><a href="#cb39-4"></a>In [<span class="dv">75</span>]: top(tips, n<span class="op">=</span><span class="dv">6</span>)</span>
+<span id="cb39-5"><a href="#cb39-5"></a>Out[<span class="dv">75</span>]: </span>
+<span id="cb39-6"><a href="#cb39-6"></a>     total_bill   tip smoker  day    time  size   tip_pct</span>
+<span id="cb39-7"><a href="#cb39-7"></a><span class="dv">109</span>       <span class="fl">14.31</span>  <span class="fl">4.00</span>    Yes  Sat  Dinner     <span class="dv">2</span>  <span class="fl">0.279525</span></span>
+<span id="cb39-8"><a href="#cb39-8"></a><span class="dv">183</span>       <span class="fl">23.17</span>  <span class="fl">6.50</span>    Yes  Sun  Dinner     <span class="dv">4</span>  <span class="fl">0.280535</span></span>
+<span id="cb39-9"><a href="#cb39-9"></a><span class="dv">232</span>       <span class="fl">11.61</span>  <span class="fl">3.39</span>     No  Sat  Dinner     <span class="dv">2</span>  <span class="fl">0.291990</span></span>
+<span id="cb39-10"><a href="#cb39-10"></a><span class="dv">67</span>         <span class="fl">3.07</span>  <span class="fl">1.00</span>    Yes  Sat  Dinner     <span class="dv">1</span>  <span class="fl">0.325733</span></span>
+<span id="cb39-11"><a href="#cb39-11"></a><span class="dv">178</span>        <span class="fl">9.60</span>  <span class="fl">4.00</span>    Yes  Sun  Dinner     <span class="dv">2</span>  <span class="fl">0.416667</span></span>
+<span id="cb39-12"><a href="#cb39-12"></a><span class="dv">172</span>        <span class="fl">7.25</span>  <span class="fl">5.15</span>    Yes  Sun  Dinner     <span class="dv">2</span>  <span class="fl">0.710345</span></span></code></pre></div>
+<p>现在，如果对smoker分组并用该函数调用apply，就会得到：</p>
+<div class="sourceCode" id="cb40"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb40-1"><a href="#cb40-1"></a>In [<span class="dv">76</span>]: tips.groupby(<span class="st">&#39;smoker&#39;</span>).<span class="bu">apply</span>(top)</span>
+<span id="cb40-2"><a href="#cb40-2"></a>Out[<span class="dv">76</span>]: </span>
+<span id="cb40-3"><a href="#cb40-3"></a>            total_bill   tip smoker   day    time  size   tip_pct</span>
+<span id="cb40-4"><a href="#cb40-4"></a>smoker                                                           </span>
+<span id="cb40-5"><a href="#cb40-5"></a>No     <span class="dv">88</span>        <span class="fl">24.71</span>  <span class="fl">5.85</span>     No  Thur   Lunch     <span class="dv">2</span>  <span class="fl">0.236746</span></span>
+<span id="cb40-6"><a href="#cb40-6"></a>       <span class="dv">185</span>       <span class="fl">20.69</span>  <span class="fl">5.00</span>     No   Sun  Dinner     <span class="dv">5</span>  <span class="fl">0.241663</span></span>
+<span id="cb40-7"><a href="#cb40-7"></a>       <span class="dv">51</span>        <span class="fl">10.29</span>  <span class="fl">2.60</span>     No   Sun  Dinner     <span class="dv">2</span>  <span class="fl">0.252672</span></span>
+<span id="cb40-8"><a href="#cb40-8"></a>       <span class="dv">149</span>        <span class="fl">7.51</span>  <span class="fl">2.00</span>     No  Thur   Lunch     <span class="dv">2</span>  <span class="fl">0.266312</span></span>
+<span id="cb40-9"><a href="#cb40-9"></a>       <span class="dv">232</span>       <span class="fl">11.61</span>  <span class="fl">3.39</span>     No   Sat  Dinner     <span class="dv">2</span>  <span class="fl">0.291990</span></span>
+<span id="cb40-10"><a href="#cb40-10"></a>Yes    <span class="dv">109</span>       <span class="fl">14.31</span>  <span class="fl">4.00</span>    Yes   Sat  Dinner     <span class="dv">2</span>  <span class="fl">0.279525</span></span>
+<span id="cb40-11"><a href="#cb40-11"></a>       <span class="dv">183</span>       <span class="fl">23.17</span>  <span class="fl">6.50</span>    Yes   Sun  Dinner     <span class="dv">4</span>  <span class="fl">0.280535</span></span>
+<span id="cb40-12"><a href="#cb40-12"></a>       <span class="dv">67</span>         <span class="fl">3.07</span>  <span class="fl">1.00</span>    Yes   Sat  Dinner     <span class="dv">1</span>  <span class="fl">0.325733</span></span>
+<span id="cb40-13"><a href="#cb40-13"></a>       <span class="dv">178</span>        <span class="fl">9.60</span>  <span class="fl">4.00</span>    Yes   Sun  Dinner     <span class="dv">2</span>  <span class="fl">0.416667</span></span>
+<span id="cb40-14"><a href="#cb40-14"></a>       <span class="dv">172</span>        <span class="fl">7.25</span>  <span class="fl">5.15</span>    Yes   Sun  Dinner     <span class="dv">2</span>  <span class="fl">0.710345</span></span></code></pre></div>
+<p>这里发生了什么？top函数在DataFrame的各个片段上调用，然后结果由pandas.concat组装到一起，并以分组名称进行了标记。于是，最终结果就有了一个层次化索引，其内层索引值来自原DataFrame。</p>
+<p>如果传给apply的函数能够接受其他参数或关键字，则可以将这些内容放在函数名后面一并传入：</p>
+<div class="sourceCode" id="cb41"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb41-1"><a href="#cb41-1"></a>In [<span class="dv">77</span>]: tips.groupby([<span class="st">&#39;smoker&#39;</span>, <span class="st">&#39;day&#39;</span>]).<span class="bu">apply</span>(top, n<span class="op">=</span><span class="dv">1</span>, column<span class="op">=</span><span class="st">&#39;total_bill&#39;</span>)</span>
+<span id="cb41-2"><a href="#cb41-2"></a>Out[<span class="dv">77</span>]: </span>
+<span id="cb41-3"><a href="#cb41-3"></a>                 total_bill    tip smoker   day    time  size   tip_pct</span>
+<span id="cb41-4"><a href="#cb41-4"></a>smoker day                                                             </span>
+<span id="cb41-5"><a href="#cb41-5"></a>No     Fri  <span class="dv">94</span>        <span class="fl">22.75</span>   <span class="fl">3.25</span>     No   Fri  Dinner     <span class="dv">2</span>  <span class="fl">0.142857</span></span>
+<span id="cb41-6"><a href="#cb41-6"></a>       Sat  <span class="dv">212</span>       <span class="fl">48.33</span>   <span class="fl">9.00</span>     No   Sat  Dinner     <span class="dv">4</span>  <span class="fl">0.186220</span></span>
+<span id="cb41-7"><a href="#cb41-7"></a>       Sun  <span class="dv">156</span>       <span class="fl">48.17</span>   <span class="fl">5.00</span>     No   Sun  Dinner     <span class="dv">6</span>  <span class="fl">0.103799</span></span>
+<span id="cb41-8"><a href="#cb41-8"></a>       Thur <span class="dv">142</span>       <span class="fl">41.19</span>   <span class="fl">5.00</span>     No  Thur   Lunch     <span class="dv">5</span>  <span class="fl">0.121389</span></span>
+<span id="cb41-9"><a href="#cb41-9"></a>Yes    Fri  <span class="dv">95</span>        <span class="fl">40.17</span>   <span class="fl">4.73</span>    Yes   Fri  Dinner     <span class="dv">4</span>  <span class="fl">0.117750</span></span>
+<span id="cb41-10"><a href="#cb41-10"></a>       Sat  <span class="dv">170</span>       <span class="fl">50.81</span>  <span class="fl">10.00</span>    Yes   Sat  Dinner     <span class="dv">3</span>  <span class="fl">0.196812</span></span>
+<span id="cb41-11"><a href="#cb41-11"></a>       Sun  <span class="dv">182</span>       <span class="fl">45.35</span>   <span class="fl">3.50</span>    Yes   Sun  Dinner     <span class="dv">3</span>  <span class="fl">0.077178</span></span>
+<span id="cb41-12"><a href="#cb41-12"></a>       Thur <span class="dv">197</span>       <span class="fl">43.11</span>   <span class="fl">5.00</span>    Yes  Thur   Lunch     <span class="dv">4</span>  <span class="fl">0.115982</span></span></code></pre></div>
+<blockquote>
+<p>笔记：除这些基本用法之外，能否充分发挥apply的威力很大程度上取决于你的创造力。传入的那个函数能做什么全由你说了算，它只需返回一个pandas对象或标量值即可。本章后续部分的示例主要用于讲解如何利用groupby解决各种各样的问题。</p>
+</blockquote>
+<p>可能你已经想起来了，之前我在GroupBy对象上调用过describe：</p>
+<div class="sourceCode" id="cb42"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb42-1"><a href="#cb42-1"></a>In [<span class="dv">78</span>]: result <span class="op">=</span> tips.groupby(<span class="st">&#39;smoker&#39;</span>)[<span class="st">&#39;tip_pct&#39;</span>].describe()</span>
+<span id="cb42-2"><a href="#cb42-2"></a></span>
+<span id="cb42-3"><a href="#cb42-3"></a>In [<span class="dv">79</span>]: result</span>
+<span id="cb42-4"><a href="#cb42-4"></a>Out[<span class="dv">79</span>]: </span>
+<span id="cb42-5"><a href="#cb42-5"></a>        count      mean       std       <span class="bu">min</span>       <span class="dv">25</span><span class="op">%</span>       <span class="dv">50</span><span class="op">%</span>       <span class="dv">75</span><span class="op">%</span>  <span class="op">\</span></span>
+<span id="cb42-6"><a href="#cb42-6"></a>smoker                                                                      </span>
+<span id="cb42-7"><a href="#cb42-7"></a>No      <span class="fl">151.0</span>  <span class="fl">0.159328</span>  <span class="fl">0.039910</span>  <span class="fl">0.056797</span>  <span class="fl">0.136906</span>  <span class="fl">0.155625</span>  <span class="fl">0.185014</span>   </span>
+<span id="cb42-8"><a href="#cb42-8"></a>Yes      <span class="fl">93.0</span>  <span class="fl">0.163196</span>  <span class="fl">0.085119</span>  <span class="fl">0.035638</span>  <span class="fl">0.106771</span>  <span class="fl">0.153846</span>  <span class="fl">0.195059</span>   </span>
+<span id="cb42-9"><a href="#cb42-9"></a>             <span class="bu">max</span>  </span>
+<span id="cb42-10"><a href="#cb42-10"></a>smoker</span>
+<span id="cb42-11"><a href="#cb42-11"></a></span>
+<span id="cb42-12"><a href="#cb42-12"></a>No      <span class="fl">0.291990</span>  </span>
+<span id="cb42-13"><a href="#cb42-13"></a>Yes     <span class="fl">0.710345</span>  </span>
+<span id="cb42-14"><a href="#cb42-14"></a></span>
+<span id="cb42-15"><a href="#cb42-15"></a>In [<span class="dv">80</span>]: result.unstack(<span class="st">&#39;smoker&#39;</span>)</span>
+<span id="cb42-16"><a href="#cb42-16"></a>Out[<span class="dv">80</span>]: </span>
+<span id="cb42-17"><a href="#cb42-17"></a>       smoker</span>
+<span id="cb42-18"><a href="#cb42-18"></a>count  No        <span class="fl">151.000000</span></span>
+<span id="cb42-19"><a href="#cb42-19"></a>       Yes        <span class="fl">93.000000</span></span>
+<span id="cb42-20"><a href="#cb42-20"></a>mean   No          <span class="fl">0.159328</span></span>
+<span id="cb42-21"><a href="#cb42-21"></a>       Yes         <span class="fl">0.163196</span></span>
+<span id="cb42-22"><a href="#cb42-22"></a>std    No          <span class="fl">0.039910</span></span>
+<span id="cb42-23"><a href="#cb42-23"></a>       Yes         <span class="fl">0.085119</span></span>
+<span id="cb42-24"><a href="#cb42-24"></a><span class="bu">min</span>    No          <span class="fl">0.056797</span></span>
+<span id="cb42-25"><a href="#cb42-25"></a>       Yes         <span class="fl">0.035638</span></span>
+<span id="cb42-26"><a href="#cb42-26"></a><span class="dv">25</span><span class="op">%</span>    No          <span class="fl">0.136906</span></span>
+<span id="cb42-27"><a href="#cb42-27"></a>       Yes         <span class="fl">0.106771</span></span>
+<span id="cb42-28"><a href="#cb42-28"></a><span class="dv">50</span><span class="op">%</span>    No          <span class="fl">0.155625</span></span>
+<span id="cb42-29"><a href="#cb42-29"></a>       Yes         <span class="fl">0.153846</span></span>
+<span id="cb42-30"><a href="#cb42-30"></a><span class="dv">75</span><span class="op">%</span>    No          <span class="fl">0.185014</span></span>
+<span id="cb42-31"><a href="#cb42-31"></a>       Yes         <span class="fl">0.195059</span></span>
+<span id="cb42-32"><a href="#cb42-32"></a><span class="bu">max</span>    No          <span class="fl">0.291990</span></span>
+<span id="cb42-33"><a href="#cb42-33"></a>       Yes         <span class="fl">0.710345</span></span>
+<span id="cb42-34"><a href="#cb42-34"></a>dtype: float64</span></code></pre></div>
+<p>在GroupBy中，当你调用诸如describe之类的方法时，实际上只是应用了下面两条代码的快捷方式而已：</p>
+<div class="sourceCode" id="cb43"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb43-1"><a href="#cb43-1"></a>f <span class="op">=</span> <span class="kw">lambda</span> x: x.describe()</span>
+<span id="cb43-2"><a href="#cb43-2"></a>grouped.<span class="bu">apply</span>(f)</span></code></pre></div>
+<h2 id="禁止分组键">禁止分组键</h2>
+<p>从上面的例子中可以看出，分组键会跟原始对象的索引共同构成结果对象中的层次化索引。将group_keys=False传入groupby即可禁止该效果：</p>
+<div class="sourceCode" id="cb44"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb44-1"><a href="#cb44-1"></a>In [<span class="dv">81</span>]: tips.groupby(<span class="st">&#39;smoker&#39;</span>, group_keys<span class="op">=</span><span class="va">False</span>).<span class="bu">apply</span>(top)</span>
+<span id="cb44-2"><a href="#cb44-2"></a>Out[<span class="dv">81</span>]: </span>
+<span id="cb44-3"><a href="#cb44-3"></a>     total_bill   tip smoker   day    time  size   tip_pct</span>
+<span id="cb44-4"><a href="#cb44-4"></a><span class="dv">88</span>        <span class="fl">24.71</span>  <span class="fl">5.85</span>     No  Thur   Lunch     <span class="dv">2</span>  <span class="fl">0.236746</span></span>
+<span id="cb44-5"><a href="#cb44-5"></a><span class="dv">185</span>       <span class="fl">20.69</span>  <span class="fl">5.00</span>     No   Sun  Dinner     <span class="dv">5</span>  <span class="fl">0.241663</span></span>
+<span id="cb44-6"><a href="#cb44-6"></a><span class="dv">51</span>        <span class="fl">10.29</span>  <span class="fl">2.60</span>     No   Sun  Dinner     <span class="dv">2</span>  <span class="fl">0.252672</span></span>
+<span id="cb44-7"><a href="#cb44-7"></a><span class="dv">149</span>        <span class="fl">7.51</span>  <span class="fl">2.00</span>     No  Thur   Lunch     <span class="dv">2</span>  <span class="fl">0.266312</span></span>
+<span id="cb44-8"><a href="#cb44-8"></a><span class="dv">232</span>       <span class="fl">11.61</span>  <span class="fl">3.39</span>     No   Sat  Dinner     <span class="dv">2</span>  <span class="fl">0.291990</span></span>
+<span id="cb44-9"><a href="#cb44-9"></a><span class="dv">109</span>       <span class="fl">14.31</span>  <span class="fl">4.00</span>    Yes   Sat  Dinner     <span class="dv">2</span>  <span class="fl">0.279525</span></span>
+<span id="cb44-10"><a href="#cb44-10"></a><span class="dv">183</span>       <span class="fl">23.17</span>  <span class="fl">6.50</span>    Yes   Sun  Dinner     <span class="dv">4</span>  <span class="fl">0.280535</span></span>
+<span id="cb44-11"><a href="#cb44-11"></a><span class="dv">67</span>         <span class="fl">3.07</span>  <span class="fl">1.00</span>    Yes   Sat  Dinner     <span class="dv">1</span>  <span class="fl">0.325733</span></span>
+<span id="cb44-12"><a href="#cb44-12"></a><span class="dv">178</span>        <span class="fl">9.60</span>  <span class="fl">4.00</span>    Yes   Sun  Dinner     <span class="dv">2</span>  <span class="fl">0.416667</span></span>
+<span id="cb44-13"><a href="#cb44-13"></a><span class="dv">172</span>        <span class="fl">7.25</span>  <span class="fl">5.15</span>    Yes   Sun  Dinner     <span class="dv">2</span>  <span class="fl">0.710345</span></span></code></pre></div>
+<h2 id="分位数和桶分析">分位数和桶分析</h2>
+<p>我曾在第8章中讲过，pandas有一些能根据指定面元或样本分位数将数据拆分成多块的工具（比如cut和qcut）。将这些函数跟groupby结合起来，就能非常轻松地实现对数据集的桶（bucket）或分位数（quantile）分析了。以下面这个简单的随机数据集为例，我们利用cut将其装入长度相等的桶中：</p>
+<div class="sourceCode" id="cb45"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb45-1"><a href="#cb45-1"></a>In [<span class="dv">82</span>]: frame <span class="op">=</span> pd.DataFrame({<span class="st">&#39;data1&#39;</span>: np.random.randn(<span class="dv">1000</span>),</span>
+<span id="cb45-2"><a href="#cb45-2"></a>   ....:                       <span class="st">&#39;data2&#39;</span>: np.random.randn(<span class="dv">1000</span>)})</span>
+<span id="cb45-3"><a href="#cb45-3"></a></span>
+<span id="cb45-4"><a href="#cb45-4"></a>In [<span class="dv">83</span>]: quartiles <span class="op">=</span> pd.cut(frame.data1, <span class="dv">4</span>)</span>
+<span id="cb45-5"><a href="#cb45-5"></a></span>
+<span id="cb45-6"><a href="#cb45-6"></a>In [<span class="dv">84</span>]: quartiles[:<span class="dv">10</span>]</span>
+<span id="cb45-7"><a href="#cb45-7"></a>Out[<span class="dv">84</span>]: </span>
+<span id="cb45-8"><a href="#cb45-8"></a><span class="dv">0</span>     (<span class="op">-</span><span class="fl">1.23</span>, <span class="fl">0.489</span>]</span>
+<span id="cb45-9"><a href="#cb45-9"></a><span class="dv">1</span>    (<span class="op">-</span><span class="fl">2.956</span>, <span class="op">-</span><span class="fl">1.23</span>]</span>
+<span id="cb45-10"><a href="#cb45-10"></a><span class="dv">2</span>     (<span class="op">-</span><span class="fl">1.23</span>, <span class="fl">0.489</span>]</span>
+<span id="cb45-11"><a href="#cb45-11"></a><span class="dv">3</span>     (<span class="fl">0.489</span>, <span class="fl">2.208</span>]</span>
+<span id="cb45-12"><a href="#cb45-12"></a><span class="dv">4</span>     (<span class="op">-</span><span class="fl">1.23</span>, <span class="fl">0.489</span>]</span>
+<span id="cb45-13"><a href="#cb45-13"></a><span class="dv">5</span>     (<span class="fl">0.489</span>, <span class="fl">2.208</span>]</span>
+<span id="cb45-14"><a href="#cb45-14"></a><span class="dv">6</span>     (<span class="op">-</span><span class="fl">1.23</span>, <span class="fl">0.489</span>]</span>
+<span id="cb45-15"><a href="#cb45-15"></a><span class="dv">7</span>     (<span class="op">-</span><span class="fl">1.23</span>, <span class="fl">0.489</span>]</span>
+<span id="cb45-16"><a href="#cb45-16"></a><span class="dv">8</span>     (<span class="fl">0.489</span>, <span class="fl">2.208</span>]</span>
+<span id="cb45-17"><a href="#cb45-17"></a><span class="dv">9</span>     (<span class="fl">0.489</span>, <span class="fl">2.208</span>]</span>
+<span id="cb45-18"><a href="#cb45-18"></a>Name: data1, dtype: category</span>
+<span id="cb45-19"><a href="#cb45-19"></a>Categories (<span class="dv">4</span>, interval[float64]): [(<span class="op">-</span><span class="fl">2.956</span>, <span class="op">-</span><span class="fl">1.23</span>] <span class="op">&lt;</span> (<span class="op">-</span><span class="fl">1.23</span>, <span class="fl">0.489</span>] <span class="op">&lt;</span> (<span class="fl">0.489</span>, <span class="fl">2.</span></span>
+<span id="cb45-20"><a href="#cb45-20"></a><span class="dv">208</span>] <span class="op">&lt;</span> (<span class="fl">2.208</span>, <span class="fl">3.928</span>]]</span></code></pre></div>
+<p>由cut返回的Categorical对象可直接传递到groupby。因此，我们可以像下面这样对data2列做一些统计计算：</p>
+<div class="sourceCode" id="cb46"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb46-1"><a href="#cb46-1"></a>In [<span class="dv">85</span>]: <span class="kw">def</span> get_stats(group):</span>
+<span id="cb46-2"><a href="#cb46-2"></a>   ....:     <span class="cf">return</span> {<span class="st">&#39;min&#39;</span>: group.<span class="bu">min</span>(), <span class="st">&#39;max&#39;</span>: group.<span class="bu">max</span>(),</span>
+<span id="cb46-3"><a href="#cb46-3"></a>   ....:             <span class="st">&#39;count&#39;</span>: group.count(), <span class="st">&#39;mean&#39;</span>: group.mean()}</span>
+<span id="cb46-4"><a href="#cb46-4"></a></span>
+<span id="cb46-5"><a href="#cb46-5"></a>In [<span class="dv">86</span>]: grouped <span class="op">=</span> frame.data2.groupby(quartiles)</span>
+<span id="cb46-6"><a href="#cb46-6"></a></span>
+<span id="cb46-7"><a href="#cb46-7"></a>In [<span class="dv">87</span>]: grouped.<span class="bu">apply</span>(get_stats).unstack()</span>
+<span id="cb46-8"><a href="#cb46-8"></a>Out[<span class="dv">87</span>]: </span>
+<span id="cb46-9"><a href="#cb46-9"></a>                 count       <span class="bu">max</span>      mean       <span class="bu">min</span></span>
+<span id="cb46-10"><a href="#cb46-10"></a>data1                                               </span>
+<span id="cb46-11"><a href="#cb46-11"></a>(<span class="op">-</span><span class="fl">2.956</span>, <span class="op">-</span><span class="fl">1.23</span>]   <span class="fl">95.0</span>  <span class="fl">1.670835</span> <span class="op">-</span><span class="fl">0.039521</span> <span class="op">-</span><span class="fl">3.399312</span></span>
+<span id="cb46-12"><a href="#cb46-12"></a>(<span class="op">-</span><span class="fl">1.23</span>, <span class="fl">0.489</span>]   <span class="fl">598.0</span>  <span class="fl">3.260383</span> <span class="op">-</span><span class="fl">0.002051</span> <span class="op">-</span><span class="fl">2.989741</span></span>
+<span id="cb46-13"><a href="#cb46-13"></a>(<span class="fl">0.489</span>, <span class="fl">2.208</span>]   <span class="fl">297.0</span>  <span class="fl">2.954439</span>  <span class="fl">0.081822</span> <span class="op">-</span><span class="fl">3.745356</span></span>
+<span id="cb46-14"><a href="#cb46-14"></a>(<span class="fl">2.208</span>, <span class="fl">3.928</span>]    <span class="fl">10.0</span>  <span class="fl">1.765640</span>  <span class="fl">0.024750</span> <span class="op">-</span><span class="fl">1.929776</span></span></code></pre></div>
+<p>这些都是长度相等的桶。要根据样本分位数得到大小相等的桶，使用qcut即可。传入labels=False即可只获取分位数的编号：</p>
+<div class="sourceCode" id="cb47"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb47-1"><a href="#cb47-1"></a><span class="co"># Return quantile numbers</span></span>
+<span id="cb47-2"><a href="#cb47-2"></a>In [<span class="dv">88</span>]: grouping <span class="op">=</span> pd.qcut(frame.data1, <span class="dv">10</span>, labels<span class="op">=</span><span class="va">False</span>)</span>
+<span id="cb47-3"><a href="#cb47-3"></a></span>
+<span id="cb47-4"><a href="#cb47-4"></a>In [<span class="dv">89</span>]: grouped <span class="op">=</span> frame.data2.groupby(grouping)</span>
+<span id="cb47-5"><a href="#cb47-5"></a></span>
+<span id="cb47-6"><a href="#cb47-6"></a>In [<span class="dv">90</span>]: grouped.<span class="bu">apply</span>(get_stats).unstack()</span>
+<span id="cb47-7"><a href="#cb47-7"></a>Out[<span class="dv">90</span>]: </span>
+<span id="cb47-8"><a href="#cb47-8"></a>       count       <span class="bu">max</span>      mean       <span class="bu">min</span></span>
+<span id="cb47-9"><a href="#cb47-9"></a>data1                                     </span>
+<span id="cb47-10"><a href="#cb47-10"></a><span class="dv">0</span>      <span class="fl">100.0</span>  <span class="fl">1.670835</span> <span class="op">-</span><span class="fl">0.049902</span> <span class="op">-</span><span class="fl">3.399312</span></span>
+<span id="cb47-11"><a href="#cb47-11"></a><span class="dv">1</span>      <span class="fl">100.0</span>  <span class="fl">2.628441</span>  <span class="fl">0.030989</span> <span class="op">-</span><span class="fl">1.950098</span></span>
+<span id="cb47-12"><a href="#cb47-12"></a><span class="dv">2</span>      <span class="fl">100.0</span>  <span class="fl">2.527939</span> <span class="op">-</span><span class="fl">0.067179</span> <span class="op">-</span><span class="fl">2.925113</span></span>
+<span id="cb47-13"><a href="#cb47-13"></a><span class="dv">3</span>      <span class="fl">100.0</span>  <span class="fl">3.260383</span>  <span class="fl">0.065713</span> <span class="op">-</span><span class="fl">2.315555</span></span>
+<span id="cb47-14"><a href="#cb47-14"></a><span class="dv">4</span>      <span class="fl">100.0</span>  <span class="fl">2.074345</span> <span class="op">-</span><span class="fl">0.111653</span> <span class="op">-</span><span class="fl">2.047939</span></span>
+<span id="cb47-15"><a href="#cb47-15"></a><span class="dv">5</span>      <span class="fl">100.0</span>  <span class="fl">2.184810</span>  <span class="fl">0.052130</span> <span class="op">-</span><span class="fl">2.989741</span></span>
+<span id="cb47-16"><a href="#cb47-16"></a><span class="dv">6</span>      <span class="fl">100.0</span>  <span class="fl">2.458842</span> <span class="op">-</span><span class="fl">0.021489</span> <span class="op">-</span><span class="fl">2.223506</span></span>
+<span id="cb47-17"><a href="#cb47-17"></a><span class="dv">7</span>      <span class="fl">100.0</span>  <span class="fl">2.954439</span> <span class="op">-</span><span class="fl">0.026459</span> <span class="op">-</span><span class="fl">3.056990</span></span>
+<span id="cb47-18"><a href="#cb47-18"></a><span class="dv">8</span>      <span class="fl">100.0</span>  <span class="fl">2.735527</span>  <span class="fl">0.103406</span> <span class="op">-</span><span class="fl">3.745356</span></span>
+<span id="cb47-19"><a href="#cb47-19"></a><span class="dv">9</span>      <span class="fl">100.0</span>  <span class="fl">2.377020</span>  <span class="fl">0.220122</span> <span class="op">-</span><span class="fl">2.064111</span></span></code></pre></div>
+<p>我们会在第12章详细讲解pandas的Categorical类型。</p>
+<h2 id="示例用特定于分组的值填充缺失值">示例：用特定于分组的值填充缺失值</h2>
+<p>对于缺失数据的清理工作，有时你会用dropna将其替换掉，而有时则可能会希望用一个固定值或由数据集本身所衍生出来的值去填充NA值。这时就得使用fillna这个工具了。在下面这个例子中，我用平均值去填充NA值：</p>
+<div class="sourceCode" id="cb48"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb48-1"><a href="#cb48-1"></a>In [<span class="dv">91</span>]: s <span class="op">=</span> pd.Series(np.random.randn(<span class="dv">6</span>))</span>
+<span id="cb48-2"><a href="#cb48-2"></a></span>
+<span id="cb48-3"><a href="#cb48-3"></a>In [<span class="dv">92</span>]: s[::<span class="dv">2</span>] <span class="op">=</span> np.nan</span>
+<span id="cb48-4"><a href="#cb48-4"></a></span>
+<span id="cb48-5"><a href="#cb48-5"></a>In [<span class="dv">93</span>]: s</span>
+<span id="cb48-6"><a href="#cb48-6"></a>Out[<span class="dv">93</span>]: </span>
+<span id="cb48-7"><a href="#cb48-7"></a><span class="dv">0</span>         NaN</span>
+<span id="cb48-8"><a href="#cb48-8"></a><span class="dv">1</span>   <span class="op">-</span><span class="fl">0.125921</span></span>
+<span id="cb48-9"><a href="#cb48-9"></a><span class="dv">2</span>         NaN</span>
+<span id="cb48-10"><a href="#cb48-10"></a><span class="dv">3</span>   <span class="op">-</span><span class="fl">0.884475</span></span>
+<span id="cb48-11"><a href="#cb48-11"></a><span class="dv">4</span>         NaN</span>
+<span id="cb48-12"><a href="#cb48-12"></a><span class="dv">5</span>    <span class="fl">0.227290</span></span>
+<span id="cb48-13"><a href="#cb48-13"></a>dtype: float64</span>
+<span id="cb48-14"><a href="#cb48-14"></a></span>
+<span id="cb48-15"><a href="#cb48-15"></a>In [<span class="dv">94</span>]: s.fillna(s.mean())</span>
+<span id="cb48-16"><a href="#cb48-16"></a>Out[<span class="dv">94</span>]: </span>
+<span id="cb48-17"><a href="#cb48-17"></a><span class="dv">0</span>   <span class="op">-</span><span class="fl">0.261035</span></span>
+<span id="cb48-18"><a href="#cb48-18"></a><span class="dv">1</span>   <span class="op">-</span><span class="fl">0.125921</span></span>
+<span id="cb48-19"><a href="#cb48-19"></a><span class="dv">2</span>   <span class="op">-</span><span class="fl">0.261035</span></span>
+<span id="cb48-20"><a href="#cb48-20"></a><span class="dv">3</span>   <span class="op">-</span><span class="fl">0.884475</span></span>
+<span id="cb48-21"><a href="#cb48-21"></a><span class="dv">4</span>   <span class="op">-</span><span class="fl">0.261035</span></span>
+<span id="cb48-22"><a href="#cb48-22"></a><span class="dv">5</span>    <span class="fl">0.227290</span></span>
+<span id="cb48-23"><a href="#cb48-23"></a>dtype: float64</span></code></pre></div>
+<p>假设你需要对不同的分组填充不同的值。一种方法是将数据分组，并使用apply和一个能够对各数据块调用fillna的函数即可。下面是一些有关美国几个州的示例数据，这些州又被分为东部和西部：</p>
+<div class="sourceCode" id="cb49"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb49-1"><a href="#cb49-1"></a>In [<span class="dv">95</span>]: states <span class="op">=</span> [<span class="st">&#39;Ohio&#39;</span>, <span class="st">&#39;New York&#39;</span>, <span class="st">&#39;Vermont&#39;</span>, <span class="st">&#39;Florida&#39;</span>,</span>
+<span id="cb49-2"><a href="#cb49-2"></a>   ....:           <span class="st">&#39;Oregon&#39;</span>, <span class="st">&#39;Nevada&#39;</span>, <span class="st">&#39;California&#39;</span>, <span class="st">&#39;Idaho&#39;</span>]</span>
+<span id="cb49-3"><a href="#cb49-3"></a></span>
+<span id="cb49-4"><a href="#cb49-4"></a>In [<span class="dv">96</span>]: group_key <span class="op">=</span> [<span class="st">&#39;East&#39;</span>] <span class="op">*</span> <span class="dv">4</span> <span class="op">+</span> [<span class="st">&#39;West&#39;</span>] <span class="op">*</span> <span class="dv">4</span></span>
+<span id="cb49-5"><a href="#cb49-5"></a></span>
+<span id="cb49-6"><a href="#cb49-6"></a>In [<span class="dv">97</span>]: data <span class="op">=</span> pd.Series(np.random.randn(<span class="dv">8</span>), index<span class="op">=</span>states)</span>
+<span id="cb49-7"><a href="#cb49-7"></a></span>
+<span id="cb49-8"><a href="#cb49-8"></a>In [<span class="dv">98</span>]: data</span>
+<span id="cb49-9"><a href="#cb49-9"></a>Out[<span class="dv">98</span>]: </span>
+<span id="cb49-10"><a href="#cb49-10"></a>Ohio          <span class="fl">0.922264</span></span>
+<span id="cb49-11"><a href="#cb49-11"></a>New York     <span class="op">-</span><span class="fl">2.153545</span></span>
+<span id="cb49-12"><a href="#cb49-12"></a>Vermont      <span class="op">-</span><span class="fl">0.365757</span></span>
+<span id="cb49-13"><a href="#cb49-13"></a>Florida      <span class="op">-</span><span class="fl">0.375842</span></span>
+<span id="cb49-14"><a href="#cb49-14"></a>Oregon        <span class="fl">0.329939</span></span>
+<span id="cb49-15"><a href="#cb49-15"></a>Nevada        <span class="fl">0.981994</span></span>
+<span id="cb49-16"><a href="#cb49-16"></a>California    <span class="fl">1.105913</span></span>
+<span id="cb49-17"><a href="#cb49-17"></a>Idaho        <span class="op">-</span><span class="fl">1.613716</span></span>
+<span id="cb49-18"><a href="#cb49-18"></a>dtype: float64</span></code></pre></div>
+<p>[‘East’] * 4产生了一个列表，包括了[‘East’]中元素的四个拷贝。将这些列表串联起来。</p>
+<p>将一些值设为缺失：</p>
+<div class="sourceCode" id="cb50"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb50-1"><a href="#cb50-1"></a>In [<span class="dv">99</span>]: data[[<span class="st">&#39;Vermont&#39;</span>, <span class="st">&#39;Nevada&#39;</span>, <span class="st">&#39;Idaho&#39;</span>]] <span class="op">=</span> np.nan</span>
+<span id="cb50-2"><a href="#cb50-2"></a></span>
+<span id="cb50-3"><a href="#cb50-3"></a>In [<span class="dv">100</span>]: data</span>
+<span id="cb50-4"><a href="#cb50-4"></a>Out[<span class="dv">100</span>]: </span>
+<span id="cb50-5"><a href="#cb50-5"></a>Ohio          <span class="fl">0.922264</span></span>
+<span id="cb50-6"><a href="#cb50-6"></a>New York     <span class="op">-</span><span class="fl">2.153545</span></span>
+<span id="cb50-7"><a href="#cb50-7"></a>Vermont            NaN</span>
+<span id="cb50-8"><a href="#cb50-8"></a>Florida      <span class="op">-</span><span class="fl">0.375842</span></span>
+<span id="cb50-9"><a href="#cb50-9"></a>Oregon        <span class="fl">0.329939</span></span>
+<span id="cb50-10"><a href="#cb50-10"></a>Nevada             NaN</span>
+<span id="cb50-11"><a href="#cb50-11"></a>California    <span class="fl">1.105913</span></span>
+<span id="cb50-12"><a href="#cb50-12"></a>Idaho              NaN</span>
+<span id="cb50-13"><a href="#cb50-13"></a>dtype: float64</span>
+<span id="cb50-14"><a href="#cb50-14"></a></span>
+<span id="cb50-15"><a href="#cb50-15"></a>In [<span class="dv">101</span>]: data.groupby(group_key).mean()</span>
+<span id="cb50-16"><a href="#cb50-16"></a>Out[<span class="dv">101</span>]: </span>
+<span id="cb50-17"><a href="#cb50-17"></a>East   <span class="op">-</span><span class="fl">0.535707</span></span>
+<span id="cb50-18"><a href="#cb50-18"></a>West    <span class="fl">0.717926</span></span>
+<span id="cb50-19"><a href="#cb50-19"></a>dtype: float64</span></code></pre></div>
+<p>我们可以用分组平均值去填充NA值:</p>
+<div class="sourceCode" id="cb51"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb51-1"><a href="#cb51-1"></a>In [<span class="dv">102</span>]: fill_mean <span class="op">=</span> <span class="kw">lambda</span> g: g.fillna(g.mean())</span>
+<span id="cb51-2"><a href="#cb51-2"></a></span>
+<span id="cb51-3"><a href="#cb51-3"></a>In [<span class="dv">103</span>]: data.groupby(group_key).<span class="bu">apply</span>(fill_mean)</span>
+<span id="cb51-4"><a href="#cb51-4"></a>Out[<span class="dv">103</span>]: </span>
+<span id="cb51-5"><a href="#cb51-5"></a>Ohio          <span class="fl">0.922264</span></span>
+<span id="cb51-6"><a href="#cb51-6"></a>New York     <span class="op">-</span><span class="fl">2.153545</span></span>
+<span id="cb51-7"><a href="#cb51-7"></a>Vermont      <span class="op">-</span><span class="fl">0.535707</span></span>
+<span id="cb51-8"><a href="#cb51-8"></a>Florida      <span class="op">-</span><span class="fl">0.375842</span></span>
+<span id="cb51-9"><a href="#cb51-9"></a>Oregon        <span class="fl">0.329939</span></span>
+<span id="cb51-10"><a href="#cb51-10"></a>Nevada        <span class="fl">0.717926</span></span>
+<span id="cb51-11"><a href="#cb51-11"></a>California    <span class="fl">1.105913</span></span>
+<span id="cb51-12"><a href="#cb51-12"></a>Idaho         <span class="fl">0.717926</span></span>
+<span id="cb51-13"><a href="#cb51-13"></a>dtype: float64</span></code></pre></div>
+<p>另外，也可以在代码中预定义各组的填充值。由于分组具有一个name属性，所以我们可以拿来用一下：</p>
+<div class="sourceCode" id="cb52"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb52-1"><a href="#cb52-1"></a>In [<span class="dv">104</span>]: fill_values <span class="op">=</span> {<span class="st">&#39;East&#39;</span>: <span class="fl">0.5</span>, <span class="st">&#39;West&#39;</span>: <span class="op">-</span><span class="dv">1</span>}</span>
+<span id="cb52-2"><a href="#cb52-2"></a></span>
+<span id="cb52-3"><a href="#cb52-3"></a>In [<span class="dv">105</span>]: fill_func <span class="op">=</span> <span class="kw">lambda</span> g: g.fillna(fill_values[g.name])</span>
+<span id="cb52-4"><a href="#cb52-4"></a></span>
+<span id="cb52-5"><a href="#cb52-5"></a>In [<span class="dv">106</span>]: data.groupby(group_key).<span class="bu">apply</span>(fill_func)</span>
+<span id="cb52-6"><a href="#cb52-6"></a>Out[<span class="dv">106</span>]: </span>
+<span id="cb52-7"><a href="#cb52-7"></a>Ohio          <span class="fl">0.922264</span></span>
+<span id="cb52-8"><a href="#cb52-8"></a>New York     <span class="op">-</span><span class="fl">2.153545</span></span>
+<span id="cb52-9"><a href="#cb52-9"></a>Vermont       <span class="fl">0.500000</span></span>
+<span id="cb52-10"><a href="#cb52-10"></a>Florida      <span class="op">-</span><span class="fl">0.375842</span></span>
+<span id="cb52-11"><a href="#cb52-11"></a>Oregon        <span class="fl">0.329939</span></span>
+<span id="cb52-12"><a href="#cb52-12"></a>Nevada       <span class="op">-</span><span class="fl">1.000000</span></span>
+<span id="cb52-13"><a href="#cb52-13"></a>California    <span class="fl">1.105913</span></span>
+<span id="cb52-14"><a href="#cb52-14"></a>Idaho        <span class="op">-</span><span class="fl">1.000000</span></span>
+<span id="cb52-15"><a href="#cb52-15"></a>dtype: float64</span></code></pre></div>
+<h2 id="示例随机采样和排列">示例：随机采样和排列</h2>
+<p>假设你想要从一个大数据集中随机抽取（进行替换或不替换）样本以进行蒙特卡罗模拟（Monte Carlo simulation）或其他分析工作。“抽取”的方式有很多，这里使用的方法是对Series使用sample方法：</p>
+<div class="sourceCode" id="cb53"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb53-1"><a href="#cb53-1"></a><span class="co"># Hearts, Spades, Clubs, Diamonds</span></span>
+<span id="cb53-2"><a href="#cb53-2"></a>suits <span class="op">=</span> [<span class="st">&#39;H&#39;</span>, <span class="st">&#39;S&#39;</span>, <span class="st">&#39;C&#39;</span>, <span class="st">&#39;D&#39;</span>]</span>
+<span id="cb53-3"><a href="#cb53-3"></a>card_val <span class="op">=</span> (<span class="bu">list</span>(<span class="bu">range</span>(<span class="dv">1</span>, <span class="dv">11</span>)) <span class="op">+</span> [<span class="dv">10</span>] <span class="op">*</span> <span class="dv">3</span>) <span class="op">*</span> <span class="dv">4</span></span>
+<span id="cb53-4"><a href="#cb53-4"></a>base_names <span class="op">=</span> [<span class="st">&#39;A&#39;</span>] <span class="op">+</span> <span class="bu">list</span>(<span class="bu">range</span>(<span class="dv">2</span>, <span class="dv">11</span>)) <span class="op">+</span> [<span class="st">&#39;J&#39;</span>, <span class="st">&#39;K&#39;</span>, <span class="st">&#39;Q&#39;</span>]</span>
+<span id="cb53-5"><a href="#cb53-5"></a>cards <span class="op">=</span> []</span>
+<span id="cb53-6"><a href="#cb53-6"></a><span class="cf">for</span> suit <span class="kw">in</span> [<span class="st">&#39;H&#39;</span>, <span class="st">&#39;S&#39;</span>, <span class="st">&#39;C&#39;</span>, <span class="st">&#39;D&#39;</span>]:</span>
+<span id="cb53-7"><a href="#cb53-7"></a>    cards.extend(<span class="bu">str</span>(num) <span class="op">+</span> suit <span class="cf">for</span> num <span class="kw">in</span> base_names)</span>
+<span id="cb53-8"><a href="#cb53-8"></a></span>
+<span id="cb53-9"><a href="#cb53-9"></a>deck <span class="op">=</span> pd.Series(card_val, index<span class="op">=</span>cards)</span></code></pre></div>
+<p>现在我有了一个长度为52的Series，其索引包括牌名，值则是21点或其他游戏中用于计分的点数（为了简单起见，我当A的点数为1）：</p>
+<div class="sourceCode" id="cb54"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb54-1"><a href="#cb54-1"></a>In [<span class="dv">108</span>]: deck[:<span class="dv">13</span>]</span>
+<span id="cb54-2"><a href="#cb54-2"></a>Out[<span class="dv">108</span>]: </span>
+<span id="cb54-3"><a href="#cb54-3"></a>AH      <span class="dv">1</span></span>
+<span id="cb54-4"><a href="#cb54-4"></a>2H      <span class="dv">2</span></span>
+<span id="cb54-5"><a href="#cb54-5"></a>3H      <span class="dv">3</span></span>
+<span id="cb54-6"><a href="#cb54-6"></a>4H      <span class="dv">4</span></span>
+<span id="cb54-7"><a href="#cb54-7"></a>5H      <span class="dv">5</span></span>
+<span id="cb54-8"><a href="#cb54-8"></a>6H      <span class="dv">6</span></span>
+<span id="cb54-9"><a href="#cb54-9"></a>7H      <span class="dv">7</span></span>
+<span id="cb54-10"><a href="#cb54-10"></a>8H      <span class="dv">8</span></span>
+<span id="cb54-11"><a href="#cb54-11"></a>9H      <span class="dv">9</span></span>
+<span id="cb54-12"><a href="#cb54-12"></a>10H    <span class="dv">10</span></span>
+<span id="cb54-13"><a href="#cb54-13"></a>JH     <span class="dv">10</span></span>
+<span id="cb54-14"><a href="#cb54-14"></a>KH     <span class="dv">10</span></span>
+<span id="cb54-15"><a href="#cb54-15"></a>QH     <span class="dv">10</span></span>
+<span id="cb54-16"><a href="#cb54-16"></a>dtype: int64</span></code></pre></div>
+<p>现在，根据我上面所讲的，从整副牌中抽出5张，代码如下：</p>
+<div class="sourceCode" id="cb55"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb55-1"><a href="#cb55-1"></a>In [<span class="dv">109</span>]: <span class="kw">def</span> draw(deck, n<span class="op">=</span><span class="dv">5</span>):</span>
+<span id="cb55-2"><a href="#cb55-2"></a>   .....:     <span class="cf">return</span> deck.sample(n)</span>
+<span id="cb55-3"><a href="#cb55-3"></a></span>
+<span id="cb55-4"><a href="#cb55-4"></a>In [<span class="dv">110</span>]: draw(deck)</span>
+<span id="cb55-5"><a href="#cb55-5"></a>Out[<span class="dv">110</span>]: </span>
+<span id="cb55-6"><a href="#cb55-6"></a>AD     <span class="dv">1</span></span>
+<span id="cb55-7"><a href="#cb55-7"></a>8C     <span class="dv">8</span></span>
+<span id="cb55-8"><a href="#cb55-8"></a>5H     <span class="dv">5</span></span>
+<span id="cb55-9"><a href="#cb55-9"></a>KC    <span class="dv">10</span></span>
+<span id="cb55-10"><a href="#cb55-10"></a>2C     <span class="dv">2</span></span>
+<span id="cb55-11"><a href="#cb55-11"></a>dtype: int64</span></code></pre></div>
+<p>假设你想要从每种花色中随机抽取两张牌。由于花色是牌名的最后一个字符，所以我们可以据此进行分组，并使用apply：</p>
+<div class="sourceCode" id="cb56"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb56-1"><a href="#cb56-1"></a>In [<span class="dv">111</span>]: get_suit <span class="op">=</span> <span class="kw">lambda</span> card: card[<span class="op">-</span><span class="dv">1</span>] <span class="co"># last letter is suit</span></span>
+<span id="cb56-2"><a href="#cb56-2"></a></span>
+<span id="cb56-3"><a href="#cb56-3"></a>In [<span class="dv">112</span>]: deck.groupby(get_suit).<span class="bu">apply</span>(draw, n<span class="op">=</span><span class="dv">2</span>)</span>
+<span id="cb56-4"><a href="#cb56-4"></a>Out[<span class="dv">112</span>]: </span>
+<span id="cb56-5"><a href="#cb56-5"></a>C  2C     <span class="dv">2</span></span>
+<span id="cb56-6"><a href="#cb56-6"></a>   3C     <span class="dv">3</span></span>
+<span id="cb56-7"><a href="#cb56-7"></a>D  KD    <span class="dv">10</span></span>
+<span id="cb56-8"><a href="#cb56-8"></a>   8D     <span class="dv">8</span></span>
+<span id="cb56-9"><a href="#cb56-9"></a>H  KH    <span class="dv">10</span></span>
+<span id="cb56-10"><a href="#cb56-10"></a>   3H     <span class="dv">3</span></span>
+<span id="cb56-11"><a href="#cb56-11"></a>S  2S     <span class="dv">2</span></span>
+<span id="cb56-12"><a href="#cb56-12"></a>   4S     <span class="dv">4</span></span>
+<span id="cb56-13"><a href="#cb56-13"></a>dtype: int64</span></code></pre></div>
+<p>或者，也可以这样写：</p>
+<div class="sourceCode" id="cb57"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb57-1"><a href="#cb57-1"></a>In [<span class="dv">113</span>]: deck.groupby(get_suit, group_keys<span class="op">=</span><span class="va">False</span>).<span class="bu">apply</span>(draw, n<span class="op">=</span><span class="dv">2</span>)</span>
+<span id="cb57-2"><a href="#cb57-2"></a>Out[<span class="dv">113</span>]: </span>
+<span id="cb57-3"><a href="#cb57-3"></a>KC    <span class="dv">10</span></span>
+<span id="cb57-4"><a href="#cb57-4"></a>JC    <span class="dv">10</span></span>
+<span id="cb57-5"><a href="#cb57-5"></a>AD     <span class="dv">1</span></span>
+<span id="cb57-6"><a href="#cb57-6"></a>5D     <span class="dv">5</span></span>
+<span id="cb57-7"><a href="#cb57-7"></a>5H     <span class="dv">5</span></span>
+<span id="cb57-8"><a href="#cb57-8"></a>6H     <span class="dv">6</span></span>
+<span id="cb57-9"><a href="#cb57-9"></a>7S     <span class="dv">7</span></span>
+<span id="cb57-10"><a href="#cb57-10"></a>KS    <span class="dv">10</span></span>
+<span id="cb57-11"><a href="#cb57-11"></a>dtype: int64</span></code></pre></div>
+<h2 id="示例分组加权平均数和相关系数">示例：分组加权平均数和相关系数</h2>
+<p>根据groupby的“拆分－应用－合并”范式，可以进行DataFrame的列与列之间或两个Series之间的运算（比如分组加权平均）。以下面这个数据集为例，它含有分组键、值以及一些权重值：</p>
+<div class="sourceCode" id="cb58"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb58-1"><a href="#cb58-1"></a>In [<span class="dv">114</span>]: df <span class="op">=</span> pd.DataFrame({<span class="st">&#39;category&#39;</span>: [<span class="st">&#39;a&#39;</span>, <span class="st">&#39;a&#39;</span>, <span class="st">&#39;a&#39;</span>, <span class="st">&#39;a&#39;</span>,</span>
+<span id="cb58-2"><a href="#cb58-2"></a>   .....:                                 <span class="st">&#39;b&#39;</span>, <span class="st">&#39;b&#39;</span>, <span class="st">&#39;b&#39;</span>, <span class="st">&#39;b&#39;</span>],</span>
+<span id="cb58-3"><a href="#cb58-3"></a>   .....:                    <span class="st">&#39;data&#39;</span>: np.random.randn(<span class="dv">8</span>),</span>
+<span id="cb58-4"><a href="#cb58-4"></a>   .....:                    <span class="st">&#39;weights&#39;</span>: np.random.rand(<span class="dv">8</span>)})</span>
+<span id="cb58-5"><a href="#cb58-5"></a></span>
+<span id="cb58-6"><a href="#cb58-6"></a>In [<span class="dv">115</span>]: df</span>
+<span id="cb58-7"><a href="#cb58-7"></a>Out[<span class="dv">115</span>]: </span>
+<span id="cb58-8"><a href="#cb58-8"></a>  category      data   weights</span>
+<span id="cb58-9"><a href="#cb58-9"></a><span class="dv">0</span>        a  <span class="fl">1.561587</span>  <span class="fl">0.957515</span></span>
+<span id="cb58-10"><a href="#cb58-10"></a><span class="dv">1</span>        a  <span class="fl">1.219984</span>  <span class="fl">0.347267</span></span>
+<span id="cb58-11"><a href="#cb58-11"></a><span class="dv">2</span>        a <span class="op">-</span><span class="fl">0.482239</span>  <span class="fl">0.581362</span></span>
+<span id="cb58-12"><a href="#cb58-12"></a><span class="dv">3</span>        a  <span class="fl">0.315667</span>  <span class="fl">0.217091</span></span>
+<span id="cb58-13"><a href="#cb58-13"></a><span class="dv">4</span>        b <span class="op">-</span><span class="fl">0.047852</span>  <span class="fl">0.894406</span></span>
+<span id="cb58-14"><a href="#cb58-14"></a><span class="dv">5</span>        b <span class="op">-</span><span class="fl">0.454145</span>  <span class="fl">0.918564</span></span>
+<span id="cb58-15"><a href="#cb58-15"></a><span class="dv">6</span>        b <span class="op">-</span><span class="fl">0.556774</span>  <span class="fl">0.277825</span></span>
+<span id="cb58-16"><a href="#cb58-16"></a><span class="dv">7</span>        b  <span class="fl">0.253321</span>  <span class="fl">0.955905</span></span></code></pre></div>
+<p>然后可以利用category计算分组加权平均数：</p>
+<div class="sourceCode" id="cb59"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb59-1"><a href="#cb59-1"></a>In [<span class="dv">116</span>]: grouped <span class="op">=</span> df.groupby(<span class="st">&#39;category&#39;</span>)</span>
+<span id="cb59-2"><a href="#cb59-2"></a></span>
+<span id="cb59-3"><a href="#cb59-3"></a>In [<span class="dv">117</span>]: get_wavg <span class="op">=</span> <span class="kw">lambda</span> g: np.average(g[<span class="st">&#39;data&#39;</span>], weights<span class="op">=</span>g[<span class="st">&#39;weights&#39;</span>])</span>
+<span id="cb59-4"><a href="#cb59-4"></a></span>
+<span id="cb59-5"><a href="#cb59-5"></a>In [<span class="dv">118</span>]: grouped.<span class="bu">apply</span>(get_wavg)</span>
+<span id="cb59-6"><a href="#cb59-6"></a>Out[<span class="dv">118</span>]:</span>
+<span id="cb59-7"><a href="#cb59-7"></a>category</span>
+<span id="cb59-8"><a href="#cb59-8"></a>a    <span class="fl">0.811643</span></span>
+<span id="cb59-9"><a href="#cb59-9"></a>b   <span class="op">-</span><span class="fl">0.122262</span></span>
+<span id="cb59-10"><a href="#cb59-10"></a>dtype: float64</span></code></pre></div>
+<p>另一个例子，考虑一个来自Yahoo!Finance的数据集，其中含有几只股票和标准普尔500指数（符号SPX）的收盘价：</p>
+<div class="sourceCode" id="cb60"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb60-1"><a href="#cb60-1"></a>In [<span class="dv">119</span>]: close_px <span class="op">=</span> pd.read_csv(<span class="st">&#39;examples/stock_px_2.csv&#39;</span>, parse_dates<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb60-2"><a href="#cb60-2"></a>   .....:                        index_col<span class="op">=</span><span class="dv">0</span>)</span>
+<span id="cb60-3"><a href="#cb60-3"></a></span>
+<span id="cb60-4"><a href="#cb60-4"></a>In [<span class="dv">120</span>]: close_px.info()</span>
+<span id="cb60-5"><a href="#cb60-5"></a><span class="op">&lt;</span><span class="kw">class</span> <span class="st">&#39;pandas.core.frame.DataFrame&#39;</span><span class="op">&gt;</span></span>
+<span id="cb60-6"><a href="#cb60-6"></a>DatetimeIndex: <span class="dv">2214</span> entries, <span class="dv">2003</span><span class="op">-</span>01<span class="op">-</span>02 to <span class="dv">2011</span><span class="op">-</span><span class="dv">10</span><span class="op">-</span><span class="dv">14</span></span>
+<span id="cb60-7"><a href="#cb60-7"></a>Data columns (total <span class="dv">4</span> columns):</span>
+<span id="cb60-8"><a href="#cb60-8"></a>AAPL    <span class="dv">2214</span> non<span class="op">-</span>null float64</span>
+<span id="cb60-9"><a href="#cb60-9"></a>MSFT    <span class="dv">2214</span> non<span class="op">-</span>null float64</span>
+<span id="cb60-10"><a href="#cb60-10"></a>XOM     <span class="dv">2214</span> non<span class="op">-</span>null float64</span>
+<span id="cb60-11"><a href="#cb60-11"></a>SPX     <span class="dv">2214</span> non<span class="op">-</span>null float64</span>
+<span id="cb60-12"><a href="#cb60-12"></a>dtypes: float64(<span class="dv">4</span>)</span>
+<span id="cb60-13"><a href="#cb60-13"></a>memory usage: <span class="fl">86.5</span> KB</span>
+<span id="cb60-14"><a href="#cb60-14"></a></span>
+<span id="cb60-15"><a href="#cb60-15"></a>In [<span class="dv">121</span>]: close_px[<span class="op">-</span><span class="dv">4</span>:]</span>
+<span id="cb60-16"><a href="#cb60-16"></a>Out[<span class="dv">121</span>]: </span>
+<span id="cb60-17"><a href="#cb60-17"></a>              AAPL   MSFT    XOM      SPX</span>
+<span id="cb60-18"><a href="#cb60-18"></a><span class="dv">2011</span><span class="op">-</span><span class="dv">10</span><span class="op">-</span><span class="dv">11</span>  <span class="fl">400.29</span>  <span class="fl">27.00</span>  <span class="fl">76.27</span>  <span class="fl">1195.54</span></span>
+<span id="cb60-19"><a href="#cb60-19"></a><span class="dv">2011</span><span class="op">-</span><span class="dv">10</span><span class="op">-</span><span class="dv">12</span>  <span class="fl">402.19</span>  <span class="fl">26.96</span>  <span class="fl">77.16</span>  <span class="fl">1207.25</span></span>
+<span id="cb60-20"><a href="#cb60-20"></a><span class="dv">2011</span><span class="op">-</span><span class="dv">10</span><span class="op">-</span><span class="dv">13</span>  <span class="fl">408.43</span>  <span class="fl">27.18</span>  <span class="fl">76.37</span>  <span class="fl">1203.66</span></span>
+<span id="cb60-21"><a href="#cb60-21"></a><span class="dv">2011</span><span class="op">-</span><span class="dv">10</span><span class="op">-</span><span class="dv">14</span>  <span class="fl">422.00</span>  <span class="fl">27.27</span>  <span class="fl">78.11</span>  <span class="fl">1224.58</span></span></code></pre></div>
+<p>来做一个比较有趣的任务：计算一个由日收益率（通过百分数变化计算）与SPX之间的年度相关系数组成的DataFrame。下面是一个实现办法，我们先创建一个函数，用它计算每列和SPX列的成对相关系数：</p>
+<div class="sourceCode" id="cb61"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb61-1"><a href="#cb61-1"></a>In [<span class="dv">122</span>]: spx_corr <span class="op">=</span> <span class="kw">lambda</span> x: x.corrwith(x[<span class="st">&#39;SPX&#39;</span>])</span></code></pre></div>
+<p>接下来，我们使用pct_change计算close_px的百分比变化：</p>
+<div class="sourceCode" id="cb62"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb62-1"><a href="#cb62-1"></a>In [<span class="dv">123</span>]: rets <span class="op">=</span> close_px.pct_change().dropna()</span></code></pre></div>
+<p>最后，我们用年对百分比变化进行分组，可以用一个一行的函数，从每行的标签返回每个datetime标签的year属性：</p>
+<div class="sourceCode" id="cb63"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb63-1"><a href="#cb63-1"></a>In [<span class="dv">124</span>]: get_year <span class="op">=</span> <span class="kw">lambda</span> x: x.year</span>
+<span id="cb63-2"><a href="#cb63-2"></a></span>
+<span id="cb63-3"><a href="#cb63-3"></a>In [<span class="dv">125</span>]: by_year <span class="op">=</span> rets.groupby(get_year)</span>
+<span id="cb63-4"><a href="#cb63-4"></a></span>
+<span id="cb63-5"><a href="#cb63-5"></a>In [<span class="dv">126</span>]: by_year.<span class="bu">apply</span>(spx_corr)</span>
+<span id="cb63-6"><a href="#cb63-6"></a>Out[<span class="dv">126</span>]: </span>
+<span id="cb63-7"><a href="#cb63-7"></a>          AAPL      MSFT       XOM  SPX</span>
+<span id="cb63-8"><a href="#cb63-8"></a><span class="dv">2003</span>  <span class="fl">0.541124</span>  <span class="fl">0.745174</span>  <span class="fl">0.661265</span>  <span class="fl">1.0</span></span>
+<span id="cb63-9"><a href="#cb63-9"></a><span class="dv">2004</span>  <span class="fl">0.374283</span>  <span class="fl">0.588531</span>  <span class="fl">0.557742</span>  <span class="fl">1.0</span></span>
+<span id="cb63-10"><a href="#cb63-10"></a><span class="dv">2005</span>  <span class="fl">0.467540</span>  <span class="fl">0.562374</span>  <span class="fl">0.631010</span>  <span class="fl">1.0</span></span>
+<span id="cb63-11"><a href="#cb63-11"></a><span class="dv">2006</span>  <span class="fl">0.428267</span>  <span class="fl">0.406126</span>  <span class="fl">0.518514</span>  <span class="fl">1.0</span></span>
+<span id="cb63-12"><a href="#cb63-12"></a><span class="dv">2007</span>  <span class="fl">0.508118</span>  <span class="fl">0.658770</span>  <span class="fl">0.786264</span>  <span class="fl">1.0</span></span>
+<span id="cb63-13"><a href="#cb63-13"></a><span class="dv">2008</span>  <span class="fl">0.681434</span>  <span class="fl">0.804626</span>  <span class="fl">0.828303</span>  <span class="fl">1.0</span></span>
+<span id="cb63-14"><a href="#cb63-14"></a><span class="dv">2009</span>  <span class="fl">0.707103</span>  <span class="fl">0.654902</span>  <span class="fl">0.797921</span>  <span class="fl">1.0</span></span>
+<span id="cb63-15"><a href="#cb63-15"></a><span class="dv">2010</span>  <span class="fl">0.710105</span>  <span class="fl">0.730118</span>  <span class="fl">0.839057</span>  <span class="fl">1.0</span></span>
+<span id="cb63-16"><a href="#cb63-16"></a><span class="dv">2011</span>  <span class="fl">0.691931</span>  <span class="fl">0.800996</span>  <span class="fl">0.859975</span>  <span class="fl">1.0</span></span></code></pre></div>
+<p>当然，你还可以计算列与列之间的相关系数。这里，我们计算Apple和Microsoft的年相关系数：</p>
+<div class="sourceCode" id="cb64"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb64-1"><a href="#cb64-1"></a>In [<span class="dv">127</span>]: by_year.<span class="bu">apply</span>(<span class="kw">lambda</span> g: g[<span class="st">&#39;AAPL&#39;</span>].corr(g[<span class="st">&#39;MSFT&#39;</span>]))</span>
+<span id="cb64-2"><a href="#cb64-2"></a>Out[<span class="dv">127</span>]: </span>
+<span id="cb64-3"><a href="#cb64-3"></a><span class="dv">2003</span>    <span class="fl">0.480868</span></span>
+<span id="cb64-4"><a href="#cb64-4"></a><span class="dv">2004</span>    <span class="fl">0.259024</span></span>
+<span id="cb64-5"><a href="#cb64-5"></a><span class="dv">2005</span>    <span class="fl">0.300093</span></span>
+<span id="cb64-6"><a href="#cb64-6"></a><span class="dv">2006</span>    <span class="fl">0.161735</span></span>
+<span id="cb64-7"><a href="#cb64-7"></a><span class="dv">2007</span>    <span class="fl">0.417738</span></span>
+<span id="cb64-8"><a href="#cb64-8"></a><span class="dv">2008</span>    <span class="fl">0.611901</span></span>
+<span id="cb64-9"><a href="#cb64-9"></a><span class="dv">2009</span>    <span class="fl">0.432738</span></span>
+<span id="cb64-10"><a href="#cb64-10"></a><span class="dv">2010</span>    <span class="fl">0.571946</span></span>
+<span id="cb64-11"><a href="#cb64-11"></a><span class="dv">2011</span>    <span class="fl">0.581987</span></span>
+<span id="cb64-12"><a href="#cb64-12"></a>dtype: float64</span></code></pre></div>
+<h2 id="示例组级别的线性回归">示例：组级别的线性回归</h2>
+<p>顺着上一个例子继续，你可以用groupby执行更为复杂的分组统计分析，只要函数返回的是pandas对象或标量值即可。例如，我可以定义下面这个regress函数（利用statsmodels计量经济学库）对各数据块执行普通最小二乘法（Ordinary Least Squares，OLS）回归：</p>
+<div class="sourceCode" id="cb65"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb65-1"><a href="#cb65-1"></a><span class="im">import</span> statsmodels.api <span class="im">as</span> sm</span>
+<span id="cb65-2"><a href="#cb65-2"></a><span class="kw">def</span> regress(data, yvar, xvars):</span>
+<span id="cb65-3"><a href="#cb65-3"></a>    Y <span class="op">=</span> data[yvar]</span>
+<span id="cb65-4"><a href="#cb65-4"></a>    X <span class="op">=</span> data[xvars]</span>
+<span id="cb65-5"><a href="#cb65-5"></a>    X[<span class="st">&#39;intercept&#39;</span>] <span class="op">=</span> <span class="fl">1.</span></span>
+<span id="cb65-6"><a href="#cb65-6"></a>    result <span class="op">=</span> sm.OLS(Y, X).fit()</span>
+<span id="cb65-7"><a href="#cb65-7"></a>    <span class="cf">return</span> result.params</span></code></pre></div>
+<p>现在，为了按年计算AAPL对SPX收益率的线性回归，执行：</p>
+<div class="sourceCode" id="cb66"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb66-1"><a href="#cb66-1"></a>In [<span class="dv">129</span>]: by_year.<span class="bu">apply</span>(regress, <span class="st">&#39;AAPL&#39;</span>, [<span class="st">&#39;SPX&#39;</span>])</span>
+<span id="cb66-2"><a href="#cb66-2"></a>Out[<span class="dv">129</span>]: </span>
+<span id="cb66-3"><a href="#cb66-3"></a>           SPX  intercept</span>
+<span id="cb66-4"><a href="#cb66-4"></a><span class="dv">2003</span>  <span class="fl">1.195406</span>   <span class="fl">0.000710</span></span>
+<span id="cb66-5"><a href="#cb66-5"></a><span class="dv">2004</span>  <span class="fl">1.363463</span>   <span class="fl">0.004201</span></span>
+<span id="cb66-6"><a href="#cb66-6"></a><span class="dv">2005</span>  <span class="fl">1.766415</span>   <span class="fl">0.003246</span></span>
+<span id="cb66-7"><a href="#cb66-7"></a><span class="dv">2006</span>  <span class="fl">1.645496</span>   <span class="fl">0.000080</span></span>
+<span id="cb66-8"><a href="#cb66-8"></a><span class="dv">2007</span>  <span class="fl">1.198761</span>   <span class="fl">0.003438</span></span>
+<span id="cb66-9"><a href="#cb66-9"></a><span class="dv">2008</span>  <span class="fl">0.968016</span>  <span class="op">-</span><span class="fl">0.001110</span></span>
+<span id="cb66-10"><a href="#cb66-10"></a><span class="dv">2009</span>  <span class="fl">0.879103</span>   <span class="fl">0.002954</span></span>
+<span id="cb66-11"><a href="#cb66-11"></a><span class="dv">2010</span>  <span class="fl">1.052608</span>   <span class="fl">0.001261</span></span>
+<span id="cb66-12"><a href="#cb66-12"></a><span class="dv">2011</span>  <span class="fl">0.806605</span>   <span class="fl">0.001514</span></span></code></pre></div>
+<h1 id="透视表和交叉表">10.4 透视表和交叉表</h1>
+<p>透视表（pivot table）是各种电子表格程序和其他数据分析软件中一种常见的数据汇总工具。它根据一个或多个键对数据进行聚合，并根据行和列上的分组键将数据分配到各个矩形区域中。在Python和pandas中，可以通过本章所介绍的groupby功能以及（能够利用层次化索引的）重塑运算制作透视表。DataFrame有一个pivot_table方法，此外还有一个顶级的pandas.pivot_table函数。除能为groupby提供便利之外，pivot_table还可以添加分项小计，也叫做margins。</p>
+<p>回到小费数据集，假设我想要根据day和smoker计算分组平均数（pivot_table的默认聚合类型），并将day和smoker放到行上：</p>
+<div class="sourceCode" id="cb67"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb67-1"><a href="#cb67-1"></a>In [<span class="dv">130</span>]: tips.pivot_table(index<span class="op">=</span>[<span class="st">&#39;day&#39;</span>, <span class="st">&#39;smoker&#39;</span>])</span>
+<span id="cb67-2"><a href="#cb67-2"></a>Out[<span class="dv">130</span>]: </span>
+<span id="cb67-3"><a href="#cb67-3"></a>                 size       tip   tip_pct  total_bill</span>
+<span id="cb67-4"><a href="#cb67-4"></a>day  smoker                                          </span>
+<span id="cb67-5"><a href="#cb67-5"></a>Fri  No      <span class="fl">2.250000</span>  <span class="fl">2.812500</span>  <span class="fl">0.151650</span>   <span class="fl">18.420000</span></span>
+<span id="cb67-6"><a href="#cb67-6"></a>     Yes     <span class="fl">2.066667</span>  <span class="fl">2.714000</span>  <span class="fl">0.174783</span>   <span class="fl">16.813333</span></span>
+<span id="cb67-7"><a href="#cb67-7"></a>Sat  No      <span class="fl">2.555556</span>  <span class="fl">3.102889</span>  <span class="fl">0.158048</span>   <span class="fl">19.661778</span></span>
+<span id="cb67-8"><a href="#cb67-8"></a>     Yes     <span class="fl">2.476190</span>  <span class="fl">2.875476</span>  <span class="fl">0.147906</span>   <span class="fl">21.276667</span></span>
+<span id="cb67-9"><a href="#cb67-9"></a>Sun  No      <span class="fl">2.929825</span>  <span class="fl">3.167895</span>  <span class="fl">0.160113</span>   <span class="fl">20.506667</span></span>
+<span id="cb67-10"><a href="#cb67-10"></a>     Yes     <span class="fl">2.578947</span>  <span class="fl">3.516842</span>  <span class="fl">0.187250</span>   <span class="fl">24.120000</span></span>
+<span id="cb67-11"><a href="#cb67-11"></a>Thur No      <span class="fl">2.488889</span>  <span class="fl">2.673778</span>  <span class="fl">0.160298</span>   <span class="fl">17.113111</span></span>
+<span id="cb67-12"><a href="#cb67-12"></a>     Yes     <span class="fl">2.352941</span>  <span class="fl">3.030000</span>  <span class="fl">0.163863</span>   <span class="fl">19.190588</span></span></code></pre></div>
+<p>可以用groupby直接来做。现在，假设我们只想聚合tip_pct和size，而且想根据time进行分组。我将smoker放到列上，把day放到行上：</p>
+<div class="sourceCode" id="cb68"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb68-1"><a href="#cb68-1"></a>In [<span class="dv">131</span>]: tips.pivot_table([<span class="st">&#39;tip_pct&#39;</span>, <span class="st">&#39;size&#39;</span>], index<span class="op">=</span>[<span class="st">&#39;time&#39;</span>, <span class="st">&#39;day&#39;</span>],</span>
+<span id="cb68-2"><a href="#cb68-2"></a>   .....:                  columns<span class="op">=</span><span class="st">&#39;smoker&#39;</span>)</span>
+<span id="cb68-3"><a href="#cb68-3"></a>Out[<span class="dv">131</span>]: </span>
+<span id="cb68-4"><a href="#cb68-4"></a>                 size             tip_pct          </span>
+<span id="cb68-5"><a href="#cb68-5"></a>smoker             No       Yes        No       Yes</span>
+<span id="cb68-6"><a href="#cb68-6"></a>time   day                                         </span>
+<span id="cb68-7"><a href="#cb68-7"></a>Dinner Fri   <span class="fl">2.000000</span>  <span class="fl">2.222222</span>  <span class="fl">0.139622</span>  <span class="fl">0.165347</span></span>
+<span id="cb68-8"><a href="#cb68-8"></a>       Sat   <span class="fl">2.555556</span>  <span class="fl">2.476190</span>  <span class="fl">0.158048</span>  <span class="fl">0.147906</span></span>
+<span id="cb68-9"><a href="#cb68-9"></a>       Sun   <span class="fl">2.929825</span>  <span class="fl">2.578947</span>  <span class="fl">0.160113</span>  <span class="fl">0.187250</span></span>
+<span id="cb68-10"><a href="#cb68-10"></a>       Thur  <span class="fl">2.000000</span>       NaN  <span class="fl">0.159744</span>       NaN</span>
+<span id="cb68-11"><a href="#cb68-11"></a>Lunch  Fri   <span class="fl">3.000000</span>  <span class="fl">1.833333</span>  <span class="fl">0.187735</span>  <span class="fl">0.188937</span></span>
+<span id="cb68-12"><a href="#cb68-12"></a>       Thur  <span class="fl">2.500000</span>  <span class="fl">2.352941</span>  <span class="fl">0.160311</span>  <span class="fl">0.163863</span></span></code></pre></div>
+<p>还可以对这个表作进一步的处理，传入margins=True添加分项小计。这将会添加标签为All的行和列，其值对应于单个等级中所有数据的分组统计：</p>
+<div class="sourceCode" id="cb69"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb69-1"><a href="#cb69-1"></a>In [<span class="dv">132</span>]: tips.pivot_table([<span class="st">&#39;tip_pct&#39;</span>, <span class="st">&#39;size&#39;</span>], index<span class="op">=</span>[<span class="st">&#39;time&#39;</span>, <span class="st">&#39;day&#39;</span>],</span>
+<span id="cb69-2"><a href="#cb69-2"></a>   .....:                  columns<span class="op">=</span><span class="st">&#39;smoker&#39;</span>, margins<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb69-3"><a href="#cb69-3"></a>Out[<span class="dv">132</span>]: </span>
+<span id="cb69-4"><a href="#cb69-4"></a>                 size                       tip_pct                    </span>
+<span id="cb69-5"><a href="#cb69-5"></a>smoker             No       Yes       All        No       Yes       All</span>
+<span id="cb69-6"><a href="#cb69-6"></a>time   day                                                             </span>
+<span id="cb69-7"><a href="#cb69-7"></a>Dinner Fri   <span class="fl">2.000000</span>  <span class="fl">2.222222</span>  <span class="fl">2.166667</span>  <span class="fl">0.139622</span>  <span class="fl">0.165347</span>  <span class="fl">0.158916</span></span>
+<span id="cb69-8"><a href="#cb69-8"></a>       Sat   <span class="fl">2.555556</span>  <span class="fl">2.476190</span>  <span class="fl">2.517241</span>  <span class="fl">0.158048</span>  <span class="fl">0.147906</span>  <span class="fl">0.153152</span></span>
+<span id="cb69-9"><a href="#cb69-9"></a>       Sun   <span class="fl">2.929825</span>  <span class="fl">2.578947</span>  <span class="fl">2.842105</span>  <span class="fl">0.160113</span>  <span class="fl">0.187250</span>  <span class="fl">0.166897</span></span>
+<span id="cb69-10"><a href="#cb69-10"></a>       Thur  <span class="fl">2.000000</span>       NaN  <span class="fl">2.000000</span>  <span class="fl">0.159744</span>       NaN  <span class="fl">0.159744</span></span>
+<span id="cb69-11"><a href="#cb69-11"></a>Lunch  Fri   <span class="fl">3.000000</span>  <span class="fl">1.833333</span>  <span class="fl">2.000000</span>  <span class="fl">0.187735</span>  <span class="fl">0.188937</span>  <span class="fl">0.188765</span></span>
+<span id="cb69-12"><a href="#cb69-12"></a>       Thur  <span class="fl">2.500000</span>  <span class="fl">2.352941</span>  <span class="fl">2.459016</span>  <span class="fl">0.160311</span>  <span class="fl">0.163863</span>  <span class="fl">0.161301</span></span>
+<span id="cb69-13"><a href="#cb69-13"></a>All          <span class="fl">2.668874</span>  <span class="fl">2.408602</span>  <span class="fl">2.569672</span>  <span class="fl">0.159328</span>  <span class="fl">0.163196</span>  <span class="fl">0.160803</span></span></code></pre></div>
+<p>这里，All值为平均数：不单独考虑烟民与非烟民（All列），不单独考虑行分组两个级别中的任何单项（All行）。</p>
+<p>要使用其他的聚合函数，将其传给aggfunc即可。例如，使用count或len可以得到有关分组大小的交叉表（计数或频率）：</p>
+<div class="sourceCode" id="cb70"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb70-1"><a href="#cb70-1"></a>In [<span class="dv">133</span>]: tips.pivot_table(<span class="st">&#39;tip_pct&#39;</span>, index<span class="op">=</span>[<span class="st">&#39;time&#39;</span>, <span class="st">&#39;smoker&#39;</span>], columns<span class="op">=</span><span class="st">&#39;day&#39;</span>,</span>
+<span id="cb70-2"><a href="#cb70-2"></a>   .....:                  aggfunc<span class="op">=</span><span class="bu">len</span>, margins<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb70-3"><a href="#cb70-3"></a>Out[<span class="dv">133</span>]: </span>
+<span id="cb70-4"><a href="#cb70-4"></a>day             Fri   Sat   Sun  Thur    All</span>
+<span id="cb70-5"><a href="#cb70-5"></a>time   smoker                               </span>
+<span id="cb70-6"><a href="#cb70-6"></a>Dinner No       <span class="fl">3.0</span>  <span class="fl">45.0</span>  <span class="fl">57.0</span>   <span class="fl">1.0</span>  <span class="fl">106.0</span></span>
+<span id="cb70-7"><a href="#cb70-7"></a>       Yes      <span class="fl">9.0</span>  <span class="fl">42.0</span>  <span class="fl">19.0</span>   NaN   <span class="fl">70.0</span></span>
+<span id="cb70-8"><a href="#cb70-8"></a>Lunch  No       <span class="fl">1.0</span>   NaN   NaN  <span class="fl">44.0</span>   <span class="fl">45.0</span></span>
+<span id="cb70-9"><a href="#cb70-9"></a>       Yes      <span class="fl">6.0</span>   NaN   NaN  <span class="fl">17.0</span>   <span class="fl">23.0</span></span>
+<span id="cb70-10"><a href="#cb70-10"></a>All            <span class="fl">19.0</span>  <span class="fl">87.0</span>  <span class="fl">76.0</span>  <span class="fl">62.0</span>  <span class="fl">244.0</span></span></code></pre></div>
+<p>如果存在空的组合（也就是NA），你可能会希望设置一个fill_value：</p>
+<div class="sourceCode" id="cb71"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb71-1"><a href="#cb71-1"></a>In [<span class="dv">134</span>]: tips.pivot_table(<span class="st">&#39;tip_pct&#39;</span>, index<span class="op">=</span>[<span class="st">&#39;time&#39;</span>, <span class="st">&#39;size&#39;</span>, <span class="st">&#39;smoker&#39;</span>],</span>
+<span id="cb71-2"><a href="#cb71-2"></a>   .....:                  columns<span class="op">=</span><span class="st">&#39;day&#39;</span>, aggfunc<span class="op">=</span><span class="st">&#39;mean&#39;</span>, fill_value<span class="op">=</span><span class="dv">0</span>)</span>
+<span id="cb71-3"><a href="#cb71-3"></a>Out[<span class="dv">134</span>]: </span>
+<span id="cb71-4"><a href="#cb71-4"></a>day                      Fri       Sat       Sun      Thur</span>
+<span id="cb71-5"><a href="#cb71-5"></a>time   size smoker                                        </span>
+<span id="cb71-6"><a href="#cb71-6"></a>Dinner <span class="dv">1</span>    No      <span class="fl">0.000000</span>  <span class="fl">0.137931</span>  <span class="fl">0.000000</span>  <span class="fl">0.000000</span></span>
+<span id="cb71-7"><a href="#cb71-7"></a>            Yes     <span class="fl">0.000000</span>  <span class="fl">0.325733</span>  <span class="fl">0.000000</span>  <span class="fl">0.000000</span></span>
+<span id="cb71-8"><a href="#cb71-8"></a>       <span class="dv">2</span>    No      <span class="fl">0.139622</span>  <span class="fl">0.162705</span>  <span class="fl">0.168859</span>  <span class="fl">0.159744</span></span>
+<span id="cb71-9"><a href="#cb71-9"></a>            Yes     <span class="fl">0.171297</span>  <span class="fl">0.148668</span>  <span class="fl">0.207893</span>  <span class="fl">0.000000</span></span>
+<span id="cb71-10"><a href="#cb71-10"></a>       <span class="dv">3</span>    No      <span class="fl">0.000000</span>  <span class="fl">0.154661</span>  <span class="fl">0.152663</span>  <span class="fl">0.000000</span></span>
+<span id="cb71-11"><a href="#cb71-11"></a>            Yes     <span class="fl">0.000000</span>  <span class="fl">0.144995</span>  <span class="fl">0.152660</span>  <span class="fl">0.000000</span></span>
+<span id="cb71-12"><a href="#cb71-12"></a>       <span class="dv">4</span>    No      <span class="fl">0.000000</span>  <span class="fl">0.150096</span>  <span class="fl">0.148143</span>  <span class="fl">0.000000</span></span>
+<span id="cb71-13"><a href="#cb71-13"></a>            Yes     <span class="fl">0.117750</span>  <span class="fl">0.124515</span>  <span class="fl">0.193370</span>  <span class="fl">0.000000</span></span>
+<span id="cb71-14"><a href="#cb71-14"></a>       <span class="dv">5</span>    No      <span class="fl">0.000000</span>  <span class="fl">0.000000</span>  <span class="fl">0.206928</span>  <span class="fl">0.000000</span></span>
+<span id="cb71-15"><a href="#cb71-15"></a>Yes     <span class="fl">0.000000</span>  <span class="fl">0.106572</span>  <span class="fl">0.065660</span>  <span class="fl">0.000000</span></span>
+<span id="cb71-16"><a href="#cb71-16"></a>...                      ...       ...       ...       ...</span>
+<span id="cb71-17"><a href="#cb71-17"></a>Lunch  <span class="dv">1</span>    No      <span class="fl">0.000000</span>  <span class="fl">0.000000</span>  <span class="fl">0.000000</span>  <span class="fl">0.181728</span></span>
+<span id="cb71-18"><a href="#cb71-18"></a>            Yes     <span class="fl">0.223776</span>  <span class="fl">0.000000</span>  <span class="fl">0.000000</span>  <span class="fl">0.000000</span></span>
+<span id="cb71-19"><a href="#cb71-19"></a>       <span class="dv">2</span>    No      <span class="fl">0.000000</span>  <span class="fl">0.000000</span>  <span class="fl">0.000000</span>  <span class="fl">0.166005</span></span>
+<span id="cb71-20"><a href="#cb71-20"></a>            Yes     <span class="fl">0.181969</span>  <span class="fl">0.000000</span>  <span class="fl">0.000000</span>  <span class="fl">0.158843</span></span>
+<span id="cb71-21"><a href="#cb71-21"></a>       <span class="dv">3</span>    No      <span class="fl">0.187735</span>  <span class="fl">0.000000</span>  <span class="fl">0.000000</span>  <span class="fl">0.084246</span></span>
+<span id="cb71-22"><a href="#cb71-22"></a>            Yes     <span class="fl">0.000000</span>  <span class="fl">0.000000</span>  <span class="fl">0.000000</span>  <span class="fl">0.204952</span></span>
+<span id="cb71-23"><a href="#cb71-23"></a>       <span class="dv">4</span>    No      <span class="fl">0.000000</span>  <span class="fl">0.000000</span>  <span class="fl">0.000000</span>  <span class="fl">0.138919</span></span>
+<span id="cb71-24"><a href="#cb71-24"></a>            Yes     <span class="fl">0.000000</span>  <span class="fl">0.000000</span>  <span class="fl">0.000000</span>  <span class="fl">0.155410</span></span>
+<span id="cb71-25"><a href="#cb71-25"></a>       <span class="dv">5</span>    No      <span class="fl">0.000000</span>  <span class="fl">0.000000</span>  <span class="fl">0.000000</span>  <span class="fl">0.121389</span></span>
+<span id="cb71-26"><a href="#cb71-26"></a>       <span class="dv">6</span>    No      <span class="fl">0.000000</span>  <span class="fl">0.000000</span>  <span class="fl">0.000000</span>  <span class="fl">0.173706</span></span>
+<span id="cb71-27"><a href="#cb71-27"></a>[<span class="dv">21</span> rows x <span class="dv">4</span> columns]</span></code></pre></div>
+<p>pivot_table的参数说明请参见表10-2。</p>
+<figure>
+<img src="http://upload-images.jianshu.io/upload_images/7178691-c9e01844c4803a42.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="" /><figcaption>表10-2 pivot_table的选项</figcaption>
+</figure>
+<h2 id="交叉表crosstab">交叉表：crosstab</h2>
+<p>交叉表（cross-tabulation，简称crosstab）是一种用于计算分组频率的特殊透视表。看下面的例子：</p>
+<div class="sourceCode" id="cb72"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb72-1"><a href="#cb72-1"></a>In [<span class="dv">138</span>]: data</span>
+<span id="cb72-2"><a href="#cb72-2"></a>Out[<span class="dv">138</span>]:</span>
+<span id="cb72-3"><a href="#cb72-3"></a>   Sample Nationality    Handedness</span>
+<span id="cb72-4"><a href="#cb72-4"></a><span class="dv">0</span>       <span class="dv">1</span>         USA  Right<span class="op">-</span>handed</span>
+<span id="cb72-5"><a href="#cb72-5"></a><span class="dv">1</span>       <span class="dv">2</span>       Japan   Left<span class="op">-</span>handed</span>
+<span id="cb72-6"><a href="#cb72-6"></a><span class="dv">2</span>       <span class="dv">3</span>         USA  Right<span class="op">-</span>handed</span>
+<span id="cb72-7"><a href="#cb72-7"></a><span class="dv">3</span>       <span class="dv">4</span>       Japan  Right<span class="op">-</span>handed</span>
+<span id="cb72-8"><a href="#cb72-8"></a><span class="dv">4</span>       <span class="dv">5</span>       Japan   Left<span class="op">-</span>handed</span>
+<span id="cb72-9"><a href="#cb72-9"></a><span class="dv">5</span>       <span class="dv">6</span>       Japan  Right<span class="op">-</span>handed</span>
+<span id="cb72-10"><a href="#cb72-10"></a><span class="dv">6</span>       <span class="dv">7</span>         USA  Right<span class="op">-</span>handed</span>
+<span id="cb72-11"><a href="#cb72-11"></a><span class="dv">7</span>       <span class="dv">8</span>         USA   Left<span class="op">-</span>handed</span>
+<span id="cb72-12"><a href="#cb72-12"></a><span class="dv">8</span>       <span class="dv">9</span>       Japan  Right<span class="op">-</span>handed</span>
+<span id="cb72-13"><a href="#cb72-13"></a><span class="dv">9</span>      <span class="dv">10</span>         USA  Right<span class="op">-</span>handed</span></code></pre></div>
+<p>作为调查分析的一部分，我们可能想要根据国籍和用手习惯对这段数据进行统计汇总。虽然可以用pivot_table实现该功能，但是pandas.crosstab函数会更方便：</p>
+<div class="sourceCode" id="cb73"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb73-1"><a href="#cb73-1"></a>In [<span class="dv">139</span>]: pd.crosstab(data.Nationality, data.Handedness, margins<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb73-2"><a href="#cb73-2"></a>Out[<span class="dv">139</span>]: </span>
+<span id="cb73-3"><a href="#cb73-3"></a>Handedness   Left<span class="op">-</span>handed  Right<span class="op">-</span>handed  All</span>
+<span id="cb73-4"><a href="#cb73-4"></a>Nationality</span>
+<span id="cb73-5"><a href="#cb73-5"></a>Japan                  <span class="dv">2</span>             <span class="dv">3</span>    <span class="dv">5</span></span>
+<span id="cb73-6"><a href="#cb73-6"></a>USA                    <span class="dv">1</span>             <span class="dv">4</span>    <span class="dv">5</span></span>
+<span id="cb73-7"><a href="#cb73-7"></a>All                    <span class="dv">3</span>             <span class="dv">7</span>   <span class="dv">10</span></span></code></pre></div>
+<p>crosstab的前两个参数可以是数组或Series，或是数组列表。就像小费数据：</p>
+<div class="sourceCode" id="cb74"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb74-1"><a href="#cb74-1"></a>In [<span class="dv">140</span>]: pd.crosstab([tips.time, tips.day], tips.smoker, margins<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb74-2"><a href="#cb74-2"></a>Out[<span class="dv">140</span>]: </span>
+<span id="cb74-3"><a href="#cb74-3"></a>smoker        No  Yes  All</span>
+<span id="cb74-4"><a href="#cb74-4"></a>time   day                </span>
+<span id="cb74-5"><a href="#cb74-5"></a>Dinner Fri     <span class="dv">3</span>    <span class="dv">9</span>   <span class="dv">12</span></span>
+<span id="cb74-6"><a href="#cb74-6"></a>       Sat    <span class="dv">45</span>   <span class="dv">42</span>   <span class="dv">87</span></span>
+<span id="cb74-7"><a href="#cb74-7"></a>       Sun    <span class="dv">57</span>   <span class="dv">19</span>   <span class="dv">76</span></span>
+<span id="cb74-8"><a href="#cb74-8"></a>       Thur    <span class="dv">1</span>    <span class="dv">0</span>    <span class="dv">1</span></span>
+<span id="cb74-9"><a href="#cb74-9"></a>Lunch  Fri     <span class="dv">1</span>    <span class="dv">6</span>    <span class="dv">7</span></span>
+<span id="cb74-10"><a href="#cb74-10"></a>       Thur   <span class="dv">44</span>   <span class="dv">17</span>   <span class="dv">61</span></span>
+<span id="cb74-11"><a href="#cb74-11"></a>All          <span class="dv">151</span>   <span class="dv">93</span>  <span class="dv">244</span></span></code></pre></div>
+<h1 id="总结">10.5 总结</h1>
+<p>掌握pandas数据分组工具既有助于数据清理，也有助于建模或统计分析工作。在第14章，我们会看几个例子，对真实数据使用groupby。</p>
+<p>在下一章，我们将关注时间序列数据。</p>

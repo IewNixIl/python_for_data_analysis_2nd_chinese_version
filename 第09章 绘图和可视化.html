@@ -1,0 +1,476 @@
+<p>信息可视化（也叫绘图）是数据分析中最重要的工作之一。它可能是探索过程的一部分，例如，帮助我们找出异常值、必要的数据转换、得出有关模型的idea等。另外，做一个可交互的数据可视化也许是工作的最终目标。Python有许多库进行静态或动态的数据可视化，但我这里重要关注于matplotlib（http://matplotlib.org/）和基于它的库。</p>
+<p>matplotlib是一个用于创建出版质量图表的桌面绘图包（主要是2D方面）。该项目是由John Hunter于2002年启动的，其目的是为Python构建一个MATLAB式的绘图接口。matplotlib和IPython社区进行合作，简化了从IPython shell（包括现在的Jupyter notebook）进行交互式绘图。matplotlib支持各种操作系统上许多不同的GUI后端，而且还能将图片导出为各种常见的矢量（vector）和光栅（raster）图：PDF、SVG、JPG、PNG、BMP、GIF等。除了几张，本书中的大部分图都是用它生成的。</p>
+<p>随着时间的发展，matplotlib衍生出了多个数据可视化的工具集，它们使用matplotlib作为底层。其中之一是seaborn（http://seaborn.pydata.org/），本章后面会学习它。</p>
+<p>学习本章代码案例的最简单方法是在Jupyter notebook进行交互式绘图。在Jupyter notebook中执行下面的语句：</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1"></a><span class="op">%</span>matplotlib notebook</span></code></pre></div>
+<h1 id="matplotlib-api入门">9.1 matplotlib API入门</h1>
+<p>matplotlib的通常引入约定是：</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1"></a>In [<span class="dv">11</span>]: <span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span></code></pre></div>
+<p>在Jupyter中运行%matplotlib notebook（或在IPython中运行%matplotlib），就可以创建一个简单的图形。如果一切设置正确，会看到图9-1：</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1"></a>In [<span class="dv">12</span>]: <span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb3-2"><a href="#cb3-2"></a></span>
+<span id="cb3-3"><a href="#cb3-3"></a>In [<span class="dv">13</span>]: data <span class="op">=</span> np.arange(<span class="dv">10</span>)</span>
+<span id="cb3-4"><a href="#cb3-4"></a></span>
+<span id="cb3-5"><a href="#cb3-5"></a>In [<span class="dv">14</span>]: data</span>
+<span id="cb3-6"><a href="#cb3-6"></a>Out[<span class="dv">14</span>]: array([<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">5</span>, <span class="dv">6</span>, <span class="dv">7</span>, <span class="dv">8</span>, <span class="dv">9</span>])</span>
+<span id="cb3-7"><a href="#cb3-7"></a></span>
+<span id="cb3-8"><a href="#cb3-8"></a>In [<span class="dv">15</span>]: plt.plot(data)</span></code></pre></div>
+<figure>
+<img src="http://upload-images.jianshu.io/upload_images/7178691-7032e333a6ecdd37.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="" /><figcaption>图9-1 简单的线图</figcaption>
+</figure>
+<p>虽然seaborn这样的库和pandas的内置绘图函数能够处理许多普通的绘图任务，但如果需要自定义一些高级功能的话就必须学习matplotlib API。</p>
+<blockquote>
+<p>笔记：虽然本书没有详细地讨论matplotlib的各种功能，但足以将你引入门。matplotlib的示例库和文档是学习高级特性的最好资源。</p>
+</blockquote>
+<h2 id="figure和subplot">Figure和Subplot</h2>
+<p>matplotlib的图像都位于Figure对象中。你可以用plt.figure创建一个新的Figure：</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1"></a>In [<span class="dv">16</span>]: fig <span class="op">=</span> plt.figure()</span></code></pre></div>
+<p>如果用的是IPython，这时会弹出一个空窗口，但在Jupyter中，必须再输入更多命令才能看到。plt.figure有一些选项，特别是figsize，它用于确保当图片保存到磁盘时具有一定的大小和纵横比。</p>
+<p>不能通过空Figure绘图。必须用add_subplot创建一个或多个subplot才行：</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1"></a>In [<span class="dv">17</span>]: ax1 <span class="op">=</span> fig.add_subplot(<span class="dv">2</span>, <span class="dv">2</span>, <span class="dv">1</span>)</span></code></pre></div>
+<p>这条代码的意思是：图像应该是2×2的（即最多4张图），且当前选中的是4个subplot中的第一个（编号从1开始）。如果再把后面两个subplot也创建出来，最终得到的图像如图9-2所示：</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1"></a>In [<span class="dv">18</span>]: ax2 <span class="op">=</span> fig.add_subplot(<span class="dv">2</span>, <span class="dv">2</span>, <span class="dv">2</span>)</span>
+<span id="cb6-2"><a href="#cb6-2"></a></span>
+<span id="cb6-3"><a href="#cb6-3"></a>In [<span class="dv">19</span>]: ax3 <span class="op">=</span> fig.add_subplot(<span class="dv">2</span>, <span class="dv">2</span>, <span class="dv">3</span>)</span></code></pre></div>
+<figure>
+<img src="http://upload-images.jianshu.io/upload_images/7178691-b8cff158e64eae74.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="" /><figcaption>图9-2 带有三个subplot的Figure</figcaption>
+</figure>
+<blockquote>
+<p>提示：使用Jupyter notebook有一点不同，即每个小窗重新执行后，图形会被重置。因此，对于复杂的图形，，你必须将所有的绘图命令存在一个小窗里。</p>
+</blockquote>
+<p>这里，我们运行同一个小窗里的所有命令：</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1"></a>fig <span class="op">=</span> plt.figure()</span>
+<span id="cb7-2"><a href="#cb7-2"></a>ax1 <span class="op">=</span> fig.add_subplot(<span class="dv">2</span>, <span class="dv">2</span>, <span class="dv">1</span>)</span>
+<span id="cb7-3"><a href="#cb7-3"></a>ax2 <span class="op">=</span> fig.add_subplot(<span class="dv">2</span>, <span class="dv">2</span>, <span class="dv">2</span>)</span>
+<span id="cb7-4"><a href="#cb7-4"></a>ax3 <span class="op">=</span> fig.add_subplot(<span class="dv">2</span>, <span class="dv">2</span>, <span class="dv">3</span>)</span></code></pre></div>
+<p>如果这时执行一条绘图命令（如plt.plot([1.5, 3.5, -2, 1.6])），matplotlib就会在最后一个用过的subplot（如果没有则创建一个）上进行绘制，隐藏创建figure和subplot的过程。因此，如果我们执行下列命令，你就会得到如图9-3所示的结果：</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1"></a>In [<span class="dv">20</span>]: plt.plot(np.random.randn(<span class="dv">50</span>).cumsum(), <span class="st">&#39;k--&#39;</span>)</span></code></pre></div>
+<figure>
+<img src="http://upload-images.jianshu.io/upload_images/7178691-7bcbd5e56fdbbd92.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="" /><figcaption>图9-3 绘制一次之后的图像</figcaption>
+</figure>
+<p>“k–”是一个线型选项，用于告诉matplotlib绘制黑色虚线图。上面那些由fig.add_subplot所返回的对象是AxesSubplot对象，直接调用它们的实例方法就可以在其它空着的格子里面画图了，如图9-4所示：</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1"></a>In [<span class="dv">21</span>]: ax1.hist(np.random.randn(<span class="dv">100</span>), bins<span class="op">=</span><span class="dv">20</span>, color<span class="op">=</span><span class="st">&#39;k&#39;</span>, alpha<span class="op">=</span><span class="fl">0.3</span>)</span>
+<span id="cb9-2"><a href="#cb9-2"></a></span>
+<span id="cb9-3"><a href="#cb9-3"></a>In [<span class="dv">22</span>]: ax2.scatter(np.arange(<span class="dv">30</span>), np.arange(<span class="dv">30</span>) <span class="op">+</span> <span class="dv">3</span> <span class="op">*</span> np.random.randn(<span class="dv">30</span>))</span></code></pre></div>
+<figure>
+<img src="http://upload-images.jianshu.io/upload_images/7178691-2297bcaf355db24c.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="" /><figcaption>图9-4 继续绘制两次之后的图像</figcaption>
+</figure>
+<p>你可以在matplotlib的文档中找到各种图表类型。</p>
+<p>创建包含subplot网格的figure是一个非常常见的任务，matplotlib有一个更为方便的方法plt.subplots，它可以创建一个新的Figure，并返回一个含有已创建的subplot对象的NumPy数组：</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1"></a>In [<span class="dv">24</span>]: fig, axes <span class="op">=</span> plt.subplots(<span class="dv">2</span>, <span class="dv">3</span>)</span>
+<span id="cb10-2"><a href="#cb10-2"></a></span>
+<span id="cb10-3"><a href="#cb10-3"></a>In [<span class="dv">25</span>]: axes</span>
+<span id="cb10-4"><a href="#cb10-4"></a>Out[<span class="dv">25</span>]: </span>
+<span id="cb10-5"><a href="#cb10-5"></a>array([[<span class="op">&lt;</span>matplotlib.axes._subplots.AxesSubplot <span class="bu">object</span> at <span class="bn">0x7fb626374048</span><span class="op">&gt;</span>,</span>
+<span id="cb10-6"><a href="#cb10-6"></a>        <span class="op">&lt;</span>matplotlib.axes._subplots.AxesSubplot <span class="bu">object</span> at <span class="bn">0x7fb62625db00</span><span class="op">&gt;</span>,</span>
+<span id="cb10-7"><a href="#cb10-7"></a>        <span class="op">&lt;</span>matplotlib.axes._subplots.AxesSubplot <span class="bu">object</span> at <span class="bn">0x7fb6262f6c88</span><span class="op">&gt;</span>],</span>
+<span id="cb10-8"><a href="#cb10-8"></a>       [<span class="op">&lt;</span>matplotlib.axes._subplots.AxesSubplot <span class="bu">object</span> at <span class="bn">0x7fb6261a36a0</span><span class="op">&gt;</span>,</span>
+<span id="cb10-9"><a href="#cb10-9"></a>        <span class="op">&lt;</span>matplotlib.axes._subplots.AxesSubplot <span class="bu">object</span> at <span class="bn">0x7fb626181860</span><span class="op">&gt;</span>,</span>
+<span id="cb10-10"><a href="#cb10-10"></a>        <span class="op">&lt;</span>matplotlib.axes._subplots.AxesSubplot <span class="bu">object</span> at <span class="bn">0x7fb6260fd4e0</span><span class="op">&gt;</span>]], dtype</span>
+<span id="cb10-11"><a href="#cb10-11"></a><span class="op">=</span><span class="bu">object</span>)</span></code></pre></div>
+<p>这是非常实用的，因为可以轻松地对axes数组进行索引，就好像是一个二维数组一样，例如axes[0,1]。你还可以通过sharex和sharey指定subplot应该具有相同的X轴或Y轴。在比较相同范围的数据时，这也是非常实用的，否则，matplotlib会自动缩放各图表的界限。有关该方法的更多信息，请参见表9-1。</p>
+<figure>
+<img src="http://upload-images.jianshu.io/upload_images/7178691-88bb55faca7d01ba.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="" /><figcaption>表9-1 pyplot.subplots的选项</figcaption>
+</figure>
+<h2 id="调整subplot周围的间距">调整subplot周围的间距</h2>
+<p>默认情况下，matplotlib会在subplot外围留下一定的边距，并在subplot之间留下一定的间距。间距跟图像的高度和宽度有关，因此，如果你调整了图像大小（不管是编程还是手工），间距也会自动调整。利用Figure的subplots_adjust方法可以轻而易举地修改间距，此外，它也是个顶级函数：</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1"></a>subplots_adjust(left<span class="op">=</span><span class="va">None</span>, bottom<span class="op">=</span><span class="va">None</span>, right<span class="op">=</span><span class="va">None</span>, top<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb11-2"><a href="#cb11-2"></a>                wspace<span class="op">=</span><span class="va">None</span>, hspace<span class="op">=</span><span class="va">None</span>)</span></code></pre></div>
+<p>wspace和hspace用于控制宽度和高度的百分比，可以用作subplot之间的间距。下面是一个简单的例子，其中我将间距收缩到了0（如图9-5所示）：</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">2</span>, <span class="dv">2</span>, sharex<span class="op">=</span><span class="va">True</span>, sharey<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb12-2"><a href="#cb12-2"></a><span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">2</span>):</span>
+<span id="cb12-3"><a href="#cb12-3"></a>    <span class="cf">for</span> j <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">2</span>):</span>
+<span id="cb12-4"><a href="#cb12-4"></a>        axes[i, j].hist(np.random.randn(<span class="dv">500</span>), bins<span class="op">=</span><span class="dv">50</span>, color<span class="op">=</span><span class="st">&#39;k&#39;</span>, alpha<span class="op">=</span><span class="fl">0.5</span>)</span>
+<span id="cb12-5"><a href="#cb12-5"></a>plt.subplots_adjust(wspace<span class="op">=</span><span class="dv">0</span>, hspace<span class="op">=</span><span class="dv">0</span>)</span></code></pre></div>
+<figure>
+<img src="http://upload-images.jianshu.io/upload_images/7178691-80be7ffc3dec88a5.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="" /><figcaption>图9-5 各subplot之间没有间距</figcaption>
+</figure>
+<p>不难看出，其中的轴标签重叠了。matplotlib不会检查标签是否重叠，所以对于这种情况，你只能自己设定刻度位置和刻度标签。后面几节将会详细介绍该内容。</p>
+<h2 id="颜色标记和线型">颜色、标记和线型</h2>
+<p>matplotlib的plot函数接受一组X和Y坐标，还可以接受一个表示颜色和线型的字符串缩写。例如，要根据x和y绘制绿色虚线，你可以执行如下代码：</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1"></a>ax.plot(x, y, <span class="st">&#39;g--&#39;</span>)</span></code></pre></div>
+<p>这种在一个字符串中指定颜色和线型的方式非常方便。在实际中，如果你是用代码绘图，你可能不想通过处理字符串来获得想要的格式。通过下面这种更为明确的方式也能得到同样的效果：</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1"></a>ax.plot(x, y, linestyle<span class="op">=</span><span class="st">&#39;--&#39;</span>, color<span class="op">=</span><span class="st">&#39;g&#39;</span>)</span></code></pre></div>
+<p>常用的颜色可以使用颜色缩写，你也可以指定颜色码（例如，‘#CECECE’）。你可以通过查看plot的文档字符串查看所有线型的合集（在IPython和Jupyter中使用plot?）。</p>
+<p>线图可以使用标记强调数据点。因为matplotlib可以创建连续线图，在点之间进行插值，因此有时可能不太容易看出真实数据点的位置。标记也可以放到格式字符串中，但标记类型和线型必须放在颜色后面（见图9-6）：</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1"></a>In [<span class="dv">30</span>]: <span class="im">from</span> numpy.random <span class="im">import</span> randn</span>
+<span id="cb15-2"><a href="#cb15-2"></a></span>
+<span id="cb15-3"><a href="#cb15-3"></a>In [<span class="dv">31</span>]: plt.plot(randn(<span class="dv">30</span>).cumsum(), <span class="st">&#39;ko--&#39;</span>)</span></code></pre></div>
+<figure>
+<img src="http://upload-images.jianshu.io/upload_images/7178691-404d816f3e1d6621.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="" /><figcaption>图9-6 带有标记的线型图示例</figcaption>
+</figure>
+<p>还可以将其写成更为明确的形式：</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1"></a>plot(randn(<span class="dv">30</span>).cumsum(), color<span class="op">=</span><span class="st">&#39;k&#39;</span>, linestyle<span class="op">=</span><span class="st">&#39;dashed&#39;</span>, marker<span class="op">=</span><span class="st">&#39;o&#39;</span>)</span></code></pre></div>
+<p>在线型图中，非实际数据点默认是按线性方式插值的。可以通过drawstyle选项修改（见图9-7）：</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1"></a>In [<span class="dv">33</span>]: data <span class="op">=</span> np.random.randn(<span class="dv">30</span>).cumsum()</span>
+<span id="cb17-2"><a href="#cb17-2"></a></span>
+<span id="cb17-3"><a href="#cb17-3"></a>In [<span class="dv">34</span>]: plt.plot(data, <span class="st">&#39;k--&#39;</span>, label<span class="op">=</span><span class="st">&#39;Default&#39;</span>)</span>
+<span id="cb17-4"><a href="#cb17-4"></a>Out[<span class="dv">34</span>]: [<span class="op">&lt;</span>matplotlib.lines.Line2D at <span class="bn">0x7fb624d86160</span><span class="op">&gt;</span>]</span>
+<span id="cb17-5"><a href="#cb17-5"></a></span>
+<span id="cb17-6"><a href="#cb17-6"></a>In [<span class="dv">35</span>]: plt.plot(data, <span class="st">&#39;k-&#39;</span>, drawstyle<span class="op">=</span><span class="st">&#39;steps-post&#39;</span>, label<span class="op">=</span><span class="st">&#39;steps-post&#39;</span>)</span>
+<span id="cb17-7"><a href="#cb17-7"></a>Out[<span class="dv">35</span>]: [<span class="op">&lt;</span>matplotlib.lines.Line2D at <span class="bn">0x7fb624d869e8</span><span class="op">&gt;</span>]</span>
+<span id="cb17-8"><a href="#cb17-8"></a></span>
+<span id="cb17-9"><a href="#cb17-9"></a>In [<span class="dv">36</span>]: plt.legend(loc<span class="op">=</span><span class="st">&#39;best&#39;</span>)</span></code></pre></div>
+<figure>
+<img src="http://upload-images.jianshu.io/upload_images/7178691-3ec7642e1a592f08.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="" /><figcaption>图9-7 不同drawstyle选项的线型图</figcaption>
+</figure>
+<p>你可能注意到运行上面代码时有输出&lt;matplotlib.lines.Line2D at …&gt;。matplotlib会返回引用了新添加的子组件的对象。大多数时候，你可以放心地忽略这些输出。这里，因为我们传递了label参数到plot，我们可以创建一个plot图例，指明每条使用plt.legend的线。</p>
+<blockquote>
+<p>笔记：你必须调用plt.legend（或使用ax.legend，如果引用了轴的话）来创建图例，无论你绘图时是否传递label标签选项。</p>
+</blockquote>
+<h2 id="刻度标签和图例">刻度、标签和图例</h2>
+<p>对于大多数的图表装饰项，其主要实现方式有二：使用过程型的pyplot接口（例如，matplotlib.pyplot）以及更为面向对象的原生matplotlib API。</p>
+<p>pyplot接口的设计目的就是交互式使用，含有诸如xlim、xticks和xticklabels之类的方法。它们分别控制图表的范围、刻度位置、刻度标签等。其使用方式有以下两种：</p>
+<ul>
+<li>调用时不带参数，则返回当前的参数值（例如，plt.xlim()返回当前的X轴绘图范围）。</li>
+<li>调用时带参数，则设置参数值（例如，plt.xlim([0,10])会将X轴的范围设置为0到10）。</li>
+</ul>
+<p>所有这些方法都是对当前或最近创建的AxesSubplot起作用的。它们各自对应subplot对象上的两个方法，以xlim为例，就是ax.get_xlim和ax.set_xlim。我更喜欢使用subplot的实例方法（因为我喜欢明确的事情，而且在处理多个subplot时这样也更清楚一些）。当然你完全可以选择自己觉得方便的那个。</p>
+<h2 id="设置标题轴标签刻度以及刻度标签">设置标题、轴标签、刻度以及刻度标签</h2>
+<p>为了说明自定义轴，我将创建一个简单的图像并绘制一段随机漫步（如图9-8所示）：</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1"></a>In [<span class="dv">37</span>]: fig <span class="op">=</span> plt.figure()</span>
+<span id="cb18-2"><a href="#cb18-2"></a></span>
+<span id="cb18-3"><a href="#cb18-3"></a>In [<span class="dv">38</span>]: ax <span class="op">=</span> fig.add_subplot(<span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>)</span>
+<span id="cb18-4"><a href="#cb18-4"></a></span>
+<span id="cb18-5"><a href="#cb18-5"></a>In [<span class="dv">39</span>]: ax.plot(np.random.randn(<span class="dv">1000</span>).cumsum())</span></code></pre></div>
+<figure>
+<img src="http://upload-images.jianshu.io/upload_images/7178691-caf9300dacb61fa4.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="" /><figcaption>图9-8 用于演示xticks的简单线型图（带有标签）</figcaption>
+</figure>
+<p>要改变x轴刻度，最简单的办法是使用set_xticks和set_xticklabels。前者告诉matplotlib要将刻度放在数据范围中的哪些位置，默认情况下，这些位置也就是刻度标签。但我们可以通过set_xticklabels将任何其他的值用作标签：</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1"></a>In [<span class="dv">40</span>]: ticks <span class="op">=</span> ax.set_xticks([<span class="dv">0</span>, <span class="dv">250</span>, <span class="dv">500</span>, <span class="dv">750</span>, <span class="dv">1000</span>])</span>
+<span id="cb19-2"><a href="#cb19-2"></a></span>
+<span id="cb19-3"><a href="#cb19-3"></a>In [<span class="dv">41</span>]: labels <span class="op">=</span> ax.set_xticklabels([<span class="st">&#39;one&#39;</span>, <span class="st">&#39;two&#39;</span>, <span class="st">&#39;three&#39;</span>, <span class="st">&#39;four&#39;</span>, <span class="st">&#39;five&#39;</span>],</span>
+<span id="cb19-4"><a href="#cb19-4"></a>   ....:                             rotation<span class="op">=</span><span class="dv">30</span>, fontsize<span class="op">=</span><span class="st">&#39;small&#39;</span>)</span></code></pre></div>
+<p>rotation选项设定x刻度标签倾斜30度。最后，再用set_xlabel为X轴设置一个名称，并用set_title设置一个标题（见图9-9的结果）：</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1"></a>In [<span class="dv">42</span>]: ax.set_title(<span class="st">&#39;My first matplotlib plot&#39;</span>)</span>
+<span id="cb20-2"><a href="#cb20-2"></a>Out[<span class="dv">42</span>]: <span class="op">&lt;</span>matplotlib.text.Text at <span class="bn">0x7fb624d055f8</span><span class="op">&gt;</span></span>
+<span id="cb20-3"><a href="#cb20-3"></a></span>
+<span id="cb20-4"><a href="#cb20-4"></a>In [<span class="dv">43</span>]: ax.set_xlabel(<span class="st">&#39;Stages&#39;</span>)</span></code></pre></div>
+<figure>
+<img src="http://upload-images.jianshu.io/upload_images/7178691-741f968323bd818f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="" /><figcaption>图9-9 用于演示xticks的简单线型图</figcaption>
+</figure>
+<p>Y轴的修改方式与此类似，只需将上述代码中的x替换为y即可。轴的类有集合方法，可以批量设定绘图选项。前面的例子，也可以写为：</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1"></a>props <span class="op">=</span> {</span>
+<span id="cb21-2"><a href="#cb21-2"></a>    <span class="st">&#39;title&#39;</span>: <span class="st">&#39;My first matplotlib plot&#39;</span>,</span>
+<span id="cb21-3"><a href="#cb21-3"></a>    <span class="st">&#39;xlabel&#39;</span>: <span class="st">&#39;Stages&#39;</span></span>
+<span id="cb21-4"><a href="#cb21-4"></a>}</span>
+<span id="cb21-5"><a href="#cb21-5"></a>ax.<span class="bu">set</span>(<span class="op">**</span>props)</span></code></pre></div>
+<h2 id="添加图例">添加图例</h2>
+<p>图例（legend）是另一种用于标识图表元素的重要工具。添加图例的方式有多种。最简单的是在添加subplot的时候传入label参数：</p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1"></a>In [<span class="dv">44</span>]: <span class="im">from</span> numpy.random <span class="im">import</span> randn</span>
+<span id="cb22-2"><a href="#cb22-2"></a></span>
+<span id="cb22-3"><a href="#cb22-3"></a>In [<span class="dv">45</span>]: fig <span class="op">=</span> plt.figure()<span class="op">;</span> ax <span class="op">=</span> fig.add_subplot(<span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>)</span>
+<span id="cb22-4"><a href="#cb22-4"></a></span>
+<span id="cb22-5"><a href="#cb22-5"></a>In [<span class="dv">46</span>]: ax.plot(randn(<span class="dv">1000</span>).cumsum(), <span class="st">&#39;k&#39;</span>, label<span class="op">=</span><span class="st">&#39;one&#39;</span>)</span>
+<span id="cb22-6"><a href="#cb22-6"></a>Out[<span class="dv">46</span>]: [<span class="op">&lt;</span>matplotlib.lines.Line2D at <span class="bn">0x7fb624bdf860</span><span class="op">&gt;</span>]</span>
+<span id="cb22-7"><a href="#cb22-7"></a></span>
+<span id="cb22-8"><a href="#cb22-8"></a>In [<span class="dv">47</span>]: ax.plot(randn(<span class="dv">1000</span>).cumsum(), <span class="st">&#39;k--&#39;</span>, label<span class="op">=</span><span class="st">&#39;two&#39;</span>)</span>
+<span id="cb22-9"><a href="#cb22-9"></a>Out[<span class="dv">47</span>]: [<span class="op">&lt;</span>matplotlib.lines.Line2D at <span class="bn">0x7fb624be90f0</span><span class="op">&gt;</span>]</span>
+<span id="cb22-10"><a href="#cb22-10"></a></span>
+<span id="cb22-11"><a href="#cb22-11"></a>In [<span class="dv">48</span>]: ax.plot(randn(<span class="dv">1000</span>).cumsum(), <span class="st">&#39;k.&#39;</span>, label<span class="op">=</span><span class="st">&#39;three&#39;</span>)</span>
+<span id="cb22-12"><a href="#cb22-12"></a>Out[<span class="dv">48</span>]: [<span class="op">&lt;</span>matplotlib.lines.Line2D at <span class="bn">0x7fb624be9160</span><span class="op">&gt;</span>]</span></code></pre></div>
+<p>在此之后，你可以调用ax.legend()或plt.legend()来自动创建图例（结果见图9-10）：</p>
+<div class="sourceCode" id="cb23"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1"></a>In [<span class="dv">49</span>]: ax.legend(loc<span class="op">=</span><span class="st">&#39;best&#39;</span>)</span></code></pre></div>
+<figure>
+<img src="http://upload-images.jianshu.io/upload_images/7178691-651ff89750c0a89b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="" /><figcaption>图9-10 带有三条线以及图例的简单线型图</figcaption>
+</figure>
+<p>legend方法有几个其它的loc位置参数选项。请查看文档字符串（使用ax.legend?）。</p>
+<p>loc告诉matplotlib要将图例放在哪。如果你不是吹毛求疵的话，“best”是不错的选择，因为它会选择最不碍事的位置。要从图例中去除一个或多个元素，不传入label或传入label=’<em>nolegend</em>’即可。（中文第一版这里把best错写成了beat）</p>
+<h2 id="注解以及在subplot上绘图">注解以及在Subplot上绘图</h2>
+<p>除标准的绘图类型，你可能还希望绘制一些子集的注解，可能是文本、箭头或其他图形等。注解和文字可以通过text、arrow和annotate函数进行添加。text可以将文本绘制在图表的指定坐标(x,y)，还可以加上一些自定义格式：</p>
+<div class="sourceCode" id="cb24"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1"></a>ax.text(x, y, <span class="st">&#39;Hello world!&#39;</span>,</span>
+<span id="cb24-2"><a href="#cb24-2"></a>        family<span class="op">=</span><span class="st">&#39;monospace&#39;</span>, fontsize<span class="op">=</span><span class="dv">10</span>)</span></code></pre></div>
+<p>注解中可以既含有文本也含有箭头。例如，我们根据最近的标准普尔500指数价格（来自Yahoo!Finance）绘制一张曲线图，并标出2008年到2009年金融危机期间的一些重要日期。你可以在Jupyter notebook的一个小窗中试验这段代码（图9-11是结果）：</p>
+<div class="sourceCode" id="cb25"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1"></a><span class="im">from</span> datetime <span class="im">import</span> datetime</span>
+<span id="cb25-2"><a href="#cb25-2"></a></span>
+<span id="cb25-3"><a href="#cb25-3"></a>fig <span class="op">=</span> plt.figure()</span>
+<span id="cb25-4"><a href="#cb25-4"></a>ax <span class="op">=</span> fig.add_subplot(<span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>)</span>
+<span id="cb25-5"><a href="#cb25-5"></a></span>
+<span id="cb25-6"><a href="#cb25-6"></a>data <span class="op">=</span> pd.read_csv(<span class="st">&#39;examples/spx.csv&#39;</span>, index_col<span class="op">=</span><span class="dv">0</span>, parse_dates<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb25-7"><a href="#cb25-7"></a>spx <span class="op">=</span> data[<span class="st">&#39;SPX&#39;</span>]</span>
+<span id="cb25-8"><a href="#cb25-8"></a></span>
+<span id="cb25-9"><a href="#cb25-9"></a>spx.plot(ax<span class="op">=</span>ax, style<span class="op">=</span><span class="st">&#39;k-&#39;</span>)</span>
+<span id="cb25-10"><a href="#cb25-10"></a></span>
+<span id="cb25-11"><a href="#cb25-11"></a>crisis_data <span class="op">=</span> [</span>
+<span id="cb25-12"><a href="#cb25-12"></a>    (datetime(<span class="dv">2007</span>, <span class="dv">10</span>, <span class="dv">11</span>), <span class="st">&#39;Peak of bull market&#39;</span>),</span>
+<span id="cb25-13"><a href="#cb25-13"></a>    (datetime(<span class="dv">2008</span>, <span class="dv">3</span>, <span class="dv">12</span>), <span class="st">&#39;Bear Stearns Fails&#39;</span>),</span>
+<span id="cb25-14"><a href="#cb25-14"></a>    (datetime(<span class="dv">2008</span>, <span class="dv">9</span>, <span class="dv">15</span>), <span class="st">&#39;Lehman Bankruptcy&#39;</span>)</span>
+<span id="cb25-15"><a href="#cb25-15"></a>]</span>
+<span id="cb25-16"><a href="#cb25-16"></a></span>
+<span id="cb25-17"><a href="#cb25-17"></a><span class="cf">for</span> date, label <span class="kw">in</span> crisis_data:</span>
+<span id="cb25-18"><a href="#cb25-18"></a>    ax.annotate(label, xy<span class="op">=</span>(date, spx.asof(date) <span class="op">+</span> <span class="dv">75</span>),</span>
+<span id="cb25-19"><a href="#cb25-19"></a>                xytext<span class="op">=</span>(date, spx.asof(date) <span class="op">+</span> <span class="dv">225</span>),</span>
+<span id="cb25-20"><a href="#cb25-20"></a>                arrowprops<span class="op">=</span><span class="bu">dict</span>(facecolor<span class="op">=</span><span class="st">&#39;black&#39;</span>, headwidth<span class="op">=</span><span class="dv">4</span>, width<span class="op">=</span><span class="dv">2</span>,</span>
+<span id="cb25-21"><a href="#cb25-21"></a>                                headlength<span class="op">=</span><span class="dv">4</span>),</span>
+<span id="cb25-22"><a href="#cb25-22"></a>                horizontalalignment<span class="op">=</span><span class="st">&#39;left&#39;</span>, verticalalignment<span class="op">=</span><span class="st">&#39;top&#39;</span>)</span>
+<span id="cb25-23"><a href="#cb25-23"></a></span>
+<span id="cb25-24"><a href="#cb25-24"></a><span class="co"># Zoom in on 2007-2010</span></span>
+<span id="cb25-25"><a href="#cb25-25"></a>ax.set_xlim([<span class="st">&#39;1/1/2007&#39;</span>, <span class="st">&#39;1/1/2011&#39;</span>])</span>
+<span id="cb25-26"><a href="#cb25-26"></a>ax.set_ylim([<span class="dv">600</span>, <span class="dv">1800</span>])</span>
+<span id="cb25-27"><a href="#cb25-27"></a></span>
+<span id="cb25-28"><a href="#cb25-28"></a>ax.set_title(<span class="st">&#39;Important dates in the 2008-2009 financial crisis&#39;</span>)</span></code></pre></div>
+<figure>
+<img src="http://upload-images.jianshu.io/upload_images/7178691-3127eaa51f5e4c2c.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="" /><figcaption>图9-11 2008-2009年金融危机期间的重要日期</figcaption>
+</figure>
+<p>这张图中有几个重要的点要强调：ax.annotate方法可以在指定的x和y坐标轴绘制标签。我们使用set_xlim和set_ylim人工设定起始和结束边界，而不使用matplotlib的默认方法。最后，用ax.set_title添加图标标题。</p>
+<p>更多有关注解的示例，请访问matplotlib的在线示例库。</p>
+<p>图形的绘制要麻烦一些。matplotlib有一些表示常见图形的对象。这些对象被称为块（patch）。其中有些（如Rectangle和Circle），可以在matplotlib.pyplot中找到，但完整集合位于matplotlib.patches。</p>
+<p>要在图表中添加一个图形，你需要创建一个块对象shp，然后通过ax.add_patch(shp)将其添加到subplot中（如图9-12所示）：</p>
+<div class="sourceCode" id="cb26"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1"></a>fig <span class="op">=</span> plt.figure()</span>
+<span id="cb26-2"><a href="#cb26-2"></a>ax <span class="op">=</span> fig.add_subplot(<span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>)</span>
+<span id="cb26-3"><a href="#cb26-3"></a></span>
+<span id="cb26-4"><a href="#cb26-4"></a>rect <span class="op">=</span> plt.Rectangle((<span class="fl">0.2</span>, <span class="fl">0.75</span>), <span class="fl">0.4</span>, <span class="fl">0.15</span>, color<span class="op">=</span><span class="st">&#39;k&#39;</span>, alpha<span class="op">=</span><span class="fl">0.3</span>)</span>
+<span id="cb26-5"><a href="#cb26-5"></a>circ <span class="op">=</span> plt.Circle((<span class="fl">0.7</span>, <span class="fl">0.2</span>), <span class="fl">0.15</span>, color<span class="op">=</span><span class="st">&#39;b&#39;</span>, alpha<span class="op">=</span><span class="fl">0.3</span>)</span>
+<span id="cb26-6"><a href="#cb26-6"></a>pgon <span class="op">=</span> plt.Polygon([[<span class="fl">0.15</span>, <span class="fl">0.15</span>], [<span class="fl">0.35</span>, <span class="fl">0.4</span>], [<span class="fl">0.2</span>, <span class="fl">0.6</span>]],</span>
+<span id="cb26-7"><a href="#cb26-7"></a>                   color<span class="op">=</span><span class="st">&#39;g&#39;</span>, alpha<span class="op">=</span><span class="fl">0.5</span>)</span>
+<span id="cb26-8"><a href="#cb26-8"></a></span>
+<span id="cb26-9"><a href="#cb26-9"></a>ax.add_patch(rect)</span>
+<span id="cb26-10"><a href="#cb26-10"></a>ax.add_patch(circ)</span>
+<span id="cb26-11"><a href="#cb26-11"></a>ax.add_patch(pgon)</span></code></pre></div>
+<figure>
+<img src="http://upload-images.jianshu.io/upload_images/7178691-1f8a3d7a3a02d7d8.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="" /><figcaption>图9-12 由三个块图形组成的图</figcaption>
+</figure>
+<p>如果查看许多常见图表对象的具体实现代码，你就会发现它们其实就是由块patch组装而成的。</p>
+<h2 id="将图表保存到文件">将图表保存到文件</h2>
+<p>利用plt.savefig可以将当前图表保存到文件。该方法相当于Figure对象的实例方法savefig。例如，要将图表保存为SVG文件，你只需输入：</p>
+<div class="sourceCode" id="cb27"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1"></a>plt.savefig(<span class="st">&#39;figpath.svg&#39;</span>)</span></code></pre></div>
+<p>文件类型是通过文件扩展名推断出来的。因此，如果你使用的是.pdf，就会得到一个PDF文件。我在发布图片时最常用到两个重要的选项是dpi（控制“每英寸点数”分辨率）和bbox_inches（可以剪除当前图表周围的空白部分）。要得到一张带有最小白边且分辨率为400DPI的PNG图片，你可以：</p>
+<div class="sourceCode" id="cb28"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1"></a>plt.savefig(<span class="st">&#39;figpath.png&#39;</span>, dpi<span class="op">=</span><span class="dv">400</span>, bbox_inches<span class="op">=</span><span class="st">&#39;tight&#39;</span>)</span></code></pre></div>
+<p>savefig并非一定要写入磁盘，也可以写入任何文件型的对象，比如BytesIO：</p>
+<div class="sourceCode" id="cb29"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1"></a><span class="im">from</span> io <span class="im">import</span> BytesIO</span>
+<span id="cb29-2"><a href="#cb29-2"></a><span class="bu">buffer</span> <span class="op">=</span> BytesIO()</span>
+<span id="cb29-3"><a href="#cb29-3"></a>plt.savefig(<span class="bu">buffer</span>)</span>
+<span id="cb29-4"><a href="#cb29-4"></a>plot_data <span class="op">=</span> <span class="bu">buffer</span>.getvalue()</span></code></pre></div>
+<p>表9-2列出了savefig的其它选项。</p>
+<figure>
+<img src="http://upload-images.jianshu.io/upload_images/7178691-4bee796bf7262423.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="" /><figcaption>表9-2 Figure.savefig的选项</figcaption>
+</figure>
+<h2 id="matplotlib配置">matplotlib配置</h2>
+<p>matplotlib自带一些配色方案，以及为生成出版质量的图片而设定的默认配置信息。幸运的是，几乎所有默认行为都能通过一组全局参数进行自定义，它们可以管理图像大小、subplot边距、配色方案、字体大小、网格类型等。一种Python编程方式配置系统的方法是使用rc方法。例如，要将全局的图像默认大小设置为10×10，你可以执行：</p>
+<div class="sourceCode" id="cb30"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1"></a>plt.rc(<span class="st">&#39;figure&#39;</span>, figsize<span class="op">=</span>(<span class="dv">10</span>, <span class="dv">10</span>))</span></code></pre></div>
+<p>rc的第一个参数是希望自定义的对象，如’figure’、‘axes’、‘xtick’、‘ytick’、‘grid’、’legend’等。其后可以跟上一系列的关键字参数。一个简单的办法是将这些选项写成一个字典：</p>
+<div class="sourceCode" id="cb31"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb31-1"><a href="#cb31-1"></a>font_options <span class="op">=</span> {<span class="st">&#39;family&#39;</span> : <span class="st">&#39;monospace&#39;</span>,</span>
+<span id="cb31-2"><a href="#cb31-2"></a>                <span class="st">&#39;weight&#39;</span> : <span class="st">&#39;bold&#39;</span>,</span>
+<span id="cb31-3"><a href="#cb31-3"></a>                <span class="st">&#39;size&#39;</span>   : <span class="st">&#39;small&#39;</span>}</span>
+<span id="cb31-4"><a href="#cb31-4"></a>plt.rc(<span class="st">&#39;font&#39;</span>, <span class="op">**</span>font_options)</span></code></pre></div>
+<p>要了解全部的自定义选项，请查阅matplotlib的配置文件matplotlibrc（位于matplotlib/mpl-data目录中）。如果对该文件进行了自定义，并将其放在你自己的.matplotlibrc目录中，则每次使用matplotlib时就会加载该文件。</p>
+<p>下一节，我们会看到，seaborn包有若干内置的绘图主题或类型，它们使用了matplotlib的内部配置。</p>
+<h1 id="使用pandas和seaborn绘图">9.2 使用pandas和seaborn绘图</h1>
+<p>matplotlib实际上是一种比较低级的工具。要绘制一张图表，你组装一些基本组件就行：数据展示（即图表类型：线型图、柱状图、盒形图、散布图、等值线图等）、图例、标题、刻度标签以及其他注解型信息。</p>
+<p>在pandas中，我们有多列数据，还有行和列标签。pandas自身就有内置的方法，用于简化从DataFrame和Series绘制图形。另一个库seaborn（https://seaborn.pydata.org/），由Michael Waskom创建的静态图形库。Seaborn简化了许多常见可视类型的创建。</p>
+<blockquote>
+<p>提示：引入seaborn会修改matplotlib默认的颜色方案和绘图类型，以提高可读性和美观度。即使你不使用seaborn API，你可能也会引入seaborn，作为提高美观度和绘制常见matplotlib图形的简化方法。</p>
+</blockquote>
+<h2 id="线型图">线型图</h2>
+<p>Series和DataFrame都有一个用于生成各类图表的plot方法。默认情况下，它们所生成的是线型图（如图9-13所示）：</p>
+<div class="sourceCode" id="cb32"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb32-1"><a href="#cb32-1"></a>In [<span class="dv">60</span>]: s <span class="op">=</span> pd.Series(np.random.randn(<span class="dv">10</span>).cumsum(), index<span class="op">=</span>np.arange(<span class="dv">0</span>, <span class="dv">100</span>, <span class="dv">10</span>))</span>
+<span id="cb32-2"><a href="#cb32-2"></a></span>
+<span id="cb32-3"><a href="#cb32-3"></a>In [<span class="dv">61</span>]: s.plot()</span></code></pre></div>
+<figure>
+<img src="http://upload-images.jianshu.io/upload_images/7178691-f28e5ab2ac94c7a2.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="" /><figcaption>图9-13 简单的Series图表示例</figcaption>
+</figure>
+<p>该Series对象的索引会被传给matplotlib，并用以绘制X轴。可以通过use_index=False禁用该功能。X轴的刻度和界限可以通过xticks和xlim选项进行调节，Y轴就用yticks和ylim。plot参数的完整列表请参见表9-3。我只会讲解其中几个，剩下的就留给读者自己去研究了。</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/7178691-6d9fbf863c09370a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" /></p>
+<figure>
+<img src="http://upload-images.jianshu.io/upload_images/7178691-44e50562aeb5eb49.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="" /><figcaption>表9-3 Series.plot方法的参数</figcaption>
+</figure>
+<p>pandas的大部分绘图方法都有一个可选的ax参数，它可以是一个matplotlib的subplot对象。这使你能够在网格布局中更为灵活地处理subplot的位置。</p>
+<p>DataFrame的plot方法会在一个subplot中为各列绘制一条线，并自动创建图例（如图9-14所示）：</p>
+<div class="sourceCode" id="cb33"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb33-1"><a href="#cb33-1"></a>In [<span class="dv">62</span>]: df <span class="op">=</span> pd.DataFrame(np.random.randn(<span class="dv">10</span>, <span class="dv">4</span>).cumsum(<span class="dv">0</span>),</span>
+<span id="cb33-2"><a href="#cb33-2"></a>   ....:                   columns<span class="op">=</span>[<span class="st">&#39;A&#39;</span>, <span class="st">&#39;B&#39;</span>, <span class="st">&#39;C&#39;</span>, <span class="st">&#39;D&#39;</span>],</span>
+<span id="cb33-3"><a href="#cb33-3"></a>   ....:                   index<span class="op">=</span>np.arange(<span class="dv">0</span>, <span class="dv">100</span>, <span class="dv">10</span>))</span>
+<span id="cb33-4"><a href="#cb33-4"></a></span>
+<span id="cb33-5"><a href="#cb33-5"></a>In [<span class="dv">63</span>]: df.plot()</span></code></pre></div>
+<figure>
+<img src="http://upload-images.jianshu.io/upload_images/7178691-a1234d5e5ee41a40.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="" /><figcaption>图9-14 简单的DataFrame绘图</figcaption>
+</figure>
+<p>plot属性包含一批不同绘图类型的方法。例如，df.plot()等价于df.plot.line()。后面会学习这些方法。</p>
+<blockquote>
+<p>笔记：plot的其他关键字参数会被传给相应的matplotlib绘图函数，所以要更深入地自定义图表，就必须学习更多有关matplotlib API的知识。</p>
+</blockquote>
+<p>DataFrame还有一些用于对列进行灵活处理的选项，例如，是要将所有列都绘制到一个subplot中还是创建各自的subplot。详细信息请参见表9-4。</p>
+<figure>
+<img src="http://upload-images.jianshu.io/upload_images/7178691-96651ecaa90f1c68.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="" /><figcaption>表9-4 专用于DataFrame的plot参数</figcaption>
+</figure>
+<blockquote>
+<p>注意： 有关时间序列的绘图，请见第11章。</p>
+</blockquote>
+<h2 id="柱状图">柱状图</h2>
+<p>plot.bar()和plot.barh()分别绘制水平和垂直的柱状图。这时，Series和DataFrame的索引将会被用作X（bar）或Y（barh）刻度（如图9-15所示）：</p>
+<div class="sourceCode" id="cb34"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb34-1"><a href="#cb34-1"></a>In [<span class="dv">64</span>]: fig, axes <span class="op">=</span> plt.subplots(<span class="dv">2</span>, <span class="dv">1</span>)</span>
+<span id="cb34-2"><a href="#cb34-2"></a></span>
+<span id="cb34-3"><a href="#cb34-3"></a>In [<span class="dv">65</span>]: data <span class="op">=</span> pd.Series(np.random.rand(<span class="dv">16</span>), index<span class="op">=</span><span class="bu">list</span>(<span class="st">&#39;abcdefghijklmnop&#39;</span>))</span>
+<span id="cb34-4"><a href="#cb34-4"></a></span>
+<span id="cb34-5"><a href="#cb34-5"></a>In [<span class="dv">66</span>]: data.plot.bar(ax<span class="op">=</span>axes[<span class="dv">0</span>], color<span class="op">=</span><span class="st">&#39;k&#39;</span>, alpha<span class="op">=</span><span class="fl">0.7</span>)</span>
+<span id="cb34-6"><a href="#cb34-6"></a>Out[<span class="dv">66</span>]: <span class="op">&lt;</span>matplotlib.axes._subplots.AxesSubplot at <span class="bn">0x7fb62493d470</span><span class="op">&gt;</span></span>
+<span id="cb34-7"><a href="#cb34-7"></a></span>
+<span id="cb34-8"><a href="#cb34-8"></a>In [<span class="dv">67</span>]: data.plot.barh(ax<span class="op">=</span>axes[<span class="dv">1</span>], color<span class="op">=</span><span class="st">&#39;k&#39;</span>, alpha<span class="op">=</span><span class="fl">0.7</span>)</span></code></pre></div>
+<figure>
+<img src="http://upload-images.jianshu.io/upload_images/7178691-cd54c7ccfa3f0687.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="" /><figcaption>图9-15 水平和垂直的柱状图</figcaption>
+</figure>
+<p>color=’k’和alpha=0.7设定了图形的颜色为黑色，并使用部分的填充透明度。对于DataFrame，柱状图会将每一行的值分为一组，并排显示，如图9-16所示：</p>
+<div class="sourceCode" id="cb35"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb35-1"><a href="#cb35-1"></a>In [<span class="dv">69</span>]: df <span class="op">=</span> pd.DataFrame(np.random.rand(<span class="dv">6</span>, <span class="dv">4</span>),</span>
+<span id="cb35-2"><a href="#cb35-2"></a>   ....:                   index<span class="op">=</span>[<span class="st">&#39;one&#39;</span>, <span class="st">&#39;two&#39;</span>, <span class="st">&#39;three&#39;</span>, <span class="st">&#39;four&#39;</span>, <span class="st">&#39;five&#39;</span>, <span class="st">&#39;six&#39;</span>],</span>
+<span id="cb35-3"><a href="#cb35-3"></a>   ....:                   columns<span class="op">=</span>pd.Index([<span class="st">&#39;A&#39;</span>, <span class="st">&#39;B&#39;</span>, <span class="st">&#39;C&#39;</span>, <span class="st">&#39;D&#39;</span>], name<span class="op">=</span><span class="st">&#39;Genus&#39;</span>))</span>
+<span id="cb35-4"><a href="#cb35-4"></a></span>
+<span id="cb35-5"><a href="#cb35-5"></a>In [<span class="dv">70</span>]: df</span>
+<span id="cb35-6"><a href="#cb35-6"></a>Out[<span class="dv">70</span>]: </span>
+<span id="cb35-7"><a href="#cb35-7"></a>Genus         A         B         C         D</span>
+<span id="cb35-8"><a href="#cb35-8"></a>one    <span class="fl">0.370670</span>  <span class="fl">0.602792</span>  <span class="fl">0.229159</span>  <span class="fl">0.486744</span></span>
+<span id="cb35-9"><a href="#cb35-9"></a>two    <span class="fl">0.420082</span>  <span class="fl">0.571653</span>  <span class="fl">0.049024</span>  <span class="fl">0.880592</span></span>
+<span id="cb35-10"><a href="#cb35-10"></a>three  <span class="fl">0.814568</span>  <span class="fl">0.277160</span>  <span class="fl">0.880316</span>  <span class="fl">0.431326</span></span>
+<span id="cb35-11"><a href="#cb35-11"></a>four   <span class="fl">0.374020</span>  <span class="fl">0.899420</span>  <span class="fl">0.460304</span>  <span class="fl">0.100843</span></span>
+<span id="cb35-12"><a href="#cb35-12"></a>five   <span class="fl">0.433270</span>  <span class="fl">0.125107</span>  <span class="fl">0.494675</span>  <span class="fl">0.961825</span></span>
+<span id="cb35-13"><a href="#cb35-13"></a>six    <span class="fl">0.601648</span>  <span class="fl">0.478576</span>  <span class="fl">0.205690</span>  <span class="fl">0.560547</span></span>
+<span id="cb35-14"><a href="#cb35-14"></a></span>
+<span id="cb35-15"><a href="#cb35-15"></a>In [<span class="dv">71</span>]: df.plot.bar()</span></code></pre></div>
+<figure>
+<img src="http://upload-images.jianshu.io/upload_images/7178691-bfc141acb37d99b5.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="" /><figcaption>图9-16 DataFrame的柱状图</figcaption>
+</figure>
+<p>注意，DataFrame各列的名称“Genus”被用作了图例的标题。</p>
+<p>设置stacked=True即可为DataFrame生成堆积柱状图，这样每行的值就会被堆积在一起（如图9-17所示）：</p>
+<div class="sourceCode" id="cb36"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb36-1"><a href="#cb36-1"></a>In [<span class="dv">73</span>]: df.plot.barh(stacked<span class="op">=</span><span class="va">True</span>, alpha<span class="op">=</span><span class="fl">0.5</span>)</span></code></pre></div>
+<figure>
+<img src="http://upload-images.jianshu.io/upload_images/7178691-c19e4246eb897978.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="" /><figcaption>图9-17 DataFrame的堆积柱状图</figcaption>
+</figure>
+<blockquote>
+<p>笔记：柱状图有一个非常不错的用法：利用value_counts图形化显示Series中各值的出现频率，比如s.value_counts().plot.bar()。</p>
+</blockquote>
+<p>再以本书前面用过的那个有关小费的数据集为例，假设我们想要做一张堆积柱状图以展示每天各种聚会规模的数据点的百分比。我用read_csv将数据加载进来，然后根据日期和聚会规模创建一张交叉表：</p>
+<div class="sourceCode" id="cb37"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb37-1"><a href="#cb37-1"></a>In [<span class="dv">75</span>]: tips <span class="op">=</span> pd.read_csv(<span class="st">&#39;examples/tips.csv&#39;</span>)</span>
+<span id="cb37-2"><a href="#cb37-2"></a></span>
+<span id="cb37-3"><a href="#cb37-3"></a>In [<span class="dv">76</span>]: party_counts <span class="op">=</span> pd.crosstab(tips[<span class="st">&#39;day&#39;</span>], tips[<span class="st">&#39;size&#39;</span>])</span>
+<span id="cb37-4"><a href="#cb37-4"></a></span>
+<span id="cb37-5"><a href="#cb37-5"></a>In [<span class="dv">77</span>]: party_counts</span>
+<span id="cb37-6"><a href="#cb37-6"></a>Out[<span class="dv">77</span>]: </span>
+<span id="cb37-7"><a href="#cb37-7"></a>size  <span class="dv">1</span>   <span class="dv">2</span>   <span class="dv">3</span>   <span class="dv">4</span>  <span class="dv">5</span>  <span class="dv">6</span></span>
+<span id="cb37-8"><a href="#cb37-8"></a>day                      </span>
+<span id="cb37-9"><a href="#cb37-9"></a>Fri   <span class="dv">1</span>  <span class="dv">16</span>   <span class="dv">1</span>   <span class="dv">1</span>  <span class="dv">0</span>  <span class="dv">0</span></span>
+<span id="cb37-10"><a href="#cb37-10"></a>Sat   <span class="dv">2</span>  <span class="dv">53</span>  <span class="dv">18</span>  <span class="dv">13</span>  <span class="dv">1</span>  <span class="dv">0</span></span>
+<span id="cb37-11"><a href="#cb37-11"></a>Sun   <span class="dv">0</span>  <span class="dv">39</span>  <span class="dv">15</span>  <span class="dv">18</span>  <span class="dv">3</span>  <span class="dv">1</span></span>
+<span id="cb37-12"><a href="#cb37-12"></a>Thur  <span class="dv">1</span>  <span class="dv">48</span>   <span class="dv">4</span>   <span class="dv">5</span>  <span class="dv">1</span>  <span class="dv">3</span></span>
+<span id="cb37-13"><a href="#cb37-13"></a></span>
+<span id="cb37-14"><a href="#cb37-14"></a><span class="co"># Not many 1- and 6-person parties</span></span>
+<span id="cb37-15"><a href="#cb37-15"></a>In [<span class="dv">78</span>]: party_counts <span class="op">=</span> party_counts.loc[:, <span class="dv">2</span>:<span class="dv">5</span>]</span></code></pre></div>
+<p>然后进行规格化，使得各行的和为1，并生成图表（如图9-18所示）：</p>
+<div class="sourceCode" id="cb38"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb38-1"><a href="#cb38-1"></a><span class="co"># Normalize to sum to 1</span></span>
+<span id="cb38-2"><a href="#cb38-2"></a>In [<span class="dv">79</span>]: party_pcts <span class="op">=</span> party_counts.div(party_counts.<span class="bu">sum</span>(<span class="dv">1</span>), axis<span class="op">=</span><span class="dv">0</span>)</span>
+<span id="cb38-3"><a href="#cb38-3"></a></span>
+<span id="cb38-4"><a href="#cb38-4"></a>In [<span class="dv">80</span>]: party_pcts</span>
+<span id="cb38-5"><a href="#cb38-5"></a>Out[<span class="dv">80</span>]: </span>
+<span id="cb38-6"><a href="#cb38-6"></a>size         <span class="dv">2</span>         <span class="dv">3</span>         <span class="dv">4</span>         <span class="dv">5</span></span>
+<span id="cb38-7"><a href="#cb38-7"></a>day                                         </span>
+<span id="cb38-8"><a href="#cb38-8"></a>Fri   <span class="fl">0.888889</span>  <span class="fl">0.055556</span>  <span class="fl">0.055556</span>  <span class="fl">0.000000</span></span>
+<span id="cb38-9"><a href="#cb38-9"></a>Sat   <span class="fl">0.623529</span>  <span class="fl">0.211765</span>  <span class="fl">0.152941</span>  <span class="fl">0.011765</span></span>
+<span id="cb38-10"><a href="#cb38-10"></a>Sun   <span class="fl">0.520000</span>  <span class="fl">0.200000</span>  <span class="fl">0.240000</span>  <span class="fl">0.040000</span></span>
+<span id="cb38-11"><a href="#cb38-11"></a>Thur  <span class="fl">0.827586</span>  <span class="fl">0.068966</span>  <span class="fl">0.086207</span>  <span class="fl">0.017241</span></span>
+<span id="cb38-12"><a href="#cb38-12"></a></span>
+<span id="cb38-13"><a href="#cb38-13"></a>In [<span class="dv">81</span>]: party_pcts.plot.bar()</span></code></pre></div>
+<figure>
+<img src="http://upload-images.jianshu.io/upload_images/7178691-2918f67936823834.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="" /><figcaption>图9-18 每天各种聚会规模的比例</figcaption>
+</figure>
+<p>于是，通过该数据集就可以看出，聚会规模在周末会变大。</p>
+<p>对于在绘制一个图形之前，需要进行合计的数据，使用seaborn可以减少工作量。用seaborn来看每天的小费比例（图9-19是结果）：</p>
+<div class="sourceCode" id="cb39"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb39-1"><a href="#cb39-1"></a>In [<span class="dv">83</span>]: <span class="im">import</span> seaborn <span class="im">as</span> sns</span>
+<span id="cb39-2"><a href="#cb39-2"></a></span>
+<span id="cb39-3"><a href="#cb39-3"></a>In [<span class="dv">84</span>]: tips[<span class="st">&#39;tip_pct&#39;</span>] <span class="op">=</span> tips[<span class="st">&#39;tip&#39;</span>] <span class="op">/</span> (tips[<span class="st">&#39;total_bill&#39;</span>] <span class="op">-</span> tips[<span class="st">&#39;tip&#39;</span>])</span>
+<span id="cb39-4"><a href="#cb39-4"></a></span>
+<span id="cb39-5"><a href="#cb39-5"></a>In [<span class="dv">85</span>]: tips.head()</span>
+<span id="cb39-6"><a href="#cb39-6"></a>Out[<span class="dv">85</span>]: </span>
+<span id="cb39-7"><a href="#cb39-7"></a>   total_bill   tip smoker  day    time  size   tip_pct</span>
+<span id="cb39-8"><a href="#cb39-8"></a><span class="dv">0</span>       <span class="fl">16.99</span>  <span class="fl">1.01</span>     No  Sun  Dinner     <span class="dv">2</span>  <span class="fl">0.063204</span></span>
+<span id="cb39-9"><a href="#cb39-9"></a><span class="dv">1</span>       <span class="fl">10.34</span>  <span class="fl">1.66</span>     No  Sun  Dinner     <span class="dv">3</span>  <span class="fl">0.191244</span></span>
+<span id="cb39-10"><a href="#cb39-10"></a><span class="dv">2</span>       <span class="fl">21.01</span>  <span class="fl">3.50</span>     No  Sun  Dinner     <span class="dv">3</span>  <span class="fl">0.199886</span></span>
+<span id="cb39-11"><a href="#cb39-11"></a><span class="dv">3</span>       <span class="fl">23.68</span>  <span class="fl">3.31</span>     No  Sun  Dinner     <span class="dv">2</span>  <span class="fl">0.162494</span></span>
+<span id="cb39-12"><a href="#cb39-12"></a><span class="dv">4</span>       <span class="fl">24.59</span>  <span class="fl">3.61</span>     No  Sun  Dinner     <span class="dv">4</span>  <span class="fl">0.172069</span></span>
+<span id="cb39-13"><a href="#cb39-13"></a></span>
+<span id="cb39-14"><a href="#cb39-14"></a>In [<span class="dv">86</span>]: sns.barplot(x<span class="op">=</span><span class="st">&#39;tip_pct&#39;</span>, y<span class="op">=</span><span class="st">&#39;day&#39;</span>, data<span class="op">=</span>tips, orient<span class="op">=</span><span class="st">&#39;h&#39;</span>)</span></code></pre></div>
+<figure>
+<img src="http://upload-images.jianshu.io/upload_images/7178691-c33e8b3add99904b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="" /><figcaption>图9-19 小费的每日比例，带有误差条</figcaption>
+</figure>
+<p>seaborn的绘制函数使用data参数，它可能是pandas的DataFrame。其它的参数是关于列的名字。因为一天的每个值有多次观察，柱状图的值是tip_pct的平均值。绘制在柱状图上的黑线代表95%置信区间（可以通过可选参数配置）。</p>
+<p>seaborn.barplot有颜色选项，使我们能够通过一个额外的值设置（见图9-20）：</p>
+<div class="sourceCode" id="cb40"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb40-1"><a href="#cb40-1"></a>In [<span class="dv">88</span>]: sns.barplot(x<span class="op">=</span><span class="st">&#39;tip_pct&#39;</span>, y<span class="op">=</span><span class="st">&#39;day&#39;</span>, hue<span class="op">=</span><span class="st">&#39;time&#39;</span>, data<span class="op">=</span>tips, orient<span class="op">=</span><span class="st">&#39;h&#39;</span>)</span></code></pre></div>
+<figure>
+<img src="http://upload-images.jianshu.io/upload_images/7178691-06abe2f070222115.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="" /><figcaption>图9-20 根据天和时间的小费比例</figcaption>
+</figure>
+<p>注意，seaborn已经自动修改了图形的美观度：默认调色板，图形背景和网格线的颜色。你可以用seaborn.set在不同的图形外观之间切换：</p>
+<div class="sourceCode" id="cb41"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb41-1"><a href="#cb41-1"></a>In [<span class="dv">90</span>]: sns.<span class="bu">set</span>(style<span class="op">=</span><span class="st">&quot;whitegrid&quot;</span>)</span></code></pre></div>
+<h2 id="直方图和密度图">直方图和密度图</h2>
+<p>直方图（histogram）是一种可以对值频率进行离散化显示的柱状图。数据点被拆分到离散的、间隔均匀的面元中，绘制的是各面元中数据点的数量。再以前面那个小费数据为例，通过在Series使用plot.hist方法，我们可以生成一张“小费占消费总额百分比”的直方图（如图9-21所示）：</p>
+<div class="sourceCode" id="cb42"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb42-1"><a href="#cb42-1"></a>In [<span class="dv">92</span>]: tips[<span class="st">&#39;tip_pct&#39;</span>].plot.hist(bins<span class="op">=</span><span class="dv">50</span>)</span></code></pre></div>
+<figure>
+<img src="http://upload-images.jianshu.io/upload_images/7178691-255279376f7649a3.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="" /><figcaption>图9-21 小费百分比的直方图</figcaption>
+</figure>
+<p>与此相关的一种图表类型是密度图，它是通过计算“可能会产生观测数据的连续概率分布的估计”而产生的。一般的过程是将该分布近似为一组核（即诸如正态分布之类的较为简单的分布）。因此，密度图也被称作KDE（Kernel Density Estimate，核密度估计）图。使用plot.kde和标准混合正态分布估计即可生成一张密度图（见图9-22）：</p>
+<div class="sourceCode" id="cb43"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb43-1"><a href="#cb43-1"></a>In [<span class="dv">94</span>]: tips[<span class="st">&#39;tip_pct&#39;</span>].plot.density()</span></code></pre></div>
+<figure>
+<img src="http://upload-images.jianshu.io/upload_images/7178691-ee929d033159516a.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="" /><figcaption>图9-22 小费百分比的密度图</figcaption>
+</figure>
+<p>seaborn的distplot方法绘制直方图和密度图更加简单，还可以同时画出直方图和连续密度估计图。作为例子，考虑一个双峰分布，由两个不同的标准正态分布组成（见图9-23）：</p>
+<div class="sourceCode" id="cb44"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb44-1"><a href="#cb44-1"></a>In [<span class="dv">96</span>]: comp1 <span class="op">=</span> np.random.normal(<span class="dv">0</span>, <span class="dv">1</span>, size<span class="op">=</span><span class="dv">200</span>)</span>
+<span id="cb44-2"><a href="#cb44-2"></a></span>
+<span id="cb44-3"><a href="#cb44-3"></a>In [<span class="dv">97</span>]: comp2 <span class="op">=</span> np.random.normal(<span class="dv">10</span>, <span class="dv">2</span>, size<span class="op">=</span><span class="dv">200</span>)</span>
+<span id="cb44-4"><a href="#cb44-4"></a></span>
+<span id="cb44-5"><a href="#cb44-5"></a>In [<span class="dv">98</span>]: values <span class="op">=</span> pd.Series(np.concatenate([comp1, comp2]))</span>
+<span id="cb44-6"><a href="#cb44-6"></a></span>
+<span id="cb44-7"><a href="#cb44-7"></a>In [<span class="dv">99</span>]: sns.distplot(values, bins<span class="op">=</span><span class="dv">100</span>, color<span class="op">=</span><span class="st">&#39;k&#39;</span>)</span></code></pre></div>
+<figure>
+<img src="http://upload-images.jianshu.io/upload_images/7178691-975f04d750c4efe2.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="" /><figcaption>图9-23 标准混合密度估计的标准直方图</figcaption>
+</figure>
+<h2 id="散布图或点图">散布图或点图</h2>
+<p>点图或散布图是观察两个一维数据序列之间的关系的有效手段。在下面这个例子中，我加载了来自statsmodels项目的macrodata数据集，选择了几个变量，然后计算对数差：</p>
+<div class="sourceCode" id="cb45"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb45-1"><a href="#cb45-1"></a>In [<span class="dv">100</span>]: macro <span class="op">=</span> pd.read_csv(<span class="st">&#39;examples/macrodata.csv&#39;</span>)</span>
+<span id="cb45-2"><a href="#cb45-2"></a></span>
+<span id="cb45-3"><a href="#cb45-3"></a>In [<span class="dv">101</span>]: data <span class="op">=</span> macro[[<span class="st">&#39;cpi&#39;</span>, <span class="st">&#39;m1&#39;</span>, <span class="st">&#39;tbilrate&#39;</span>, <span class="st">&#39;unemp&#39;</span>]]</span>
+<span id="cb45-4"><a href="#cb45-4"></a></span>
+<span id="cb45-5"><a href="#cb45-5"></a>In [<span class="dv">102</span>]: trans_data <span class="op">=</span> np.log(data).diff().dropna()</span>
+<span id="cb45-6"><a href="#cb45-6"></a></span>
+<span id="cb45-7"><a href="#cb45-7"></a>In [<span class="dv">103</span>]: trans_data[<span class="op">-</span><span class="dv">5</span>:]</span>
+<span id="cb45-8"><a href="#cb45-8"></a>Out[<span class="dv">103</span>]: </span>
+<span id="cb45-9"><a href="#cb45-9"></a>          cpi        m1  tbilrate     unemp</span>
+<span id="cb45-10"><a href="#cb45-10"></a><span class="dv">198</span> <span class="op">-</span><span class="fl">0.007904</span>  <span class="fl">0.045361</span> <span class="op">-</span><span class="fl">0.396881</span>  <span class="fl">0.105361</span></span>
+<span id="cb45-11"><a href="#cb45-11"></a><span class="dv">199</span> <span class="op">-</span><span class="fl">0.021979</span>  <span class="fl">0.066753</span> <span class="op">-</span><span class="fl">2.277267</span>  <span class="fl">0.139762</span></span>
+<span id="cb45-12"><a href="#cb45-12"></a><span class="dv">200</span>  <span class="fl">0.002340</span>  <span class="fl">0.010286</span>  <span class="fl">0.606136</span>  <span class="fl">0.160343</span></span>
+<span id="cb45-13"><a href="#cb45-13"></a><span class="dv">201</span>  <span class="fl">0.008419</span>  <span class="fl">0.037461</span> <span class="op">-</span><span class="fl">0.200671</span>  <span class="fl">0.127339</span></span>
+<span id="cb45-14"><a href="#cb45-14"></a><span class="dv">202</span>  <span class="fl">0.008894</span>  <span class="fl">0.012202</span> <span class="op">-</span><span class="fl">0.405465</span>  <span class="fl">0.042560</span></span></code></pre></div>
+<p>然后可以使用seaborn的regplot方法，它可以做一个散布图，并加上一条线性回归的线（见图9-24）：</p>
+<div class="sourceCode" id="cb46"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb46-1"><a href="#cb46-1"></a>In [<span class="dv">105</span>]: sns.regplot(<span class="st">&#39;m1&#39;</span>, <span class="st">&#39;unemp&#39;</span>, data<span class="op">=</span>trans_data)</span>
+<span id="cb46-2"><a href="#cb46-2"></a>Out[<span class="dv">105</span>]: <span class="op">&lt;</span>matplotlib.axes._subplots.AxesSubplot at <span class="bn">0x7fb613720be0</span><span class="op">&gt;</span></span>
+<span id="cb46-3"><a href="#cb46-3"></a></span>
+<span id="cb46-4"><a href="#cb46-4"></a>In [<span class="dv">106</span>]: plt.title(<span class="st">&#39;Changes in log </span><span class="sc">%s</span><span class="st"> versus log </span><span class="sc">%s</span><span class="st">&#39;</span> <span class="op">%</span> (<span class="st">&#39;m1&#39;</span>, <span class="st">&#39;unemp&#39;</span>))</span></code></pre></div>
+<figure>
+<img src="http://upload-images.jianshu.io/upload_images/7178691-2133d20739478a80.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="" /><figcaption>图9-24 seaborn的回归/散布图</figcaption>
+</figure>
+<p>在探索式数据分析工作中，同时观察一组变量的散布图是很有意义的，这也被称为散布图矩阵（scatter plot matrix）。纯手工创建这样的图表很费工夫，所以seaborn提供了一个便捷的pairplot函数，它支持在对角线上放置每个变量的直方图或密度估计（见图9-25）：</p>
+<div class="sourceCode" id="cb47"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb47-1"><a href="#cb47-1"></a>In [<span class="dv">107</span>]: sns.pairplot(trans_data, diag_kind<span class="op">=</span><span class="st">&#39;kde&#39;</span>, plot_kws<span class="op">=</span>{<span class="st">&#39;alpha&#39;</span>: <span class="fl">0.2</span>})</span></code></pre></div>
+<figure>
+<img src="http://upload-images.jianshu.io/upload_images/7178691-20aa530a44e06f61.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="" /><figcaption>图9-25 statsmodels macro data的散布图矩阵</figcaption>
+</figure>
+<p>你可能注意到了plot_kws参数。它可以让我们传递配置选项到非对角线元素上的图形使用。对于更详细的配置选项，可以查阅seaborn.pairplot文档字符串。</p>
+<p>##分面网格（facet grid）和类型数据 要是数据集有额外的分组维度呢？有多个分类变量的数据可视化的一种方法是使用小面网格。seaborn有一个有用的内置函数factorplot，可以简化制作多种分面图（见图9-26）：</p>
+<div class="sourceCode" id="cb48"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb48-1"><a href="#cb48-1"></a> In [<span class="dv">108</span>]: sns.factorplot(x<span class="op">=</span><span class="st">&#39;day&#39;</span>, y<span class="op">=</span><span class="st">&#39;tip_pct&#39;</span>, hue<span class="op">=</span><span class="st">&#39;time&#39;</span>, col<span class="op">=</span><span class="st">&#39;smoker&#39;</span>,</span>
+<span id="cb48-2"><a href="#cb48-2"></a>   .....:                kind<span class="op">=</span><span class="st">&#39;bar&#39;</span>, data<span class="op">=</span>tips[tips.tip_pct <span class="op">&lt;</span> <span class="dv">1</span>])</span></code></pre></div>
+<figure>
+<img src="http://upload-images.jianshu.io/upload_images/7178691-737ba19a0cbdd46f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="" /><figcaption>图9-26 按照天/时间/吸烟者的小费百分比</figcaption>
+</figure>
+<p>除了在分面中用不同的颜色按时间分组，我们还可以通过给每个时间值添加一行来扩展分面网格：</p>
+<div class="sourceCode" id="cb49"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb49-1"><a href="#cb49-1"></a>In [<span class="dv">109</span>]: sns.factorplot(x<span class="op">=</span><span class="st">&#39;day&#39;</span>, y<span class="op">=</span><span class="st">&#39;tip_pct&#39;</span>, row<span class="op">=</span><span class="st">&#39;time&#39;</span>,</span>
+<span id="cb49-2"><a href="#cb49-2"></a>   .....:                col<span class="op">=</span><span class="st">&#39;smoker&#39;</span>,</span>
+<span id="cb49-3"><a href="#cb49-3"></a>   .....:                kind<span class="op">=</span><span class="st">&#39;bar&#39;</span>, data<span class="op">=</span>tips[tips.tip_pct <span class="op">&lt;</span> <span class="dv">1</span>])</span></code></pre></div>
+<figure>
+<img src="http://upload-images.jianshu.io/upload_images/7178691-4e52192441c609f7.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="" /><figcaption>图9-27 按天的tip_pct，通过time/smoker分面</figcaption>
+</figure>
+<p>factorplot支持其它的绘图类型，你可能会用到。例如，盒图（它可以显示中位数，四分位数，和异常值）就是一个有用的可视化类型（见图9-28）：</p>
+<div class="sourceCode" id="cb50"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb50-1"><a href="#cb50-1"></a>In [<span class="dv">110</span>]: sns.factorplot(x<span class="op">=</span><span class="st">&#39;tip_pct&#39;</span>, y<span class="op">=</span><span class="st">&#39;day&#39;</span>, kind<span class="op">=</span><span class="st">&#39;box&#39;</span>,</span>
+<span id="cb50-2"><a href="#cb50-2"></a>   .....:                data<span class="op">=</span>tips[tips.tip_pct <span class="op">&lt;</span> <span class="fl">0.5</span>])</span></code></pre></div>
+<figure>
+<img src="http://upload-images.jianshu.io/upload_images/7178691-356fb27a7c658920.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="" /><figcaption>图9-28 按天的tip_pct的盒图</figcaption>
+</figure>
+<p>使用更通用的seaborn.FacetGrid类，你可以创建自己的分面网格。请查阅seaborn的文档（https://seaborn.pydata.org/）。</p>
+<h1 id="其它的python可视化工具">9.3 其它的Python可视化工具</h1>
+<p>与其它开源库类似，Python创建图形的方式非常多（根本罗列不完）。自从2010年，许多开发工作都集中在创建交互式图形以便在Web上发布。利用工具如Boken（https://bokeh.pydata.org/en/latest/）和Plotly（https://github.com/plotly/plotly.py），现在可以创建动态交互图形，用于网页浏览器。</p>
+<p>对于创建用于打印或网页的静态图形，我建议默认使用matplotlib和附加的库，比如pandas和seaborn。对于其它数据可视化要求，学习其它的可用工具可能是有用的。我鼓励你探索绘图的生态系统，因为它将持续发展。</p>
+<h1 id="总结">9.4 总结</h1>
+<p>本章的目的是熟悉一些基本的数据可视化操作，使用pandas，matplotlib，和seaborn。如果视觉显示数据分析的结果对你的工作很重要，我鼓励你寻求更多的资源来了解更高效的数据可视化。这是一个活跃的研究领域，你可以通过在线和纸质的形式学习许多优秀的资源。</p>
+<p>下一章，我们将重点放在pandas的数据聚合和分组操作上。</p>
